@@ -14,7 +14,9 @@ export const env = createEnv({
     AUTH_DISCORD_ID: z.string(),
     AUTH_DISCORD_SECRET: z.string(),
     AUTH_URL: z.string().url(),
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z.string(),
+    TURSO_DATABASE_URL: z.string(),
+    TURSO_AUTH_TOKEN: z.string(),
     UPSTASH_REDIS_REST_URL:
       process.env.NODE_ENV === "production"
         ? z.string().url()
@@ -47,6 +49,8 @@ export const env = createEnv({
     AUTH_DISCORD_SECRET: process.env.AUTH_DISCORD_SECRET,
     AUTH_URL: process.env.AUTH_URL,
     DATABASE_URL: process.env.DATABASE_URL,
+    TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL,
+    TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     NODE_ENV: process.env.NODE_ENV,
