@@ -11,7 +11,7 @@ import { Shell } from "./_components/app-shell";
 export const metadata: Metadata = {
   title: "Cornucopia",
   description: "Cornucopia",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [{ rel: "icon", url: "/favicon.svg", type: "image/svg+xml" }],
 };
 
 export default function RootLayout({
