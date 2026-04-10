@@ -9,8 +9,8 @@ import { Providers } from "./_components/providers";
 import { Shell } from "./_components/app-shell";
 
 export const metadata: Metadata = {
-  title: "Cornucopia",
-  description: "Cornucopia",
+  title: "Cornucopium",
+  description: "Cornucopium",
   icons: [{ rel: "icon", url: "/favicon.svg", type: "image/svg+xml" }],
 };
 
