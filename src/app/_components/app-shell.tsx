@@ -90,12 +90,13 @@ function AccountButton() {
 }
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  const [mobileOpened, { toggle: toggleMobile }] = useDisclosure();
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure();
+  const [desktopCollapsed, setDesktopCollapsed] = useState(true);
   const pathname = usePathname();
 
   useEffect(() => {
-    setDesktopCollapsed(localStorage.getItem(NAVBAR_STORAGE_KEY) === "true");
+    const stored = localStorage.getItem(NAVBAR_STORAGE_KEY);
+    setDesktopCollapsed(stored !== "false");
   }, []);
 
   const toggleDesktop = () => {
@@ -119,7 +120,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={mobileOpened} onClick={toggleMobile} hiddenFrom="sm" size="sm" />
-            <Text fw={700} size="lg">Cornucopia</Text>
+            <Text fw={700} size="lg">Cornucopium</Text>
           </Group>
           <Group gap="xs">
             <ColorSchemeToggle />
@@ -164,6 +165,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 component={Link}
                 href={link.href}
                 aria-label={link.label}
+                onClick={closeMobile}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -186,6 +188,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               label={link.label}
               leftSection={<link.icon size={18} />}
               active={pathname === link.href}
+              onClick={closeMobile}
             />
           )
         )}

@@ -24,7 +24,7 @@ import {
   Tooltip,
   useCombobox,
 } from "@mantine/core";
-import { useDebouncedValue, useDisclosure } from "@mantine/hooks";
+import { useDebouncedValue, useDisclosure, useIntersection } from "@mantine/hooks";
 import {
   IconChevronDown,
   IconChevronUp,
@@ -164,6 +164,7 @@ function getPartnerWithName(card: ScryfallCard): string | null {
 async function scryfallSearch(q: string): Promise<ScryfallCard[]> {
   const res = await fetch(
     `https://api.scryfall.com/cards/search?q=${encodeURIComponent(q)}&order=name&unique=cards`,
+    { headers: { "User-Agent": "Cornucopium/1.0", "Accept": "application/json" } },
   );
   if (!res.ok) return [];
   const data = (await res.json()) as { data: ScryfallCard[] };
@@ -326,6 +327,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
       minWidth: 0,
       position: "relative",
       cursor: "default",
+      aspectRatio: "313/457",
       borderRadius: half === "left"
         ? "var(--mantine-radius-sm) 0 0 var(--mantine-radius-sm)"
         : "0 var(--mantine-radius-sm) var(--mantine-radius-sm) 0",
@@ -338,15 +340,12 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
         <div style={wrapperStyle} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
           {half ? (
             <Image src={artCrop} alt={name} radius={0} loading="lazy"
-              style={{ width: "200%", maxWidth: "none", marginLeft: "-50%", display: "block" }}
+              style={{ width: "200%", maxWidth: "none", marginLeft: "-50%", display: "block", aspectRatio: "626/457", objectFit: "cover" }}
             />
           ) : (
             <Image
               src={artCrop} alt={name} radius="sm" loading="lazy"
-              style={{
-                display: "block",
-                ...(canFlip ? { aspectRatio: "626/457", objectFit: "cover", width: "100%" } : {}),
-              }}
+              style={{ display: "block", aspectRatio: "626/457", objectFit: "cover", width: "100%" }}
             />
           )}
           {onGlimmerClick && hovered && (
@@ -545,6 +544,9 @@ export function CommanderSlot({
   const enrichedCmdId = useRef<string | null>(null);
   const enrichedPtnId = useRef<string | null>(null);
 
+  const { ref: cardRef, entry } = useIntersection({ threshold: 0, rootMargin: "200px" });
+  const isInView = entry?.isIntersecting ?? false;
+
   // Derive effective partner type from oracle text or saved value
   const partnerType: PartnerType = commander
     ? (getPartnerType(commander) || savedPartnerType)
@@ -602,6 +604,7 @@ export function CommanderSlot({
 
   // Enrich commander with card_faces / layout if missing (e.g. after hydration from DB)
   useEffect(() => {
+    if (!isInView) return;
     if (!commander?.id || (commander.card_faces !== undefined && commander.layout !== undefined)) return;
     if (enrichedCmdId.current === commander.id) return;
     enrichedCmdId.current = commander.id;
@@ -617,10 +620,11 @@ export function CommanderSlot({
         }
       })
       .catch(() => undefined);
-  }, [commander?.id]);
+  }, [commander?.id, isInView]);
 
   // Enrich partner with card_faces / layout if missing
   useEffect(() => {
+    if (!isInView) return;
     if (!partner?.id || (partner.card_faces !== undefined && partner.layout !== undefined)) return;
     if (enrichedPtnId.current === partner.id) return;
     enrichedPtnId.current = partner.id;
@@ -636,10 +640,11 @@ export function CommanderSlot({
         }
       })
       .catch(() => undefined);
-  }, [partner?.id]);
+  }, [partner?.id, isInView]);
 
   // Commander search
   useEffect(() => {
+    if (!userModified.current) return;
     if (debounced.trim().length < 2) { setResults([]); return; }
     setLoading(true);
     searchCommanders(colorId, debounced).then(setResults).finally(() => setLoading(false));
@@ -669,6 +674,7 @@ export function CommanderSlot({
 
   // Partner search (plain partner / background)
   useEffect(() => {
+    if (!userModified.current) return;
     if (partnerType !== "partner" && partnerType !== "background") { setPartnerResults([]); return; }
     if (debouncedPartner.trim().length < 2) { setPartnerResults([]); return; }
     setPartnerLoading(true);
@@ -721,6 +727,39 @@ export function CommanderSlot({
   const bracketLabel = BRACKETS.find((b) => b.value === bracket)?.label ?? null;
   const mark = () => { userModified.current = true; };
 
+  // True for the one render frame between initialData arriving and the hydration effect running.
+  // During that frame commander is null even though we have data — show skeleton instead of flash.
+  const pendingHydration = !commander && !!initialData?.commanderName;
+
+  // ── Card minHeight ────────────────────────────────────────────────────────────
+  // Prevents height pop when the summary content appears after the Collapse animation
+  // finishes closing. The card is clamped at this height during the animation so the
+  // summary materialises without a jump.
+  //
+  // Approximate Mantine xs-text line-height (12px font × 1.4) and badge row heights.
+  const hasBadges = !!(bracketLabel || displayTag || archetype);
+  const TEXT_H = 17;   // Text size="xs" line height
+  const BADGE_H = 20;  // Badge size="xs" row
+  const GAP = 4;       // Stack/Group gap
+
+  let summaryH: number;
+  if (!commander) {
+    summaryH = TEXT_H; // "No commander selected"
+  } else if (visual) {
+    // Visual mode wraps text in a div with minHeight:60
+    let textH = TEXT_H;
+    if (partner) textH += GAP + TEXT_H;
+    if (hasBadges) textH += GAP + BADGE_H;
+    summaryH = Math.max(60, textH);
+    if (art) summaryH += GAP + 120; // art image (120px conservative min; CSS aspect-ratio covers exact)
+  } else {
+    summaryH = TEXT_H;
+    if (partner) summaryH += GAP + TEXT_H;
+    if (hasBadges) summaryH += GAP + BADGE_H;
+  }
+  // 42 = card padding-top(12) + header-height(18) + card padding-bottom(12)
+  const cardMinHeight = 42 + summaryH;
+
   const badges = (
     <>
       {bracketLabel && <Badge size="xs" variant="filled" color="blue">{bracketLabel}</Badge>}
@@ -730,7 +769,7 @@ export function CommanderSlot({
   );
 
   return (
-    <Card withBorder padding="sm" onMouseDownCapture={() => { clickedInsideCard.current = true; }}>
+    <Card ref={cardRef} withBorder padding="sm" style={{ minHeight: cardMinHeight }} onMouseDownCapture={() => { clickedInsideCard.current = true; }}>
       {/* ── Header ── */}
       <Group justify="space-between" wrap="nowrap" mb={collapseVisible ? "xs" : 0}>
         <Text size="xs" fw={700} lineClamp={1}>{name}</Text>
@@ -761,7 +800,7 @@ export function CommanderSlot({
 
       {/* ── Contracted summary ── */}
       {!collapseVisible && (
-        isLoading ? (
+        (isLoading || pendingHydration) ? (
           <Stack gap={6} mt={4}>
             <Skeleton height={11} width="70%" radius="sm" />
             <Skeleton height={9} width="45%" radius="sm" />
