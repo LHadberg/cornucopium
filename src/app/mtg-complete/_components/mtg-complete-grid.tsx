@@ -14,12 +14,13 @@ import {
   TextInput,
   Tooltip,
 } from "@mantine/core";
-import { useClipboard, useDebouncedValue } from "@mantine/hooks";
+import { useClipboard, useDebouncedValue, useMediaQuery } from "@mantine/hooks";
 import { IconCheck, IconCopy, IconPencil } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "~/trpc/react";
-import { CommanderSlot, type SelectionData } from "./commander-selector";
+import { CommanderSlot, type SelectionData, type SlotSnapshot } from "./commander-selector";
+import { SelectionCharts } from "./selection-charts";
 
 // ── Color combinations ────────────────────────────────────────────────────────
 
@@ -229,6 +230,8 @@ export function MtgCompleteGrid({
   preloadedSelections?: SelectionRow[];
 }) {
   const [view, setView] = useState<"condensed" | "visual">("visual");
+  const [localSnapshots, setLocalSnapshots] = useState<Record<string, SlotSnapshot>>({});
+  const isSmallScreen = useMediaQuery("(max-width: 576px)") ?? false;
   const { data: session, status: sessionStatus } = useSession();
 
   const { data: selections, isLoading: selectionsLoading } = api.mtg.getSelections.useQuery(
@@ -309,6 +312,28 @@ export function MtgCompleteGrid({
 
   const clipboard = useClipboard({ timeout: 1500 });
 
+  const resolvedSelections: SelectionRow[] = readOnly
+    ? (preloadedSelections ?? [])
+    : (selections ?? []);
+
+  const handleLocalChange = useCallback((colorId: string, snapshot: SlotSnapshot) => {
+    setLocalSnapshots((prev) => ({ ...prev, [colorId]: snapshot }));
+  }, []);
+
+  // Merge local slot state on top of server data so charts update immediately on edit.
+  const chartSelections: SelectionRow[] = COLOR_COMBINATIONS.map((combo) => {
+    const server = resolvedSelections.find((s) => s.colorId === combo.id);
+    const local = localSnapshots[combo.id];
+    if (!local) return server ?? ({ colorId: combo.id, tags: "[]" } as SelectionRow);
+    return {
+      ...(server ?? ({ colorId: combo.id } as SelectionRow)),
+      commanderScryfallId: local.commanderScryfallId,
+      bracket: local.bracket,
+      tags: JSON.stringify(local.tags),
+      archetype: local.archetype,
+    } as SelectionRow;
+  });
+
   return (
     <Stack>
       <NameModal
@@ -317,6 +342,8 @@ export function MtgCompleteGrid({
         onDecline={handleDecline}
         onAccept={handleAccept}
       />
+
+      <SelectionCharts selections={chartSelections} />
 
       <Group justify="space-between" wrap="nowrap">
         <SegmentedControl
@@ -359,7 +386,8 @@ export function MtgCompleteGrid({
         )}
       </Group>
       <SimpleGrid cols={{ base: 1, xs: 2, sm: 3, md: 4, lg: 5 }} spacing="sm">
-        {COLOR_COMBINATIONS.map((combo) => {
+        {/* useMemo prevents all 32 slots re-rendering on every localSnapshot update */}
+        {useMemo(() => COLOR_COMBINATIONS.map((combo) => {
           const saved = readOnly
             ? preloadedSelections?.find((s) => s.colorId === combo.id)
             : selections?.find((s) => s.colorId === combo.id);
@@ -377,9 +405,12 @@ export function MtgCompleteGrid({
               canSave={!readOnly && !!session?.user}
               isLoading={!readOnly && (sessionStatus === "loading" || (!!session?.user && selectionsLoading))}
               readOnly={readOnly}
+              isSmallScreen={isSmallScreen}
+              onLocalChange={readOnly ? undefined : handleLocalChange}
             />
           );
-        })}
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        }), [view, selections, preloadedSelections, session?.user, sessionStatus, selectionsLoading, readOnly, handleLocalChange])}
       </SimpleGrid>
     </Stack>
   );
