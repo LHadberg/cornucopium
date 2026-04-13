@@ -116,12 +116,80 @@ const BRACKETS = [
   { value: "5", label: "5 — cEDH" },
 ];
 
-const ARCHETYPES = ["Aggro", "Combo", "Control", "Midrange", "Stax", "Tempo"];
+const ARCHETYPES: { value: string; label: string; description: string }[] = [
+  { value: "Aggro",    label: "Aggro",    description: "Rush opponents with fast, cheap threats before they can set up." },
+  { value: "Combo",    label: "Combo",    description: "Assemble a specific card combination to win on the spot." },
+  { value: "Control",  label: "Control",  description: "Dominate through counterspells, removal, and late-game card advantage." },
+  { value: "Midrange", label: "Midrange", description: "Flexible threats and answers that adapt to any board state." },
+  { value: "Stax",     label: "Stax",     description: "Deny opponents resources through taxing effects and locks." },
+  { value: "Tempo",    label: "Tempo",    description: "Disrupt opponents while efficiently advancing your own game plan." },
+];
 
 const TAGS = [
-  "Aristocrats", "Enchantress", "Extra Turns", "Group Hug", "Hatebears",
-  "Infect", "Landfall", "Mill", "Pillowfort", "Politics", "Ramp",
-  "Reanimator", "Spellslinger", "Storm", "Superfriends", "Tokens", "Tribal", "Voltron",
+  "-1/-1 Counters", "+1/+1 Counters",
+  "Activated Abilities", "Ad Nauseam", "Adventures", "Advisors", "Affinity", "Aggro",
+  "Aikido", "Airbending", "All Spells", "Allies", "Amass", "Angels", "Annihilator",
+  "Anthems", "Apes", "Arcane", "Archers", "Aristocrats", "Artificers", "Artifacts",
+  "Assassins", "Astartes", "Atogs", "Attack Triggers", "Attractions", "Auras", "Avatars",
+  "Banding", "Barbarians", "Battles", "Bats", "Bears", "Beasts", "Berserkers",
+  "Big Mana", "Birds", "Birthing Pod", "Blink", "Blood", "Bloodthirst", "Blue Moon",
+  "Bobbleheads", "Bounce", "Burn",
+  "Cantrips", "Card Draw", "Cascade", "Cats", "Caves", "cEDH", "Cephalids",
+  "Charge Counters", "Chaos", "Cheerios", "Clerics", "Clones", "Clues", "Coin Flip",
+  "Color Hack", "Combo", "Commander Matters", "Connive", "Constructs", "Control",
+  "Convoke", "Counterspells", "Counters Matter", "Crabs", "Craft", "Creatureless",
+  "Crime", "Curses", "Cybermen", "Cycling",
+  "Daleks", "Dandan", "Day / Night", "Deathtouch", "Defenders", "Delirium", "Delver",
+  "Demons", "Descend", "Deserts", "Detectives", "Devoid", "Devotion", "Die Roll",
+  "Dinosaurs", "Discard", "Discover", "Dogs", "Donate", "Dragon's Approach", "Dragons",
+  "Drakes", "Dredge", "Druids", "Dungeon", "Dwarves",
+  "Earthbending", "Eggs", "Elders", "Eldrazi", "Elementals", "Elephants", "Elves",
+  "Enchantress", "Energy", "Enrage", "ETB", "European Highlander", "Evoke", "Exalted",
+  "Exile", "Experience Counters", "Exploit", "Explore", "Extra Combats", "Extra Turns",
+  "Extra Upkeeps",
+  "Faeries", "Fight", "Firebending", "Flash", "Flashback", "Fling", "Flying", "Food",
+  "Forced Combat", "Foretell", "Foxes", "Freerunning", "Frogs", "Fungi",
+  "Giants", "Glass Cannon", "Gnomes", "Goblins", "Gods", "Goats", "Golems",
+  "Good Stuff", "Gorgons", "Graveyard", "Griffins", "Group Hug", "Group Slug",
+  "Guildgates", "Gyruda Companion",
+  "Halflings", "Hand Size", "Hare Apparent", "Haste", "Hatebears", "Hellbent", "Heroic",
+  "Heroes", "Hippos", "Historic", "Horses", "Horrors", "Humans", "Hydras",
+  "Illusions", "Impulse Draw", "Improvise", "Indestructible", "Infect", "Insects",
+  "Jegantha Companion",
+  "Kaheera Companion", "Keruga Companion", "Keywords", "Kicker", "Kithkin", "Knights", "Kor",
+  "Land Animation", "Land Destruction", "Landfall", "Landwalk", "Lands Matter", "Legends",
+  "Lessons", "Lhurgoyfs", "Life Exchange", "Lifedrain", "Lifegain", "Lizards", "Looting",
+  "LTB Effects", "Lure", "Lurrus Companion",
+  "Madness", "Mayhem", "Mercenaries", "Merfolk", "Mice", "Midrange", "Mill", "Minotaurs",
+  "Modified Creatures", "Modular", "Monarch", "Monks", "Monkeys", "Moonfolk", "Morph",
+  "Mounts", "Multicolor Matters", "Mutants", "Mutate", "Myr", "Myriad",
+  "Necrons", "Nightmares", "Ninjas", "Ninjutsu",
+  "Obosh Companion", "Offspring", "Oil Counters", "Old School", "Oozes", "Orcs", "Otters",
+  "Outlaws",
+  "Paradox", "Party", "Pegasi", "Persistent Petitioners", "Phasing", "Phoenixes",
+  "Phyrexians", "Pillow Fort", "Pingers", "Pirates", "Plants", "Planeswalkers", "Plot",
+  "Politics", "Polymorph", "Populate", "Power", "Praetors", "Primal Surge", "Prison",
+  "Proliferate", "Prowess",
+  "Rabbits", "Raccoons", "Rad Counters", "Ramp", "Rat Colony", "Rats", "Reach", "Rebels",
+  "Reanimator", "Relentless Rats", "Robots", "Rock", "Rogues", "Rooms",
+  "Saboteurs", "Sacrifice", "Sagas", "Samurai", "Saprolings", "Satyrs", "Scarecrows",
+  "Scry", "Sea Creatures", "Self-Damage", "Self-Destruct", "Self-Discard", "Self-Mill",
+  "Servos", "Shadowborn Apostles", "Shades", "Shamans", "Shapeshifters", "Sharks",
+  "Shrines", "Skeletons", "Skulk", "Slime Against Humanity", "Slivers", "Snakes", "Sneak",
+  "Sneak Attack", "Snow", "Soldiers", "Spacecraft", "Specters", "Speed", "Spell Copy",
+  "Spellslinger", "Spiders", "Spirits", "Spore Counters", "Squad", "Squirrels", "Stax",
+  "Stickers", "Stompy", "Stoneblade", "Storm", "Sunburst", "Sunforger", "Surveil",
+  "Suspend", "Symbiotes",
+  "Tap / Untap", "Tempest Hawk", "Tempo", "Theft", "The Ring", "Thopters", "Time Counters",
+  "Time Lords", "Tokens", "Toolbox", "Topdeck", "Toughness Matters", "Towns", "Transform",
+  "Treasure", "Treefolk", "Triggered Abilities", "Tron", "Turbo Fog", "Turtles", "Tyranids",
+  "Type Hack",
+  "Umori Companion", "Unblockable", "Unicorns", "Unnatural",
+  "Vampires", "Vanilla", "Vehicles", "Villainous Choice", "Villains", "Voltron", "Voting",
+  "Warriors", "Waterbending", "Web-slinging", "Weenies", "Werewolves", "Whales", "Wheels",
+  "Wizards", "Wolves", "Wraiths", "Wurms",
+  "X Spells",
+  "Zoo", "Zirda Companion",
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -233,7 +301,7 @@ function CardSearch({ placeholder, query, results, loading, store, onQueryChange
         <Combobox.Options>
           {results.length > 0 ? results.map((card) => (
             <Combobox.Option value={card.id} key={card.id}>
-              <HoverCard width={260} position="right" openDelay={200} closeDelay={0} withinPortal>
+              <HoverCard width="auto" position="right" openDelay={200} closeDelay={0} withinPortal middlewares={{ flip: true, shift: true }}>
                 <HoverCard.Target>
                   <div>
                     <Text size="xs" fw={500}>{card.name}</Text>
@@ -242,7 +310,7 @@ function CardSearch({ placeholder, query, results, loading, store, onQueryChange
                 </HoverCard.Target>
                 {cardImage(card) && (
                   <HoverCard.Dropdown p={4}>
-                    <Image src={cardImage(card)!} alt={card.name} radius={20} loading="lazy" />
+                    <Image src={cardImage(card)!} alt={card.name} radius={20} loading="lazy" style={{ maxWidth: "min(260px, calc(100vw - 16px))", width: "100%" }} />
                   </HoverCard.Dropdown>
                 )}
               </HoverCard>
@@ -308,11 +376,12 @@ function GlimmerSvg() {
 }
 
 // Art image with hover card preview and optional glimmer for print selection
-function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNormal, backArtCrop, canFlip }: {
+function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNormal, backArtCrop, canFlip, isSmallScreen }: {
   artCrop: string; normal: string; name: string; flex?: string; half?: "left" | "right";
   onGlimmerClick?: () => void;
   backNormal?: string; backArtCrop?: string;
   canFlip?: boolean;
+  isSmallScreen?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const [showBack, setShowBack] = useState(false);
@@ -335,7 +404,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
     : { flex: flex ?? "1 1 100%", minWidth: 0, position: "relative", cursor: "default" };
 
   return (
-    <HoverCard width={260} position="right" openDelay={300} closeDelay={150} withinPortal>
+    <HoverCard width="auto" position={isSmallScreen ? "top" : "right"} openDelay={300} closeDelay={150} withinPortal middlewares={{ flip: true, shift: true }}>
       <HoverCard.Target>
         <div style={wrapperStyle} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
           {half ? (
@@ -364,7 +433,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
         <div style={{ position: "relative" }}>
           <Image
             src={displayNormal} alt={name} radius={20} loading="lazy"
-            style={{ transform: flipped ? "rotate(180deg)" : undefined }}
+            style={{ maxWidth: "min(260px, calc(100vw - 16px))", width: "100%", transform: flipped ? "rotate(180deg)" : undefined }}
           />
           {backNormal && (
             <button
@@ -461,6 +530,13 @@ function PrintPickerModal({ opened, onClose, cardName, currentPrintId, onSelect,
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+export interface SlotSnapshot {
+  commanderScryfallId: string | null;
+  bracket: string | null;
+  tags: string[];
+  archetype: string | null;
+}
+
 export interface CommanderSlotProps {
   colorId: string;
   name: string;
@@ -470,10 +546,14 @@ export interface CommanderSlotProps {
   canSave?: boolean;
   isLoading?: boolean;
   readOnly?: boolean;
+  isSmallScreen?: boolean;
+  onLocalChange?: (colorId: string, snapshot: SlotSnapshot) => void;
 }
 
 export function CommanderSlot({
   colorId, name, colors, visual = false, initialData, canSave = false, isLoading = false, readOnly = false,
+  isSmallScreen = false,
+  onLocalChange,
 }: CommanderSlotProps) {
   const [expanded, { open, close }] = useDisclosure(false);
   const [collapseVisible, setCollapseVisible] = useState(false);
@@ -682,8 +762,23 @@ export function CommanderSlot({
     fn(debouncedPartner).then(setPartnerResults).finally(() => setPartnerLoading(false));
   }, [debouncedPartner, partnerType]);
 
+  // Notify parent of local state changes for reactive chart updates
+  useEffect(() => {
+    if (!hasHydrated.current && !commander) return;
+    onLocalChange?.(colorId, {
+      commanderScryfallId: commander?.id ?? null,
+      bracket,
+      tags,
+      archetype,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commander?.id, bracket, tags, archetype]);
+
   // Persist
-  const { mutate: upsert } = api.mtg.upsertSelection.useMutation();
+  const utils = api.useUtils();
+  const { mutate: upsert } = api.mtg.upsertSelection.useMutation({
+    onSuccess: () => void utils.mtg.getSelections.invalidate(),
+  });
   const saveJson = JSON.stringify({
     colorId,
     commanderScryfallId: commander?.id ?? null,
@@ -806,7 +901,7 @@ export function CommanderSlot({
             <Skeleton height={9} width="45%" radius="sm" />
           </Stack>
         ) : (
-          <HoverCard width={250} position="right" openDelay={400} closeDelay={0} disabled={!img || visual} withinPortal>
+          <HoverCard width="auto" position={isSmallScreen ? "top" : "right"} openDelay={400} closeDelay={0} disabled={!img || visual} withinPortal middlewares={{ flip: true, shift: true }}>
             <HoverCard.Target>
               <Stack gap={4}>
                 {commander ? (
@@ -831,6 +926,7 @@ export function CommanderSlot({
                             backNormal={cmdBackFace?.normal}
                             backArtCrop={cmdBackFace?.art_crop}
                             canFlip={cmdIsFlip}
+                            isSmallScreen={isSmallScreen}
                           />
                         )}
                         {partnerArt && partnerImg && (
@@ -841,6 +937,7 @@ export function CommanderSlot({
                             backNormal={ptnBackFace?.normal}
                             backArtCrop={ptnBackFace?.art_crop}
                             canFlip={ptnIsFlip}
+                            isSmallScreen={isSmallScreen}
                           />
                         )}
                       </Group>
@@ -862,7 +959,7 @@ export function CommanderSlot({
               </Stack>
             </HoverCard.Target>
             <HoverCard.Dropdown p={4}>
-              <Image src={img!} alt={commander?.name} radius={20} loading="lazy" />
+              <Image src={img!} alt={commander?.name} radius={20} loading="lazy" style={{ maxWidth: "min(250px, calc(100vw - 16px))", width: "100%" }} />
             </HoverCard.Dropdown>
           </HoverCard>
         )
@@ -905,8 +1002,25 @@ export function CommanderSlot({
             tags={tags} setTags={(v) => { mark(); setTags(v); }}
             favoriteTag={favoriteTag} setFavoriteTag={(v) => { mark(); setFavoriteTag(v); }}
           />
-          <Select size="xs" placeholder="Archetype…" data={ARCHETYPES} value={archetype}
-            onChange={(v) => { mark(); setArchetype(v); }} clearable />
+          <Select
+            size="xs"
+            placeholder="Archetype…"
+            data={ARCHETYPES}
+            value={archetype}
+            onChange={(v) => { mark(); setArchetype(v); }}
+            clearable
+            renderOption={({ option }) => {
+              const entry = ARCHETYPES.find((a) => a.value === option.value);
+              return (
+                <Stack gap={1} py={2}>
+                  <Text size="xs" fw={500}>{option.label}</Text>
+                  {entry && (
+                    <Text size="xs" c="dimmed" lh={1.3}>{entry.description}</Text>
+                  )}
+                </Stack>
+              );
+            }}
+          />
           <Group gap="xs" wrap="nowrap">
             <TextInput
               size="xs" placeholder="Deck list URL…"
