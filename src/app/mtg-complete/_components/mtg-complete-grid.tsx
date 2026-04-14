@@ -220,6 +220,17 @@ function NameModal({ opened, initialName, onDecline, onAccept }: NameModalProps)
   );
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getTooltipSide(slotIndex: number, numCols: number): "left" | "right" | "bottom" {
+  if (numCols <= 1) return "bottom";
+  const colIndex = slotIndex % numCols;
+  const third = numCols / 3;
+  if (colIndex < third) return "right";
+  if (colIndex >= numCols - third) return "left";
+  return "bottom";
+}
+
 // ── Grid component ────────────────────────────────────────────────────────────
 
 export function MtgCompleteGrid({
@@ -231,7 +242,11 @@ export function MtgCompleteGrid({
 }) {
   const [view, setView] = useState<"condensed" | "visual">("visual");
   const [localSnapshots, setLocalSnapshots] = useState<Record<string, SlotSnapshot>>({});
-  const isSmallScreen = useMediaQuery("(max-width: 576px)") ?? false;
+  const isXs = useMediaQuery("(min-width: 576px)") ?? false;
+  const isSm = useMediaQuery("(min-width: 768px)") ?? false;
+  const isMd = useMediaQuery("(min-width: 992px)") ?? false;
+  const isLg = useMediaQuery("(min-width: 1200px)") ?? false;
+  const numCols = isLg ? 5 : isMd ? 4 : isSm ? 3 : isXs ? 2 : 1;
   const { data: session, status: sessionStatus } = useSession();
 
   const { data: selections, isLoading: selectionsLoading } = api.mtg.getSelections.useQuery(
@@ -387,7 +402,7 @@ export function MtgCompleteGrid({
       </Group>
       <SimpleGrid cols={{ base: 1, xs: 2, sm: 3, md: 4, lg: 5 }} spacing="sm">
         {/* useMemo prevents all 32 slots re-rendering on every localSnapshot update */}
-        {useMemo(() => COLOR_COMBINATIONS.map((combo) => {
+        {useMemo(() => COLOR_COMBINATIONS.map((combo, slotIndex) => {
           const saved = readOnly
             ? preloadedSelections?.find((s) => s.colorId === combo.id)
             : selections?.find((s) => s.colorId === combo.id);
@@ -405,12 +420,12 @@ export function MtgCompleteGrid({
               canSave={!readOnly && !!session?.user}
               isLoading={!readOnly && (sessionStatus === "loading" || (!!session?.user && selectionsLoading))}
               readOnly={readOnly}
-              isSmallScreen={isSmallScreen}
+              tooltipSide={getTooltipSide(slotIndex, numCols)}
               onLocalChange={readOnly ? undefined : handleLocalChange}
             />
           );
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        }), [view, selections, preloadedSelections, session?.user, sessionStatus, selectionsLoading, readOnly, handleLocalChange])}
+        }), [view, selections, preloadedSelections, session?.user, sessionStatus, selectionsLoading, readOnly, handleLocalChange, numCols])}
       </SimpleGrid>
     </Stack>
   );
