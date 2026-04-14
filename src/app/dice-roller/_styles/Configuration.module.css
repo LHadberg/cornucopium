@@ -1,0 +1,32 @@
+/* ── Light-mode contrast improvements for config panel ────────────── */
+
+/* Boost dimmed text (c="dimmed") — covers stat value lines, descriptions, etc. */
+:global([data-mantine-color-scheme="light"]) .configWrapper {
+  --mantine-color-dimmed: var(--mantine-color-gray-7);
+}
+
+/* Darken the unfilled slider track */
+:global([data-mantine-color-scheme="light"]) .configWrapper :global(.mantine-Slider-track)::before {
+  background-color: var(--mantine-color-gray-5);
+}
+
+/* Darken the mark dots (filled and unfilled) */
+:global([data-mantine-color-scheme="light"]) .configWrapper :global(.mantine-Slider-mark) {
+  border-color: var(--mantine-color-gray-5);
+}
+
+/* Darken slider mark labels */
+:global([data-mantine-color-scheme="light"]) .configWrapper :global(.mantine-Slider-markLabel) {
+  color: var(--mantine-color-gray-7);
+}
+
+/* Darken input labels (ColorInput, Select, TextInput) */
+:global([data-mantine-color-scheme="light"]) .configWrapper :global(.mantine-InputWrapper-label) {
+  color: var(--mantine-color-dark-6);
+  font-weight: 500;
+}
+
+/* Darken input descriptions */
+:global([data-mantine-color-scheme="light"]) .configWrapper :global(.mantine-InputWrapper-description) {
+  color: var(--mantine-color-gray-7);
+}

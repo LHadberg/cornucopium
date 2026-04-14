@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!--
+    Plain-weave linen tile: 2×2 cells, each 8×8
+    Cells alternate weft-over-warp and warp-over-weft.
+    Low contrast keeps the texture subtle.
+  -->
+  <!-- base tone -->
+  <rect width="16" height="16" fill="#b8a080"/>
+  <!-- top-left: weft thread over warp — slightly lighter -->
+  <rect x="0" y="0" width="8" height="8" fill="#c4ac88"/>
+  <rect x="0" y="0" width="8" height="2" fill="#d0b890" opacity="0.45"/>
+  <rect x="0" y="6" width="8" height="2" fill="#806040" opacity="0.20"/>
+  <!-- top-right: warp thread over weft — slightly darker -->
+  <rect x="8" y="0" width="8" height="8" fill="#ac9470"/>
+  <rect x="8" y="0" width="2" height="8" fill="#c0a878" opacity="0.40"/>
+  <rect x="14" y="0" width="2" height="8" fill="#705030" opacity="0.18"/>
+  <!-- bottom-left: warp thread over weft -->
+  <rect x="0" y="8" width="8" height="8" fill="#ac9470"/>
+  <rect x="0" y="8" width="2" height="8" fill="#c0a878" opacity="0.40"/>
+  <rect x="6" y="8" width="2" height="8" fill="#705030" opacity="0.18"/>
+  <!-- bottom-right: weft thread over warp -->
+  <rect x="8" y="8" width="8" height="8" fill="#c4ac88"/>
+  <rect x="8" y="8" width="8" height="2" fill="#d0b890" opacity="0.45"/>
+  <rect x="8" y="14" width="8" height="2" fill="#806040" opacity="0.20"/>
+</svg>

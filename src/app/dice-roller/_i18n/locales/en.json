@@ -1,0 +1,103 @@
+{
+  "tabs": {
+    "stats": "Stats",
+    "actions": "Actions",
+    "physics": "Physics",
+    "visuals": "Visuals"
+  },
+  "stats": {
+    "title": "Character Stats",
+    "valueModifier": "Value: {{value}} (Modifier: {{modifier}})"
+  },
+  "actions": {
+    "title": "Actions",
+    "addAction": "Add Action",
+    "save": "Save",
+    "unnamedAction": "Unnamed action",
+    "actionNamePlaceholder": "Action Name",
+    "requiresAttackRoll": "Requires Attack Roll (D20)",
+    "statModifier": "Stat Modifier",
+    "damageDice": "Damage Dice",
+    "addDamageDie": "Add Damage Die"
+  },
+  "physics": {
+    "title": "Physics Configuration",
+    "gravity": "Gravity",
+    "mass": "Mass",
+    "friction": "Friction",
+    "massLight": "Light",
+    "massNormal": "Normal",
+    "massHeavy": "Heavy",
+    "frictionNone": "None",
+    "frictionMedium": "Medium",
+    "frictionHigh": "High"
+  },
+  "visuals": {
+    "title": "Visual Configuration",
+    "uiTheme": "UI Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "auto": "Auto",
+    "diceColor": "Dice Color",
+    "diceColorDescription": "Custom color for the dice theme",
+    "wallStyle": "Wall Style",
+    "wallRepeat": "Wall Repetition",
+    "wallRepeatDescription": "How many times the texture tiles across the wall surface",
+    "wallColor": "Wall Color",
+    "wallColorDescription": "Color tint applied to the wall surfaces",
+    "backgroundStyle": "Background Style",
+    "backgroundRepeat": "Texture Repetition",
+    "backgroundRepeatDescription": "How many times the texture tiles across the surface",
+    "backgroundColor": "Background Color",
+    "backgroundColorDescription": "Color tint applied to the floor/background",
+    "resetToDefault": "Reset to default"
+  },
+  "diceConfig": {
+    "title": "Select Dice",
+    "diceLabel": "{{type}} Dice"
+  },
+  "diceBox": {
+    "total": "Total {{value}}",
+    "reroll": "Reroll",
+    "actionsDrawerTitle": "Actions",
+    "noActionsConfigured": "No actions configured yet.",
+    "unnamed": "Unnamed",
+    "attackBadge": "Attack",
+    "doesHit": "Does {{value}} hit?",
+    "yes": "Yes",
+    "no": "No",
+    "modifierLabel": "Modifier"
+  },
+  "diceTypes": {
+    "d4": "D4",
+    "d6": "D6",
+    "d8": "D8",
+    "d10": "D10",
+    "d12": "D12",
+    "d20": "D20"
+  },
+  "damageTypes": {
+    "none": "None",
+    "acid": "Acid",
+    "bludgeoning": "Bludgeoning",
+    "cold": "Cold",
+    "fire": "Fire",
+    "force": "Force",
+    "lightning": "Lightning",
+    "necrotic": "Necrotic",
+    "piercing": "Piercing",
+    "poison": "Poison",
+    "psychic": "Psychic",
+    "radiant": "Radiant",
+    "slashing": "Slashing",
+    "thunder": "Thunder"
+  },
+  "statNames": {
+    "strength": "Strength",
+    "dexterity": "Dexterity",
+    "constitution": "Constitution",
+    "intelligence": "Intelligence",
+    "wisdom": "Wisdom",
+    "charisma": "Charisma"
+  }
+}

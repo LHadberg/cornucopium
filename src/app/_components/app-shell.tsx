@@ -23,6 +23,7 @@ import {
   IconCards,
   IconChevronLeft,
   IconChevronRight,
+  IconDice,
   IconHome,
   IconMoon,
   IconSun,
@@ -34,6 +35,7 @@ import { usePathname } from "next/navigation";
 const navLinks = [
   { label: "Home", href: "/", icon: IconHome },
   { label: "Mtg Complete", href: "/mtg-complete", icon: IconCards },
+  { label: "Dice Roller", href: "/dice-roller", icon: IconDice },
 ];
 
 const NAVBAR_WIDTH = 240;
