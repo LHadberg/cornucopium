@@ -278,9 +278,10 @@ interface CardSearchProps {
   store: ReturnType<typeof useCombobox>;
   onQueryChange: (q: string) => void;
   onSelect: (card: ScryfallCard | null) => void;
+  tooltipSide?: "left" | "right" | "bottom";
 }
 
-function CardSearch({ placeholder, query, results, loading, store, onQueryChange, onSelect }: CardSearchProps) {
+function CardSearch({ placeholder, query, results, loading, store, onQueryChange, onSelect, tooltipSide = "right" }: CardSearchProps) {
   return (
     <Combobox store={store} onOptionSubmit={(id) => {
       const card = results.find((c) => c.id === id) ?? null;
@@ -301,7 +302,7 @@ function CardSearch({ placeholder, query, results, loading, store, onQueryChange
         <Combobox.Options>
           {results.length > 0 ? results.map((card) => (
             <Combobox.Option value={card.id} key={card.id}>
-              <HoverCard width="auto" position="right" openDelay={200} closeDelay={0} withinPortal middlewares={{ flip: true, shift: true }}>
+              <HoverCard width="auto" position={tooltipSide} openDelay={200} closeDelay={0} withinPortal middlewares={{ flip: true, shift: true }}>
                 <HoverCard.Target>
                   <div>
                     <Text size="xs" fw={500}>{card.name}</Text>
@@ -376,12 +377,12 @@ function GlimmerSvg() {
 }
 
 // Art image with hover card preview and optional glimmer for print selection
-function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNormal, backArtCrop, canFlip, isSmallScreen }: {
+function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNormal, backArtCrop, canFlip, tooltipSide = "right" }: {
   artCrop: string; normal: string; name: string; flex?: string; half?: "left" | "right";
   onGlimmerClick?: () => void;
   backNormal?: string; backArtCrop?: string;
   canFlip?: boolean;
-  isSmallScreen?: boolean;
+  tooltipSide?: "left" | "right" | "bottom";
 }) {
   const [hovered, setHovered] = useState(false);
   const [showBack, setShowBack] = useState(false);
@@ -404,7 +405,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
     : { flex: flex ?? "1 1 100%", minWidth: 0, position: "relative", cursor: "default" };
 
   return (
-    <HoverCard width="auto" position={isSmallScreen ? "top" : "right"} openDelay={300} closeDelay={150} withinPortal middlewares={{ flip: true, shift: true }}>
+    <HoverCard width="auto" position={tooltipSide} openDelay={300} closeDelay={150} withinPortal middlewares={{ flip: true, shift: true }}>
       <HoverCard.Target>
         <div style={wrapperStyle} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
           {half ? (
@@ -546,13 +547,13 @@ export interface CommanderSlotProps {
   canSave?: boolean;
   isLoading?: boolean;
   readOnly?: boolean;
-  isSmallScreen?: boolean;
+  tooltipSide?: "left" | "right" | "bottom";
   onLocalChange?: (colorId: string, snapshot: SlotSnapshot) => void;
 }
 
 export function CommanderSlot({
   colorId, name, colors, visual = false, initialData, canSave = false, isLoading = false, readOnly = false,
-  isSmallScreen = false,
+  tooltipSide = "right",
   onLocalChange,
 }: CommanderSlotProps) {
   const [expanded, { open, close }] = useDisclosure(false);
@@ -901,7 +902,7 @@ export function CommanderSlot({
             <Skeleton height={9} width="45%" radius="sm" />
           </Stack>
         ) : (
-          <HoverCard width="auto" position={isSmallScreen ? "top" : "right"} openDelay={400} closeDelay={0} disabled={!img || visual} withinPortal middlewares={{ flip: true, shift: true }}>
+          <HoverCard width="auto" position={tooltipSide} openDelay={400} closeDelay={0} disabled={!img || visual} withinPortal middlewares={{ flip: true, shift: true }}>
             <HoverCard.Target>
               <Stack gap={4}>
                 {commander ? (
@@ -926,7 +927,7 @@ export function CommanderSlot({
                             backNormal={cmdBackFace?.normal}
                             backArtCrop={cmdBackFace?.art_crop}
                             canFlip={cmdIsFlip}
-                            isSmallScreen={isSmallScreen}
+                            tooltipSide={tooltipSide}
                           />
                         )}
                         {partnerArt && partnerImg && (
@@ -937,7 +938,7 @@ export function CommanderSlot({
                             backNormal={ptnBackFace?.normal}
                             backArtCrop={ptnBackFace?.art_crop}
                             canFlip={ptnIsFlip}
-                            isSmallScreen={isSmallScreen}
+                            tooltipSide={tooltipSide}
                           />
                         )}
                       </Group>
@@ -973,6 +974,7 @@ export function CommanderSlot({
             query={query} results={results} loading={loading} store={cmdStore}
             onQueryChange={(q) => { mark(); setQuery(q); setCommander(null); setSavedPartnerType(null); }}
             onSelect={(card) => { mark(); setCommander(card); setQuery(card?.name ?? ""); }}
+            tooltipSide={tooltipSide}
           />
 
           {partnerType && (
@@ -991,6 +993,7 @@ export function CommanderSlot({
                   query={partnerQuery} results={partnerResults} loading={partnerLoading} store={ptnStore}
                   onQueryChange={(q) => { mark(); setPartnerQuery(q); setPartner(null); }}
                   onSelect={(card) => { mark(); setPartner(card); setPartnerQuery(card?.name ?? ""); }}
+                  tooltipSide={tooltipSide}
                 />
               )}
             </>

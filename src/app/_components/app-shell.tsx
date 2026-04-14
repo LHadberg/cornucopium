@@ -17,7 +17,7 @@ import {
   useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
+import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import {
   IconCards,
@@ -92,6 +92,7 @@ function AccountButton() {
 export function Shell({ children }: { children: React.ReactNode }) {
   const [mobileOpened, { toggle: toggleMobile, close: closeMobile }] = useDisclosure();
   const [desktopCollapsed, setDesktopCollapsed] = useState(true);
+  const isMobile = useMediaQuery("(max-width: 768px)") ?? false;
   const pathname = usePathname();
 
   useEffect(() => {
@@ -120,7 +121,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger opened={mobileOpened} onClick={toggleMobile} hiddenFrom="sm" size="sm" />
-            <Text fw={700} size="lg">Cornucopium</Text>
+            <Group gap={6} align="center">
+              <img src="/favicon.svg" alt="Cornucopia" style={{ width: 28, height: 28 }} />
+              <Text fw={700} size="lg">Cornucopium</Text>
+            </Group>
           </Group>
           <Group gap="xs">
             <ColorSchemeToggle />
@@ -159,7 +163,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Divider my="xs" />
 
         {navLinks.map((link) =>
-          desktopCollapsed ? (
+          desktopCollapsed && !isMobile ? (
             <Tooltip key={link.href} label={link.label} position="right" withArrow openDelay={400}>
               <UnstyledButton
                 component={Link}
