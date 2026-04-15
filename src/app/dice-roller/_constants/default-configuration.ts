@@ -1,4 +1,4 @@
-import type { Action } from '../_types/types';
+import type { ActionSet } from '../_types/types';
 
 const defaultStats = {
   strength: { name: 'Strength', value: 10, modifier: 0 },
@@ -9,7 +9,7 @@ const defaultStats = {
   charisma: { name: 'Charisma', value: 10, modifier: 0 },
 };
 
-const defaultActions: Action[] = [];
+const defaultActionSets: ActionSet[] = [];
 
 const defaultPhysicsConfig = {
   gravity: 1,
@@ -36,7 +36,7 @@ const defaultVisualConfig = {
 
 export const defaultConfigs = {
   defaultStats,
-  defaultActions,
+  defaultActionSets,
   defaultPhysicsConfig,
   defaultVisualConfig,
 };

@@ -19,6 +19,7 @@ import {
   SimpleGrid,
   Skeleton,
   Stack,
+  Switch,
   Text,
   TextInput,
   Tooltip,
@@ -96,6 +97,14 @@ export interface SelectionData {
   partnerPreferredPrintId: string | null;
   partnerPreferredPrintImage: string | null;
   partnerPreferredPrintArt: string | null;
+  companionScryfallId: string | null;
+  companionName: string | null;
+  companionTypeLine: string | null;
+  companionImage: string | null;
+  companionArtCrop: string | null;
+  companionPreferredPrintId: string | null;
+  companionPreferredPrintImage: string | null;
+  companionPreferredPrintArt: string | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -258,6 +267,21 @@ async function searchByExactName(name: string) {
   return scryfallSearch(`!"${name}"`);
 }
 
+async function searchAnyCard(query: string) {
+  if (query.trim().length < 2) return [];
+  return scryfallSearch(query);
+}
+
+async function searchCompanions(colorId: string, query: string) {
+  if (query.trim().length < 2) return [];
+  return scryfallSearch(`keyword:companion t:creature id<=${colorId} ${query}`);
+}
+
+async function searchCompanionsRule0(query: string) {
+  if (query.trim().length < 2) return [];
+  return scryfallSearch(`keyword:companion t:creature ${query}`);
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function ManaSymbol({ color }: { color: string }) {
@@ -385,6 +409,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
   tooltipSide?: "left" | "right" | "bottom";
 }) {
   const [hovered, setHovered] = useState(false);
+  const [hoverKey, setHoverKey] = useState(0);
   const [showBack, setShowBack] = useState(false);
   const [flipped, setFlipped] = useState(false);
 
@@ -405,7 +430,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
     : { flex: flex ?? "1 1 100%", minWidth: 0, position: "relative", cursor: "default" };
 
   return (
-    <HoverCard width="auto" position={tooltipSide} openDelay={300} closeDelay={150} withinPortal middlewares={{ flip: true, shift: true }}>
+    <HoverCard key={hoverKey} width="auto" position={tooltipSide} openDelay={300} closeDelay={150} withinPortal middlewares={{ flip: true, shift: true }}>
       <HoverCard.Target>
         <div style={wrapperStyle} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
           {half ? (
@@ -422,7 +447,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
             <button
               className="art-glimmer-btn"
               style={{ position: "absolute", bottom: 4, right: 4, zIndex: 1 }}
-              onClick={(e) => { e.stopPropagation(); onGlimmerClick(); }}
+              onClick={(e) => { e.stopPropagation(); setHoverKey((k) => k + 1); onGlimmerClick(); }}
               title="Select art version"
             >
               <GlimmerSvg />
@@ -617,13 +642,28 @@ export function CommanderSlot({
   // Preferred print overrides (id + image URLs for commander / partner)
   const [cmdPreferredPrint, setCmdPreferredPrint] = useState<{ id: string; image: string; artCrop: string } | null>(null);
   const [ptnPreferredPrint, setPtnPreferredPrint] = useState<{ id: string; image: string; artCrop: string } | null>(null);
-  // null = closed, 'commander' | 'partner' = open for that card
-  const [printPickerFor, setPrintPickerFor] = useState<"commander" | "partner" | null>(null);
+  // null = closed, 'commander' | 'partner' | 'companion' = open for that card
+  const [printPickerFor, setPrintPickerFor] = useState<"commander" | "partner" | "companion" | null>(null);
+
+  // Rule 0 toggles
+  const [allowRule0, setAllowRule0] = useState(false);
+
+  // Companion
+  const cmpStore = useCombobox({ onDropdownClose: () => cmpStore.resetSelectedOption() });
+  const [hasCompanion, setHasCompanion] = useState(false);
+  const [companion, setCompanion] = useState<ScryfallCard | null>(null);
+  const [companionQuery, setCompanionQuery] = useState("");
+  const [debouncedCompanion] = useDebouncedValue(companionQuery, 300);
+  const [companionResults, setCompanionResults] = useState<ScryfallCard[]>([]);
+  const [companionLoading, setCompanionLoading] = useState(false);
+  const [companionAllowRule0, setCompanionAllowRule0] = useState(false);
+  const [companionPreferredPrint, setCompanionPreferredPrint] = useState<{ id: string; image: string; artCrop: string } | null>(null);
 
   const userModified = useRef(false);
   const hasHydrated = useRef(false);
   const enrichedCmdId = useRef<string | null>(null);
   const enrichedPtnId = useRef<string | null>(null);
+  const enrichedCmpId = useRef<string | null>(null);
 
   const { ref: cardRef, entry } = useIntersection({ threshold: 0, rootMargin: "200px" });
   const isInView = entry?.isIntersecting ?? false;
@@ -681,6 +721,22 @@ export function CommanderSlot({
     if (initialData.partnerPreferredPrintId && initialData.partnerPreferredPrintImage && initialData.partnerPreferredPrintArt) {
       setPtnPreferredPrint({ id: initialData.partnerPreferredPrintId, image: initialData.partnerPreferredPrintImage, artCrop: initialData.partnerPreferredPrintArt });
     }
+    if (initialData.companionName) {
+      setHasCompanion(true);
+      setCompanionQuery(initialData.companionName);
+      setCompanion({
+        id: initialData.companionScryfallId ?? "",
+        name: initialData.companionName,
+        type_line: initialData.companionTypeLine ?? "",
+        mana_cost: "",
+        image_uris: (initialData.companionImage && initialData.companionArtCrop)
+          ? { normal: initialData.companionImage, art_crop: initialData.companionArtCrop }
+          : undefined,
+      });
+    }
+    if (initialData.companionPreferredPrintId && initialData.companionPreferredPrintImage && initialData.companionPreferredPrintArt) {
+      setCompanionPreferredPrint({ id: initialData.companionPreferredPrintId, image: initialData.companionPreferredPrintImage, artCrop: initialData.companionPreferredPrintArt });
+    }
   }, [initialData]);
 
   // Enrich commander with card_faces / layout if missing (e.g. after hydration from DB)
@@ -723,13 +779,34 @@ export function CommanderSlot({
       .catch(() => undefined);
   }, [partner?.id, isInView]);
 
+  // Enrich companion with card_faces / layout if missing
+  useEffect(() => {
+    if (!isInView) return;
+    if (!companion?.id || (companion.card_faces !== undefined && companion.layout !== undefined)) return;
+    if (enrichedCmpId.current === companion.id) return;
+    enrichedCmpId.current = companion.id;
+    fetch(`https://api.scryfall.com/cards/${companion.id}`)
+      .then((r) => r.ok ? r.json() as Promise<ScryfallCard> : null)
+      .then((data) => {
+        if (data) {
+          setCompanion((prev) => prev ? {
+            ...prev,
+            ...(data.card_faces !== undefined && { card_faces: data.card_faces }),
+            layout: data.layout,
+          } : prev);
+        }
+      })
+      .catch(() => undefined);
+  }, [companion?.id, isInView]);
+
   // Commander search
   useEffect(() => {
     if (!userModified.current) return;
     if (debounced.trim().length < 2) { setResults([]); return; }
     setLoading(true);
-    searchCommanders(colorId, debounced).then(setResults).finally(() => setLoading(false));
-  }, [colorId, debounced]);
+    const fn = allowRule0 ? searchAnyCard : () => searchCommanders(colorId, debounced);
+    fn(debounced).then(setResults).finally(() => setLoading(false));
+  }, [colorId, debounced, allowRule0]);
 
   // Reset / auto-resolve partner when commander changes
   useEffect(() => {
@@ -762,6 +839,16 @@ export function CommanderSlot({
     const fn = partnerType === "background" ? searchBackgrounds : searchPartners;
     fn(debouncedPartner).then(setPartnerResults).finally(() => setPartnerLoading(false));
   }, [debouncedPartner, partnerType]);
+
+  // Companion search
+  useEffect(() => {
+    if (!userModified.current) return;
+    if (!hasCompanion) { setCompanionResults([]); return; }
+    if (debouncedCompanion.trim().length < 2) { setCompanionResults([]); return; }
+    setCompanionLoading(true);
+    const fn = companionAllowRule0 ? searchCompanionsRule0 : () => searchCompanions(colorId, debouncedCompanion);
+    fn(debouncedCompanion).then(setCompanionResults).finally(() => setCompanionLoading(false));
+  }, [colorId, debouncedCompanion, hasCompanion, companionAllowRule0]);
 
   // Notify parent of local state changes for reactive chart updates
   useEffect(() => {
@@ -800,6 +887,14 @@ export function CommanderSlot({
     partnerPreferredPrintId: ptnPreferredPrint?.id ?? null,
     partnerPreferredPrintImage: ptnPreferredPrint?.image ?? null,
     partnerPreferredPrintArt: ptnPreferredPrint?.artCrop ?? null,
+    companionScryfallId: companion?.id ?? null,
+    companionName: companion?.name ?? null,
+    companionTypeLine: companion?.type_line ?? null,
+    companionImage: companion ? cardImage(companion) : null,
+    companionArtCrop: companion ? cardArtCrop(companion) : null,
+    companionPreferredPrintId: companionPreferredPrint?.id ?? null,
+    companionPreferredPrintImage: companionPreferredPrint?.image ?? null,
+    companionPreferredPrintArt: companionPreferredPrint?.artCrop ?? null,
   });
   const [debouncedSaveJson] = useDebouncedValue(saveJson, 1000);
   useEffect(() => {
@@ -818,6 +913,11 @@ export function CommanderSlot({
   const ptnBackFace = partner?.card_faces?.[1]?.image_uris;
   const cmdIsFlip = commander?.layout === "flip";
   const ptnIsFlip = partner?.layout === "flip";
+
+  const companionImg = companionPreferredPrint?.image ?? (companion ? cardImage(companion) : null);
+  const companionArt = companionPreferredPrint?.artCrop ?? (companion ? cardArtCrop(companion) : null);
+  const cmpBackFace = companion?.card_faces?.[1]?.image_uris;
+  const cmpIsFlip = companion?.layout === "flip";
 
   const displayTag = favoriteTag ?? tags[0] ?? null;
   const bracketLabel = BRACKETS.find((b) => b.value === bracket)?.label ?? null;
@@ -848,6 +948,7 @@ export function CommanderSlot({
     if (hasBadges) textH += GAP + BADGE_H;
     summaryH = Math.max(60, textH);
     if (art) summaryH += GAP + 120; // art image (120px conservative min; CSS aspect-ratio covers exact)
+    if (companionArt) summaryH += GAP + 120; // companion row
   } else {
     summaryH = TEXT_H;
     if (partner) summaryH += GAP + TEXT_H;
@@ -942,6 +1043,17 @@ export function CommanderSlot({
                           />
                         )}
                       </Group>
+                      {companionArt && companionImg && (
+                        <ArtImage
+                          artCrop={companionArt} normal={companionImg} name={companion!.name}
+                          flex="1 1 100%"
+                          onGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("companion")}
+                          backNormal={cmpBackFace?.normal}
+                          backArtCrop={cmpBackFace?.art_crop}
+                          canFlip={cmpIsFlip}
+                          tooltipSide={tooltipSide}
+                        />
+                      )}
                     </>
                   ) : (
                     <>
@@ -969,6 +1081,14 @@ export function CommanderSlot({
       {/* ── Expanded selectors ── */}
       {!readOnly && <Collapse in={expanded} onTransitionEnd={() => { if (!expanded) setCollapseVisible(false); }}>
         <Stack gap="xs">
+          <Group justify="space-between" align="center" wrap="nowrap">
+            <Text size="xs" c="dimmed" fw={500}>Commander</Text>
+            <Switch
+              size="xs" label="Rule 0" labelPosition="left"
+              checked={allowRule0}
+              onChange={(e) => { mark(); setAllowRule0(e.currentTarget.checked); }}
+            />
+          </Group>
           <CardSearch
             placeholder="Search commander…"
             query={query} results={results} loading={loading} store={cmdStore}
@@ -996,6 +1116,40 @@ export function CommanderSlot({
                   tooltipSide={tooltipSide}
                 />
               )}
+            </>
+          )}
+
+          <Switch
+            size="xs" label="Companion" checked={hasCompanion}
+            onChange={(e) => {
+              mark();
+              setHasCompanion(e.currentTarget.checked);
+              if (!e.currentTarget.checked) {
+                setCompanion(null);
+                setCompanionQuery("");
+                setCompanionResults([]);
+                setCompanionAllowRule0(false);
+                setCompanionPreferredPrint(null);
+              }
+            }}
+          />
+          {hasCompanion && (
+            <>
+              <Group justify="space-between" align="center" wrap="nowrap">
+                <Text size="xs" c="dimmed" fw={500}>Companion</Text>
+                <Switch
+                  size="xs" label="Rule 0" labelPosition="left"
+                  checked={companionAllowRule0}
+                  onChange={(e) => { mark(); setCompanionAllowRule0(e.currentTarget.checked); }}
+                />
+              </Group>
+              <CardSearch
+                placeholder="Search companion…"
+                query={companionQuery} results={companionResults} loading={companionLoading} store={cmpStore}
+                onQueryChange={(q) => { mark(); setCompanionQuery(q); setCompanion(null); }}
+                onSelect={(card) => { mark(); setCompanion(card); setCompanionQuery(card?.name ?? ""); }}
+                tooltipSide={tooltipSide}
+              />
             </>
           )}
 
@@ -1046,17 +1200,27 @@ export function CommanderSlot({
       {!readOnly && <PrintPickerModal
         opened={printPickerFor !== null}
         onClose={() => setPrintPickerFor(null)}
-        cardName={printPickerFor === "commander" ? (commander?.name ?? "") : (partner?.name ?? "")}
-        currentPrintId={printPickerFor === "commander" ? (cmdPreferredPrint?.id ?? null) : (ptnPreferredPrint?.id ?? null)}
+        cardName={
+          printPickerFor === "commander" ? (commander?.name ?? "") :
+          printPickerFor === "partner" ? (partner?.name ?? "") :
+          (companion?.name ?? "")
+        }
+        currentPrintId={
+          printPickerFor === "commander" ? (cmdPreferredPrint?.id ?? null) :
+          printPickerFor === "partner" ? (ptnPreferredPrint?.id ?? null) :
+          (companionPreferredPrint?.id ?? null)
+        }
         onSelect={(id, image, artCrop) => {
           mark();
           if (printPickerFor === "commander") setCmdPreferredPrint({ id, image, artCrop });
-          else setPtnPreferredPrint({ id, image, artCrop });
+          else if (printPickerFor === "partner") setPtnPreferredPrint({ id, image, artCrop });
+          else setCompanionPreferredPrint({ id, image, artCrop });
         }}
         onClear={() => {
           mark();
           if (printPickerFor === "commander") setCmdPreferredPrint(null);
-          else setPtnPreferredPrint(null);
+          else if (printPickerFor === "partner") setPtnPreferredPrint(null);
+          else setCompanionPreferredPrint(null);
         }}
       />}
     </Card>

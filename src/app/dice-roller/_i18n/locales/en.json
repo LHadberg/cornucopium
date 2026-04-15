@@ -1,4 +1,13 @@
 {
+  "nav": {
+    "home": "Home",
+    "mtgComplete": "MTG Complete",
+    "diceRoller": "Dice Roller",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "signIn": "Sign in",
+    "signOut": "Sign out"
+  },
   "tabs": {
     "stats": "Stats",
     "actions": "Actions",
@@ -12,9 +21,14 @@
   "actions": {
     "title": "Actions",
     "addAction": "Add Action",
+    "addActionSet": "Add Action Set",
     "save": "Save",
+    "noActionSets": "No action sets configured yet.",
     "unnamedAction": "Unnamed action",
+    "unnamedActionSet": "Unnamed set",
     "actionNamePlaceholder": "Action Name",
+    "actionSetNamePlaceholder": "Action Set Name",
+    "actionsLabel": "Actions",
     "requiresAttackRoll": "Requires Attack Roll (D20)",
     "statModifier": "Stat Modifier",
     "damageDice": "Damage Dice",

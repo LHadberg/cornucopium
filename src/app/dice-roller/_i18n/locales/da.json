@@ -1,4 +1,13 @@
 {
+  "nav": {
+    "home": "Hjem",
+    "mtgComplete": "MTG Komplet",
+    "diceRoller": "Terningeruller",
+    "collapse": "Skjul",
+    "expand": "Udvid",
+    "signIn": "Log ind",
+    "signOut": "Log ud"
+  },
   "tabs": {
     "stats": "Statistik",
     "actions": "Handlinger",
@@ -12,9 +21,14 @@
   "actions": {
     "title": "Handlinger",
     "addAction": "Tilføj handling",
+    "addActionSet": "Tilføj handlingssæt",
     "save": "Gem",
+    "noActionSets": "Ingen handlingssæt konfigureret endnu.",
     "unnamedAction": "Unavngivet handling",
+    "unnamedActionSet": "Unavngivet sæt",
     "actionNamePlaceholder": "Handlingsnavn",
+    "actionSetNamePlaceholder": "Handlingssætnavn",
+    "actionsLabel": "Handlinger",
     "requiresAttackRoll": "Kræver angrebsrul (D20)",
     "statModifier": "Statistikmodifikator",
     "damageDice": "Skadeterninger",

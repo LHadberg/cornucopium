@@ -189,6 +189,14 @@ const selectionInput = z.object({
   partnerPreferredPrintId: z.string().max(64).nullable(),
   partnerPreferredPrintImage: scryfallImageUrl,
   partnerPreferredPrintArt: scryfallImageUrl,
+  companionScryfallId: z.string().max(64).nullable(),
+  companionName: z.string().max(200).nullable(),
+  companionTypeLine: z.string().max(200).nullable(),
+  companionImage: scryfallImageUrl,
+  companionArtCrop: scryfallImageUrl,
+  companionPreferredPrintId: z.string().max(64).nullable(),
+  companionPreferredPrintImage: scryfallImageUrl,
+  companionPreferredPrintArt: scryfallImageUrl,
 });
 
 // ── Router ────────────────────────────────────────────────────────────────────

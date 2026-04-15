@@ -68,8 +68,14 @@ export interface Action {
   }[];
 }
 
-export interface ActionsConfig {
+export interface ActionSet {
+  id: string;
+  name: string;
   actions: Action[];
+}
+
+export interface ActionsConfig {
+  actionSets: ActionSet[];
 }
 
 export interface D20Result {

@@ -16,14 +16,17 @@ import {
   Badge,
   UnstyledButton,
   Tooltip,
+  Select,
 } from '@mantine/core';
 import DiceBox from '@3d-dice/dice-box';
-import type { Action, DiceResult } from '../_types/types';
+import type { Action, ActionSet, DiceResult } from '../_types/types';
 import {
   IconChevronLeft,
   IconChevronRight,
   IconInfoCircle,
   IconSettings,
+  IconSword,
+  IconWand,
 } from '@tabler/icons-react';
 import styles from '../_styles/DiceBox.module.css';
 import type { LocalStorageConfigurationReturn } from '../_hooks/use-local-storage-configuration';
@@ -73,7 +76,9 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   configuration,
   toggleShowDiceBox,
 }) => {
-  const { actions, physicsConfig, visualConfig, stats } = configuration;
+  const { actionSets, selectedActionSetId, handleSelectedActionSetUpdate, physicsConfig, visualConfig, stats } = configuration;
+
+  const activeActions: Action[] = (actionSets.find(s => s.id === selectedActionSetId) ?? actionSets[0])?.actions ?? [];
 
   const { t } = useTranslation();
 
@@ -216,9 +221,12 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   const containerCallbackRef = useCallback(
     (node: HTMLDivElement | null) => {
       containerRef.current = node;
-
       if (node && !diceBoxRef.current) {
-        initializeDiceBox();
+        requestAnimationFrame(() => {
+          if (containerRef.current) {
+            void initializeDiceBox();
+          }
+        });
       }
     },
     [initializeDiceBox]
@@ -520,10 +528,18 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
         styles={{ content: { height: 'auto' } }}
       >
         <Stack gap="sm" p="md">
-          {actions.length === 0 && (
+          {actionSets.length > 0 && (
+            <Select
+              data={actionSets.map((s: ActionSet) => ({ value: s.id, label: s.name || t('actions.unnamedActionSet') }))}
+              value={selectedActionSetId ?? actionSets[0]?.id ?? null}
+              onChange={(id) => handleSelectedActionSetUpdate(id)}
+              comboboxProps={{ withinPortal: false }}
+            />
+          )}
+          {activeActions.length === 0 && (
             <Text c="dimmed" size="sm" ta="center">{t('diceBox.noActionsConfigured')}</Text>
           )}
-          {actions.map((action: Action) => {
+          {activeActions.map((action: Action) => {
             const primaryDamageType = action.damageDice.find(d => d.damageType)?.damageType;
             const cardStyle = primaryDamageType ? DAMAGE_TYPE_STYLES[primaryDamageType] : undefined;
             return (
@@ -531,13 +547,13 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
                 key={action.id}
                 className={styles.actionCard}
                 onClick={() => rollAction(action)}
-                style={cardStyle}
+                style={{ ...cardStyle, position: 'relative' }}
               >
+                <div style={{ position: 'absolute', top: 8, right: 8 }}>
+                  {action.requiresD20 ? <IconSword size={20} /> : <IconWand size={20} />}
+                </div>
                 <Group justify="space-between" mb={6}>
                   <Text style={{ paddingLeft: 12, paddingTop: 4 }} size="md">{action.name || t('diceBox.unnamed')}</Text>
-                  {action.requiresD20 && (
-                    <Badge size="sm" variant="light" color="blue" style={{ marginRight: 8, marginTop: 4 }}>{t('diceBox.attackBadge')}</Badge>
-                  )}
                 </Group>
                 <Group gap={6} style={{ paddingLeft: 12, paddingBottom: 8 }}>
                   {action.damageDice.map((die, i) => {

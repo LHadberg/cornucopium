@@ -4,6 +4,7 @@ import {
   AppShell,
   ActionIcon,
   Burger,
+  Button,
   Divider,
   Group,
   NavLink,
@@ -31,12 +32,8 @@ import {
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const navLinks = [
-  { label: "Home", href: "/", icon: IconHome },
-  { label: "Mtg Complete", href: "/mtg-complete", icon: IconCards },
-  { label: "Dice Roller", href: "/dice-roller", icon: IconDice },
-];
+import { useTranslation } from "react-i18next";
+import "../dice-roller/_i18n/i18n";
 
 const NAVBAR_WIDTH = 240;
 const NAVBAR_COLLAPSED_WIDTH = 60;
@@ -59,8 +56,33 @@ function ColorSchemeToggle() {
   );
 }
 
+function LanguagePicker() {
+  const { i18n } = useTranslation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return (
+    <Button.Group>
+      {(['en', 'da'] as const).map((lng) => (
+        <Button
+          key={lng}
+          size="xs"
+          variant={i18n.language.startsWith(lng) ? 'filled' : 'default'}
+          onClick={() => {
+            void i18n.changeLanguage(lng);
+            localStorage.setItem('i18n-language', lng);
+          }}
+        >
+          {lng.toUpperCase()}
+        </Button>
+      ))}
+    </Button.Group>
+  );
+}
+
 function AccountButton() {
   const { data: session, status } = useSession();
+  const { t } = useTranslation();
 
   if (status === "loading") {
     return <Skeleton height={28} width={100} radius="sm" />;
@@ -69,7 +91,7 @@ function AccountButton() {
   if (!session?.user) {
     return (
       <Anchor component={Link} href="/api/auth/signin" size="sm">
-        Sign in
+        {t('nav.signIn')}
       </Anchor>
     );
   }
@@ -85,7 +107,7 @@ function AccountButton() {
         </UnstyledButton>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Item onClick={() => signOut()}>Sign out</Menu.Item>
+        <Menu.Item onClick={() => signOut()}>{t('nav.signOut')}</Menu.Item>
       </Menu.Dropdown>
     </Menu>
   );
@@ -96,6 +118,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [desktopCollapsed, setDesktopCollapsed] = useState(true);
   const isMobile = useMediaQuery("(max-width: 768px)") ?? false;
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const navLinks = [
+    { label: t('nav.home'), href: "/", icon: IconHome },
+    { label: t('nav.mtgComplete'), href: "/mtg-complete", icon: IconCards },
+    { label: t('nav.diceRoller'), href: "/dice-roller", icon: IconDice },
+  ];
 
   useEffect(() => {
     const stored = localStorage.getItem(NAVBAR_STORAGE_KEY);
@@ -130,6 +159,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Group>
           <Group gap="xs">
             <ColorSchemeToggle />
+            <LanguagePicker />
             <AccountButton />
           </Group>
         </Group>
@@ -137,7 +167,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       <AppShell.Navbar p="sm">
         <Tooltip
-          label={desktopCollapsed ? "Expand" : "Collapse"}
+          label={desktopCollapsed ? t('nav.expand') : t('nav.collapse')}
           position="right"
           withArrow
           openDelay={400}
@@ -145,7 +175,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <UnstyledButton
             visibleFrom="sm"
             onClick={toggleDesktop}
-            aria-label={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={desktopCollapsed ? t('nav.expand') : t('nav.collapse')}
             style={{
               display: "flex",
               alignItems: "center",
@@ -158,7 +188,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             }}
           >
             {desktopCollapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
-            {!desktopCollapsed && <Text size="xs" c="dimmed">Collapse</Text>}
+            {!desktopCollapsed && <Text size="xs" c="dimmed">{t('nav.collapse')}</Text>}
           </UnstyledButton>
         </Tooltip>
 

@@ -1,19 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, Group, Stack, TextInput, Switch, Select, ActionIcon, Paper, Text, Collapse } from '@mantine/core';
-import { IconPlus, IconTrash, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
-import type { Action, DiceSelections, Stats } from '../../_types/types';
+import { Button, Group, Stack, TextInput, Switch, Select, ActionIcon, Paper, Text, Collapse, Divider } from '@mantine/core';
+import { IconPlus, IconTrash, IconChevronDown, IconChevronUp, IconFolderPlus } from '@tabler/icons-react';
+import type { Action, ActionSet, DiceSelections, Stats } from '../../_types/types';
 import { useTranslation } from 'react-i18next';
 
 interface ActionsConfigProps {
-  actions: Action[];
-  onUpdate: (actions: Action[]) => void;
+  actionSets: ActionSet[];
+  onUpdate: (actionSets: ActionSet[]) => void;
 }
 
-const ActionsConfig: React.FC<ActionsConfigProps> = ({ actions, onUpdate }) => {
-  const [draft, setDraft] = useState<Action[]>(() => actions.map(a => ({ ...a, damageDice: a.damageDice.map(d => ({ ...d })) })));
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, onUpdate }) => {
+  const [draft, setDraft] = useState<ActionSet[]>(() =>
+    actionSets.map(s => ({ ...s, actions: s.actions.map(a => ({ ...a, damageDice: a.damageDice.map(d => ({ ...d })) })) }))
+  );
+  const [expandedSetIds, setExpandedSetIds] = useState<Set<string>>(new Set());
+  const [expandedActionIds, setExpandedActionIds] = useState<Set<string>>(new Set());
   const { t } = useTranslation();
 
   const diceOptions = [
@@ -51,51 +54,88 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actions, onUpdate }) => {
     { value: 'charisma', label: t('statNames.charisma') },
   ];
 
-  const toggleExpanded = (id: string) => {
-    setExpandedIds(prev => {
+  const toggleSetExpanded = (id: string) => {
+    setExpandedSetIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
 
-  const addNewAction = () => {
+  const toggleActionExpanded = (id: string) => {
+    setExpandedActionIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const addActionSet = () => {
+    const newSet: ActionSet = { id: Date.now().toString(), name: '', actions: [] };
+    setDraft(prev => [...prev, newSet]);
+    setExpandedSetIds(prev => new Set(prev).add(newSet.id));
+  };
+
+  const removeActionSet = (setIndex: number) => {
+    setDraft(prev => prev.filter((_, i) => i !== setIndex));
+  };
+
+  const updateSetName = (setIndex: number, name: string) => {
+    setDraft(prev => prev.map((s, i) => i === setIndex ? { ...s, name } : s));
+  };
+
+  const addAction = (setIndex: number) => {
     const newAction: Action = {
       id: Date.now().toString(),
       name: '',
       requiresD20: false,
       damageDice: [{ quantity: 1, dieType: 'd6' }],
     };
-    setDraft(prev => [...prev, newAction]);
-    setExpandedIds(prev => new Set(prev).add(newAction.id));
+    setDraft(prev => prev.map((s, i) => i !== setIndex ? s : { ...s, actions: [...s.actions, newAction] }));
+    setExpandedActionIds(prev => new Set(prev).add(newAction.id));
   };
 
-  const updateAction = (index: number, updates: Partial<Action>) => {
-    setDraft(prev => prev.map((a, i) => i === index ? { ...a, ...updates } : a));
-  };
-
-  const removeAction = (index: number) => {
-    setDraft(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const addDamageDie = (actionIndex: number) => {
-    setDraft(prev => prev.map((a, i) => i !== actionIndex ? a : {
-      ...a,
-      damageDice: [...a.damageDice, { quantity: 1, dieType: 'd6' as keyof DiceSelections }],
+  const removeAction = (setIndex: number, actionIndex: number) => {
+    setDraft(prev => prev.map((s, i) => i !== setIndex ? s : {
+      ...s,
+      actions: s.actions.filter((_, j) => j !== actionIndex),
     }));
   };
 
-  const removeDamageDie = (actionIndex: number, dieIndex: number) => {
-    setDraft(prev => prev.map((a, i) => i !== actionIndex ? a : {
-      ...a,
-      damageDice: a.damageDice.filter((_, j) => j !== dieIndex),
+  const updateAction = (setIndex: number, actionIndex: number, updates: Partial<Action>) => {
+    setDraft(prev => prev.map((s, i) => i !== setIndex ? s : {
+      ...s,
+      actions: s.actions.map((a, j) => j === actionIndex ? { ...a, ...updates } : a),
     }));
   };
 
-  const updateDie = (actionIndex: number, dieIndex: number, updates: Partial<Action['damageDice'][number]>) => {
-    setDraft(prev => prev.map((a, i) => i !== actionIndex ? a : {
-      ...a,
-      damageDice: a.damageDice.map((d, j) => j !== dieIndex ? d : { ...d, ...updates }),
+  const addDamageDie = (setIndex: number, actionIndex: number) => {
+    setDraft(prev => prev.map((s, i) => i !== setIndex ? s : {
+      ...s,
+      actions: s.actions.map((a, j) => j !== actionIndex ? a : {
+        ...a,
+        damageDice: [...a.damageDice, { quantity: 1, dieType: 'd6' as keyof DiceSelections }],
+      }),
+    }));
+  };
+
+  const removeDamageDie = (setIndex: number, actionIndex: number, dieIndex: number) => {
+    setDraft(prev => prev.map((s, i) => i !== setIndex ? s : {
+      ...s,
+      actions: s.actions.map((a, j) => j !== actionIndex ? a : {
+        ...a,
+        damageDice: a.damageDice.filter((_, k) => k !== dieIndex),
+      }),
+    }));
+  };
+
+  const updateDie = (setIndex: number, actionIndex: number, dieIndex: number, updates: Partial<Action['damageDice'][number]>) => {
+    setDraft(prev => prev.map((s, i) => i !== setIndex ? s : {
+      ...s,
+      actions: s.actions.map((a, j) => j !== actionIndex ? a : {
+        ...a,
+        damageDice: a.damageDice.map((d, k) => k !== dieIndex ? d : { ...d, ...updates }),
+      }),
     }));
   };
 
@@ -104,8 +144,8 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actions, onUpdate }) => {
       <Group justify="space-between">
         <Text size="xl" fw={700}>{t('actions.title')}</Text>
         <Group gap="xs">
-          <Button onClick={addNewAction} leftSection={<IconPlus size={16} />} variant="light">
-            {t('actions.addAction')}
+          <Button onClick={addActionSet} leftSection={<IconFolderPlus size={16} />} variant="light">
+            {t('actions.addActionSet')}
           </Button>
           <Button onClick={() => onUpdate(draft)} color="green">
             {t('actions.save')}
@@ -113,100 +153,156 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actions, onUpdate }) => {
         </Group>
       </Group>
 
-      {draft.map((action, actionIndex) => {
-        const isExpanded = expandedIds.has(action.id);
+      {draft.length === 0 && (
+        <Text c="dimmed" size="sm" ta="center">{t('actions.noActionSets')}</Text>
+      )}
+
+      {draft.map((set, setIndex) => {
+        const isSetExpanded = expandedSetIds.has(set.id);
         return (
-          <Paper key={action.id} withBorder>
+          <Paper key={set.id} withBorder>
+            {/* Action Set Header */}
             <Group
               justify="space-between"
               p="sm"
               style={{ cursor: 'pointer' }}
-              onClick={() => toggleExpanded(action.id)}
+              onClick={() => toggleSetExpanded(set.id)}
             >
-              <Text fw={600} size="sm" c={action.name ? undefined : 'dimmed'}>
-                {action.name || t('actions.unnamedAction')}
+              <Text fw={700} size="sm" c={set.name ? undefined : 'dimmed'}>
+                {set.name || t('actions.unnamedActionSet')}
               </Text>
               <Group gap={4}>
                 <ActionIcon
                   color="red"
                   variant="subtle"
                   size="sm"
-                  onClick={(e) => { e.stopPropagation(); removeAction(actionIndex); }}
+                  onClick={(e) => { e.stopPropagation(); removeActionSet(setIndex); }}
                 >
                   <IconTrash size={14} />
                 </ActionIcon>
                 <ActionIcon variant="subtle" size="sm">
-                  {isExpanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
+                  {isSetExpanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
                 </ActionIcon>
               </Group>
             </Group>
 
-            <Collapse in={isExpanded}>
+            <Collapse in={isSetExpanded}>
               <Stack gap="md" px="md" pb="md">
                 <TextInput
-                  placeholder={t('actions.actionNamePlaceholder')}
-                  value={action.name}
-                  onChange={(e) => updateAction(actionIndex, { name: e.target.value })}
+                  placeholder={t('actions.actionSetNamePlaceholder')}
+                  value={set.name}
+                  onChange={(e) => updateSetName(setIndex, e.target.value)}
                 />
 
-                <Switch
-                  label={t('actions.requiresAttackRoll')}
-                  checked={action.requiresD20}
-                  onChange={(e) => updateAction(actionIndex, { requiresD20: e.currentTarget.checked })}
-                />
+                {set.actions.length > 0 && <Divider label={t('actions.actionsLabel')} labelPosition="left" />}
 
-                {action.requiresD20 && (
-                  <Select
-                    label={t('actions.statModifier')}
-                    data={statOptions}
-                    value={action.statModifier}
-                    onChange={(value) => updateAction(actionIndex, { statModifier: value as keyof Stats })}
-                    comboboxProps={{ withinPortal: false }}
-                  />
-                )}
+                {set.actions.map((action, actionIndex) => {
+                  const isActionExpanded = expandedActionIds.has(action.id);
+                  return (
+                    <Paper key={action.id} withBorder style={{ marginLeft: 8 }}>
+                      <Group
+                        justify="space-between"
+                        p="sm"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => toggleActionExpanded(action.id)}
+                      >
+                        <Text fw={600} size="sm" c={action.name ? undefined : 'dimmed'}>
+                          {action.name || t('actions.unnamedAction')}
+                        </Text>
+                        <Group gap={4}>
+                          <ActionIcon
+                            color="red"
+                            variant="subtle"
+                            size="sm"
+                            onClick={(e) => { e.stopPropagation(); removeAction(setIndex, actionIndex); }}
+                          >
+                            <IconTrash size={14} />
+                          </ActionIcon>
+                          <ActionIcon variant="subtle" size="sm">
+                            {isActionExpanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
+                          </ActionIcon>
+                        </Group>
+                      </Group>
 
-                <Text size="sm" fw={500}>{t('actions.damageDice')}</Text>
+                      <Collapse in={isActionExpanded}>
+                        <Stack gap="md" px="md" pb="md">
+                          <TextInput
+                            placeholder={t('actions.actionNamePlaceholder')}
+                            value={action.name}
+                            onChange={(e) => updateAction(setIndex, actionIndex, { name: e.target.value })}
+                          />
 
-                {action.damageDice.map((die, dieIndex) => (
-                  <Group key={`${actionIndex}-${dieIndex}`}>
-                    <TextInput
-                      type="number"
-                      placeholder="Qty"
-                      value={die.quantity}
-                      onChange={(e) => updateDie(actionIndex, dieIndex, { quantity: parseInt(e.target.value) || 1 })}
-                      style={{ width: 80 }}
-                    />
-                    <Select
-                      data={diceOptions}
-                      value={die.dieType}
-                      onChange={(value) => updateDie(actionIndex, dieIndex, { dieType: value as keyof DiceSelections })}
-                      style={{ width: 90 }}
-                      comboboxProps={{ withinPortal: false }}
-                    />
-                    <Select
-                      data={damageTypeOptions}
-                      value={die.damageType ?? ''}
-                      onChange={(value) => updateDie(actionIndex, dieIndex, { damageType: value ?? '' })}
-                      style={{ width: 140 }}
-                      comboboxProps={{ withinPortal: false }}
-                    />
-                    <ActionIcon
-                      color="red"
-                      variant="light"
-                      onClick={() => removeDamageDie(actionIndex, dieIndex)}
-                      disabled={action.damageDice.length === 1}
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  </Group>
-                ))}
+                          <Switch
+                            label={t('actions.requiresAttackRoll')}
+                            checked={action.requiresD20}
+                            onChange={(e) => updateAction(setIndex, actionIndex, { requiresD20: e.currentTarget.checked })}
+                          />
+
+                          {action.requiresD20 && (
+                            <Select
+                              label={t('actions.statModifier')}
+                              data={statOptions}
+                              value={action.statModifier}
+                              onChange={(value) => updateAction(setIndex, actionIndex, { statModifier: value as keyof Stats })}
+                              comboboxProps={{ withinPortal: false }}
+                            />
+                          )}
+
+                          <Text size="sm" fw={500}>{t('actions.damageDice')}</Text>
+
+                          {action.damageDice.map((die, dieIndex) => (
+                            <Group key={`${actionIndex}-${dieIndex}`}>
+                              <TextInput
+                                type="number"
+                                placeholder="Qty"
+                                value={die.quantity}
+                                onChange={(e) => updateDie(setIndex, actionIndex, dieIndex, { quantity: parseInt(e.target.value) || 1 })}
+                                style={{ width: 80 }}
+                              />
+                              <Select
+                                data={diceOptions}
+                                value={die.dieType}
+                                onChange={(value) => updateDie(setIndex, actionIndex, dieIndex, { dieType: value as keyof DiceSelections })}
+                                style={{ width: 90 }}
+                                comboboxProps={{ withinPortal: false }}
+                              />
+                              <Select
+                                data={damageTypeOptions}
+                                value={die.damageType ?? ''}
+                                onChange={(value) => updateDie(setIndex, actionIndex, dieIndex, { damageType: value ?? '' })}
+                                style={{ width: 140 }}
+                                comboboxProps={{ withinPortal: false }}
+                              />
+                              <ActionIcon
+                                color="red"
+                                variant="light"
+                                onClick={() => removeDamageDie(setIndex, actionIndex, dieIndex)}
+                                disabled={action.damageDice.length === 1}
+                              >
+                                <IconTrash size={16} />
+                              </ActionIcon>
+                            </Group>
+                          ))}
+
+                          <Button
+                            variant="light"
+                            onClick={() => addDamageDie(setIndex, actionIndex)}
+                            leftSection={<IconPlus size={16} />}
+                          >
+                            {t('actions.addDamageDie')}
+                          </Button>
+                        </Stack>
+                      </Collapse>
+                    </Paper>
+                  );
+                })}
 
                 <Button
                   variant="light"
-                  onClick={() => addDamageDie(actionIndex)}
+                  onClick={() => addAction(setIndex)}
                   leftSection={<IconPlus size={16} />}
                 >
-                  {t('actions.addDamageDie')}
+                  {t('actions.addAction')}
                 </Button>
               </Stack>
             </Collapse>

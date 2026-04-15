@@ -91,6 +91,14 @@ export type SelectionRow = {
   partnerPreferredPrintId: string | null;
   partnerPreferredPrintImage: string | null;
   partnerPreferredPrintArt: string | null;
+  companionScryfallId: string | null;
+  companionName: string | null;
+  companionTypeLine: string | null;
+  companionImage: string | null;
+  companionArtCrop: string | null;
+  companionPreferredPrintId: string | null;
+  companionPreferredPrintImage: string | null;
+  companionPreferredPrintArt: string | null;
 };
 
 function toInitialData(s: SelectionRow): SelectionData {
@@ -117,6 +125,14 @@ function toInitialData(s: SelectionRow): SelectionData {
     partnerPreferredPrintId: s.partnerPreferredPrintId,
     partnerPreferredPrintImage: s.partnerPreferredPrintImage,
     partnerPreferredPrintArt: s.partnerPreferredPrintArt,
+    companionScryfallId: s.companionScryfallId,
+    companionName: s.companionName,
+    companionTypeLine: s.companionTypeLine,
+    companionImage: s.companionImage,
+    companionArtCrop: s.companionArtCrop,
+    companionPreferredPrintId: s.companionPreferredPrintId,
+    companionPreferredPrintImage: s.companionPreferredPrintImage,
+    companionPreferredPrintArt: s.companionPreferredPrintArt,
   };
 }
 

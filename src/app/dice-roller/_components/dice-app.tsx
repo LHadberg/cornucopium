@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSpring, animated } from '@react-spring/three';
 import { Canvas, useLoader, useThree } from '@react-three/fiber';
 
-import { ActionIcon, Center, Loader, MantineProvider, Slider, Stack, Text } from '@mantine/core';
+import { ActionIcon, Center, Loader, MantineProvider, Slider, Stack, Text, useComputedColorScheme } from '@mantine/core';
 import { IconBulb, IconX } from '@tabler/icons-react';
 import { Configuration } from './configuration/configuration';
 import { useLocalStorageConfiguration } from '../_hooks/use-local-storage-configuration';
@@ -117,9 +117,10 @@ export interface LightingConfig {
 interface DiceAppProps {
   configuration: ReturnType<typeof useLocalStorageConfiguration>;
   lighting: LightingConfig;
+  colorScheme: 'light' | 'dark';
 }
 
-export const DiceApp: React.FC<DiceAppProps> = ({ configuration, lighting }) => {
+export const DiceApp: React.FC<DiceAppProps> = ({ configuration, lighting, colorScheme }) => {
   const { size, viewport } = useThree();
 
   const [isRotated, setIsRotated] = useState(false);
@@ -207,7 +208,7 @@ export const DiceApp: React.FC<DiceAppProps> = ({ configuration, lighting }) => 
               padding: '0',
             }}
           >
-            <MantineProvider defaultColorScheme="auto">
+            <MantineProvider forceColorScheme={colorScheme}>
               <DiceBoxComponent
                 configuration={configuration}
                 toggleShowDiceBox={toggleShowDiceBox}
@@ -229,7 +230,7 @@ export const DiceApp: React.FC<DiceAppProps> = ({ configuration, lighting }) => 
                 boxSizing: 'border-box',
               }}
             >
-              <MantineProvider defaultColorScheme="auto">
+              <MantineProvider forceColorScheme={colorScheme}>
                 <Configuration key={configKey} toggleShowDiceBox={toggleCamera} configuration={configuration} />
               </MantineProvider>
             </div>
@@ -323,7 +324,18 @@ export const DiceAppWrapper = () => {
   const [lighting] = useState<LightingConfig>(DEFAULT_LIGHTING);
   const [ready, setReady] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
+  const colorScheme = useComputedColorScheme('light');
   // const [debugOpen, setDebugOpen] = useState(false);
+
+  useEffect(() => {
+    const originalWarn = console.warn;
+    console.warn = (...args: Parameters<typeof console.warn>) => {
+      const msg = String(args[0] ?? '');
+      if (msg.includes('Clock') && msg.includes('deprecated')) return;
+      originalWarn.apply(console, args);
+    };
+    return () => { console.warn = originalWarn; };
+  }, []);
 
   useEffect(() => {
     setReady(true);
@@ -361,7 +373,7 @@ export const DiceAppWrapper = () => {
   return (
     <div style={darkBg}>
       <Canvas key={canvasKey} style={{ width: '100%', height: '100%', background: '#1a1b1e' }} onCreated={handleCreated}>
-        <DiceApp configuration={configuration} lighting={lighting} />
+        <DiceApp configuration={configuration} lighting={lighting} colorScheme={colorScheme} />
       </Canvas>
 
       {/* Lighting debug overlay — uncomment to enable

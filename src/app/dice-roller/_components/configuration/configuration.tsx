@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ActionIcon, Button, Group, Tabs, useComputedColorScheme } from '@mantine/core';
+import { ActionIcon, Group, Tabs, useComputedColorScheme } from '@mantine/core';
 import StatsConfig from './stats-config';
 import ActionsConfig from './actions-config';
 import PhysicsConfig from './physics-config';
@@ -20,9 +20,9 @@ export interface ConfigurationProps {
 
 export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox, configuration }) => {
   const isDark = useComputedColorScheme('light') === 'dark';
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
-  const { stats, actions, physicsConfig, visualConfig, handleStatsUpdate, handleActionsUpdate, handlePhysicsUpdate, handleVisualsUpdate } = configuration;
+  const { stats, actionSets, physicsConfig, visualConfig, handleStatsUpdate, handleActionSetsUpdate, handlePhysicsUpdate, handleVisualsUpdate } = configuration;
   const tabs = {
     stats: { key: 'stats', label: t('tabs.stats') },
     actions: { key: 'actions', label: t('tabs.actions') },
@@ -89,18 +89,6 @@ export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox,
               </Tabs.Tab>
             ))}
           </Tabs.List>
-          <Button.Group>
-            {(['en', 'da'] as const).map((lng) => (
-              <Button
-                key={lng}
-                size="xs"
-                variant={i18n.language.startsWith(lng) ? 'filled' : 'default'}
-                onClick={() => i18n.changeLanguage(lng)}
-              >
-                {lng.toUpperCase()}
-              </Button>
-            ))}
-          </Button.Group>
         </Group>
 
         <Tabs.Panel value="stats" pt="xs">
@@ -108,7 +96,7 @@ export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox,
         </Tabs.Panel>
 
         <Tabs.Panel value="actions" pt="xs">
-          <ActionsConfig actions={actions} onUpdate={handleActionsUpdate} />
+          <ActionsConfig actionSets={actionSets} onUpdate={handleActionSetsUpdate} />
         </Tabs.Panel>
 
         <Tabs.Panel value="physics" pt="xs">
