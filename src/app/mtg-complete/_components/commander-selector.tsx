@@ -656,7 +656,6 @@ export function CommanderSlot({
   const [debouncedCompanion] = useDebouncedValue(companionQuery, 300);
   const [companionResults, setCompanionResults] = useState<ScryfallCard[]>([]);
   const [companionLoading, setCompanionLoading] = useState(false);
-  const [companionAllowRule0, setCompanionAllowRule0] = useState(false);
   const [companionPreferredPrint, setCompanionPreferredPrint] = useState<{ id: string; image: string; artCrop: string } | null>(null);
 
   const userModified = useRef(false);
@@ -846,9 +845,9 @@ export function CommanderSlot({
     if (!hasCompanion) { setCompanionResults([]); return; }
     if (debouncedCompanion.trim().length < 2) { setCompanionResults([]); return; }
     setCompanionLoading(true);
-    const fn = companionAllowRule0 ? searchCompanionsRule0 : () => searchCompanions(colorId, debouncedCompanion);
+    const fn = allowRule0 ? searchCompanionsRule0 : () => searchCompanions(colorId, debouncedCompanion);
     fn(debouncedCompanion).then(setCompanionResults).finally(() => setCompanionLoading(false));
-  }, [colorId, debouncedCompanion, hasCompanion, companionAllowRule0]);
+  }, [colorId, debouncedCompanion, hasCompanion, allowRule0]);
 
   // Notify parent of local state changes for reactive chart updates
   useEffect(() => {
@@ -1128,21 +1127,13 @@ export function CommanderSlot({
                 setCompanion(null);
                 setCompanionQuery("");
                 setCompanionResults([]);
-                setCompanionAllowRule0(false);
                 setCompanionPreferredPrint(null);
               }
             }}
           />
           {hasCompanion && (
             <>
-              <Group justify="space-between" align="center" wrap="nowrap">
-                <Text size="xs" c="dimmed" fw={500}>Companion</Text>
-                <Switch
-                  size="xs" label="Rule 0" labelPosition="left"
-                  checked={companionAllowRule0}
-                  onChange={(e) => { mark(); setCompanionAllowRule0(e.currentTarget.checked); }}
-                />
-              </Group>
+              <Text size="xs" c="dimmed" fw={500}>Companion</Text>
               <CardSearch
                 placeholder="Search companion…"
                 query={companionQuery} results={companionResults} loading={companionLoading} store={cmpStore}
