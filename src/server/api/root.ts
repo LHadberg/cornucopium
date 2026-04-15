@@ -1,4 +1,5 @@
 import { mtgRouter } from "~/server/api/routers/mtg";
+import { diceRouter } from "~/server/api/routers/dice";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -8,6 +9,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   mtg: mtgRouter,
+  dice: diceRouter,
 });
 
 // export type definition of API

@@ -1,0 +1,210 @@
+/* Container styles */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: white;
+}
+
+/* Background and shared styles */
+.diffusedBackground {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(5px);
+  z-index: 10;
+}
+
+/* Total box - top left absolute */
+.totalBox {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+}
+
+.totalButton {
+  padding: 0.25rem 0.5rem;
+  height: auto;
+}
+
+.totalText {
+  text-align: left;
+  width: 100%;
+}
+
+/* Actions toggle - right side, vertically centered */
+.actionsToggle {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Results panel styles */
+.resultsContainer {
+  position: absolute;
+  top: 5rem;
+  left: 5%;
+  right: 5%;
+  padding: 1.25rem;
+  border-radius: 14px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.resultCard {
+  text-align: center;
+  padding: 1rem 1.25rem;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  cursor: default;
+  outline: none;
+  min-width: 0;
+}
+
+.resultCard:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.resultCard:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
+  outline: 2px solid #2196F3;
+}
+
+.dieType {
+  color: #666;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dieValue {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.5rem;
+}
+
+/* Main container styles */
+.mainContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #f8f9fa;
+}
+
+.diceContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+}
+
+/* Hit confirmation styles */
+.hitConfirmation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  max-width: 400px;
+  width: 90%;
+}
+
+/* Actions drawer styles */
+.actionCard {
+  width: 100%;
+  padding: 1.1rem 1.4rem;
+  border-radius: 10px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  transition: background 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  text-align: left;
+  cursor: pointer;
+}
+
+.actionCard:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+}
+
+.actionCard:active {
+  transform: translateY(0);
+}
+
+/* Footer styles */
+.footer {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2rem);
+  max-width: 500px;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.rerollButton {
+  flex: 1;
+  max-height: 46px;
+}
+
+/* Dark mode overrides */
+:global([data-mantine-color-scheme="dark"]) .diffusedBackground {
+  background: rgba(26, 27, 30, 0.9);
+}
+
+:global([data-mantine-color-scheme="dark"]) .resultsContainer {
+  background: rgba(26, 27, 30, 0.95);
+}
+
+:global([data-mantine-color-scheme="dark"]) .resultCard {
+  background-color: #25262b;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:global([data-mantine-color-scheme="dark"]) .header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
+:global([data-mantine-color-scheme="dark"]) .dieType {
+  color: #909296;
+}
+
+:global([data-mantine-color-scheme="dark"]) .actionCard {
+  background: rgba(37, 38, 43, 0.85);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:global([data-mantine-color-scheme="dark"]) .actionCard:hover {
+  background: rgba(44, 46, 51, 1);
+}

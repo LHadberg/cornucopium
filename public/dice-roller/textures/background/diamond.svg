@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <pattern id="diamond" x="0" y="0" width="64" height="64" patternUnits="userSpaceOnUse">
+      <!-- Base fill — visible at the 4-corner intersections between diamonds -->
+      <rect width="64" height="64" fill="#a07848"/>
+      <!-- Main diamond -->
+      <polygon points="32,2 62,32 32,62 2,32" fill="#f0e0c8" stroke="#8a6030" stroke-width="1.2"/>
+      <!-- Inner accent diamond -->
+      <polygon points="32,16 48,32 32,48 16,32" fill="none" stroke="#c89850" stroke-width="0.7" opacity="0.8"/>
+      <!-- Centre pip -->
+      <circle cx="32" cy="32" r="2" fill="#c89850" opacity="0.6"/>
+    </pattern>
+  </defs>
+  <rect width="256" height="256" fill="url(#diamond)"/>
+</svg>

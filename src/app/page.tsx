@@ -10,6 +10,7 @@ import {
   Divider,
   Anchor,
   Group,
+  Button,
 } from "@mantine/core";
 import {
   IconPhoto,
@@ -20,10 +21,12 @@ import {
   IconTag,
   IconPalette,
   IconCards,
+  IconDice,
+  IconArrowRight,
 } from "@tabler/icons-react";
-import { HomeButtons } from "./_components/home-buttons";
+import Link from "next/link";
 
-const features = [
+const mtgFeatures = [
   {
     icon: IconCards,
     title: "All 32 Color Combinations",
@@ -81,24 +84,89 @@ export default async function Home() {
     <Stack gap="xl" py="xl" px={{ base: "md", sm: "xl" }} maw={960} mx="auto">
       <Stack gap="sm" ta="center">
         <Title order={1} size="h1">
-          MTG Complete
+          Cornucopium
         </Title>
-        <Text size="lg" c="dimmed" maw={600} mx="auto">
-          Build and showcase your Commander collection across every color
-          combination. Track decks, pick card art, and share your list with the
-          world.
+        <Text size="lg" c="dimmed" maw={520} mx="auto">
+          A collection of tools for tabletop gaming and beyond.
         </Text>
-        <HomeButtons isLoggedIn={!!session?.user} />
       </Stack>
 
       <Divider />
 
       <Stack gap="sm">
         <Title order={2} size="h3" ta="center">
-          Features
+          Tools
+        </Title>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <Card withBorder radius="md" p="lg">
+            <Stack gap="sm">
+              <Group gap="sm">
+                <ThemeIcon size="lg" radius="md" variant="light" color="blue">
+                  <IconCards size={20} />
+                </ThemeIcon>
+                <Title order={3} size="h4">MTG Complete</Title>
+              </Group>
+              <Text size="sm" c="dimmed" lh={1.6}>
+                Build and showcase your Commander collection across every color
+                combination. Track decks, pick card art, and share your list.
+              </Text>
+              <Group gap="xs" mt="xs">
+                {session?.user ? (
+                  <Link href="/mtg-complete">
+                    <Button size="sm" rightSection={<IconArrowRight size={14} />}>
+                      Your collection
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/api/auth/signin">
+                      <Button size="sm" rightSection={<IconArrowRight size={14} />}>
+                        Sign in to start
+                      </Button>
+                    </Link>
+                    <Link href="/mtg-complete/example">
+                      <Button size="sm" variant="default">
+                        See an example
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </Group>
+            </Stack>
+          </Card>
+
+          <Card withBorder radius="md" p="lg">
+            <Stack gap="sm">
+              <Group gap="sm">
+                <ThemeIcon size="lg" radius="md" variant="light" color="violet">
+                  <IconDice size={20} />
+                </ThemeIcon>
+                <Title order={3} size="h4">Dice Roller</Title>
+              </Group>
+              <Text size="sm" c="dimmed" lh={1.6}>
+                A 3D physics-based dice roller with configurable dice sets,
+                custom actions, and stat modifiers. No sign-in required.
+              </Text>
+              <Group gap="xs" mt="xs">
+                <Link href="/dice-roller">
+                  <Button size="sm" color="violet" rightSection={<IconArrowRight size={14} />}>
+                    Roll some dice
+                  </Button>
+                </Link>
+              </Group>
+            </Stack>
+          </Card>
+        </SimpleGrid>
+      </Stack>
+
+      <Divider />
+
+      <Stack gap="sm">
+        <Title order={2} size="h3" ta="center">
+          MTG Complete — Features
         </Title>
         <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
-          {features.map((feature) => (
+          {mtgFeatures.map((feature) => (
             <Card key={feature.title} withBorder radius="md" p="md">
               <ThemeIcon size="lg" radius="md" mb="sm" variant="light">
                 <feature.icon size={20} />

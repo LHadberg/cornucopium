@@ -51,6 +51,11 @@ model User {
     image         String?
     mtgPagePublic        Boolean   @default(false)
     mtgPageName          String?
+    diceRollerStats              String?
+    diceRollerActionSets         String?
+    diceRollerSelectedActionSet  String?
+    diceRollerPhysics            String?
+    diceRollerVisuals            String?
     accounts             Account[]
     sessions             Session[]
     commanderSelections  CommanderSelection[]
@@ -82,6 +87,14 @@ model CommanderSelection {
     partnerPreferredPrintId      String?
     partnerPreferredPrintImage   String?
     partnerPreferredPrintArt     String?
+    companionScryfallId          String?
+    companionName                String?
+    companionTypeLine            String?
+    companionImage               String?
+    companionArtCrop             String?
+    companionPreferredPrintId    String?
+    companionPreferredPrintImage String?
+    companionPreferredPrintArt   String?
     user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([userId, colorId])
