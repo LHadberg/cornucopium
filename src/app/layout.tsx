@@ -2,6 +2,7 @@ import "@mantine/core/styles.css";
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
+import { ColorSchemeScript } from "@mantine/core";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { Providers } from "./_components/providers";
@@ -18,7 +19,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <ColorSchemeScript defaultColorScheme="auto" />
+      </head>
       <body>
         <TRPCReactProvider>
           <Providers>

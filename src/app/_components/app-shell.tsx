@@ -3,6 +3,7 @@
 import {
   AppShell,
   ActionIcon,
+  Box,
   Burger,
   Button,
   Divider,
@@ -159,13 +160,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Group>
           <Group gap="xs">
             <ColorSchemeToggle />
-            <LanguagePicker />
+            <Box visibleFrom="sm">
+              <LanguagePicker />
+            </Box>
             <AccountButton />
           </Group>
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="sm">
+      <AppShell.Navbar p="sm" style={{ display: "flex", flexDirection: "column" }}>
         <Tooltip
           label={desktopCollapsed ? t('nav.expand') : t('nav.collapse')}
           position="right"
@@ -228,6 +231,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
             />
           )
         )}
+        <Box hiddenFrom="sm" mt="auto" pt="xs">
+          <Divider mb="xs" />
+          <LanguagePicker />
+        </Box>
       </AppShell.Navbar>
 
       <AppShell.Main>{children}</AppShell.Main>
