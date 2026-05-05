@@ -11,23 +11,46 @@ interface NativeColorInputProps {
   style?: React.CSSProperties;
 }
 
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
 const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, label, description, style }) => {
+  const [localColor, setLocalColor] = useState(value);
   const [textValue, setTextValue] = useState(value);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    setLocalColor(value);
     setTextValue(value);
   }, [value]);
 
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
+
+  const propagate = (v: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => onChange(v), 80);
+  };
+
+  const handleColorChange = (v: string) => {
+    setLocalColor(v);
+    setTextValue(v);
+    propagate(v);
+  };
+
   const handleTextChange = (v: string) => {
     setTextValue(v);
-    if (/^#[0-9a-fA-F]{6}$/.test(v)) onChange(v);
+    if (HEX_RE.test(v)) {
+      setLocalColor(v);
+      propagate(v);
+    }
   };
 
   const handleTextBlur = () => {
-    if (!/^#[0-9a-fA-F]{6}$/.test(textValue)) setTextValue(value);
+    if (!HEX_RE.test(textValue)) setTextValue(localColor);
   };
 
-  const safeValue = /^#[0-9a-fA-F]{6}$/.test(value) ? value : '#000000';
+  const safeColor = HEX_RE.test(localColor) ? localColor : '#000000';
 
   return (
     <Stack gap={4} style={style}>
@@ -39,18 +62,15 @@ const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, la
             style={{
               width: 36,
               height: 36,
-              backgroundColor: safeValue,
+              backgroundColor: safeColor,
               borderRadius: 4,
               border: '1px solid rgba(128,128,128,0.4)',
             }}
           />
           <input
             type="color"
-            value={safeValue}
-            onChange={(e) => {
-              onChange(e.target.value);
-              setTextValue(e.target.value);
-            }}
+            value={safeColor}
+            onChange={(e) => handleColorChange(e.target.value)}
             style={{
               position: 'absolute',
               inset: 0,
