@@ -12,9 +12,13 @@ interface ActionsConfigProps {
   onUpdate: (actionSets: ActionSet[]) => void;
 }
 
+type DraftDie = Action['damageDice'][number] & { rawQuantity: string };
+type DraftAction = Omit<Action, 'damageDice'> & { damageDice: DraftDie[] };
+type DraftActionSet = Omit<ActionSet, 'actions'> & { actions: DraftAction[] };
+
 const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onUpdate }) => {
-  const [draft, setDraft] = useState<ActionSet[]>(() =>
-    actionSets.map(s => ({ ...s, actions: s.actions.map(a => ({ ...a, damageDice: a.damageDice.map(d => ({ ...d })) })) }))
+  const [draft, setDraft] = useState<DraftActionSet[]>(() =>
+    actionSets.map(s => ({ ...s, actions: s.actions.map(a => ({ ...a, damageDice: a.damageDice.map(d => ({ ...d, rawQuantity: String(d.quantity) })) })) }))
   );
   const [expandedSetIds, setExpandedSetIds] = useState<Set<string>>(new Set());
   const [expandedActionIds, setExpandedActionIds] = useState<Set<string>>(new Set());
@@ -73,7 +77,7 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
   };
 
   const addActionSet = () => {
-    const newSet: ActionSet = { id: Date.now().toString(), name: '', actions: [] };
+    const newSet: DraftActionSet = { id: Date.now().toString(), name: '', actions: [] };
     setDraft(prev => [...prev, newSet]);
     setExpandedSetIds(prev => new Set(prev).add(newSet.id));
   };
@@ -91,11 +95,11 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
   };
 
   const addAction = (setIndex: number) => {
-    const newAction: Action = {
+    const newAction: DraftAction = {
       id: Date.now().toString(),
       name: '',
       requiresD20: false,
-      damageDice: [{ quantity: 1, dieType: 'd6' }],
+      damageDice: [{ quantity: 1, dieType: 'd6', rawQuantity: '1' }],
     };
     setDraft(prev => prev.map((s, i) => i !== setIndex ? s : { ...s, actions: [...s.actions, newAction] }));
     setExpandedActionIds(prev => new Set(prev).add(newAction.id));
@@ -108,7 +112,7 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
     }));
   };
 
-  const updateAction = (setIndex: number, actionIndex: number, updates: Partial<Action>) => {
+  const updateAction = (setIndex: number, actionIndex: number, updates: Partial<DraftAction>) => {
     setDraft(prev => prev.map((s, i) => i !== setIndex ? s : {
       ...s,
       actions: s.actions.map((a, j) => j === actionIndex ? { ...a, ...updates } : a),
@@ -120,7 +124,7 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
       ...s,
       actions: s.actions.map((a, j) => j !== actionIndex ? a : {
         ...a,
-        damageDice: [...a.damageDice, { quantity: 1, dieType: 'd6' as keyof DiceSelections }],
+        damageDice: [...a.damageDice, { quantity: 1, dieType: 'd6' as keyof DiceSelections, rawQuantity: '1' }],
       }),
     }));
   };
@@ -135,7 +139,7 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
     }));
   };
 
-  const updateDie = (setIndex: number, actionIndex: number, dieIndex: number, updates: Partial<Action['damageDice'][number]>) => {
+  const updateDie = (setIndex: number, actionIndex: number, dieIndex: number, updates: Partial<DraftDie>) => {
     setDraft(prev => prev.map((s, i) => i !== setIndex ? s : {
       ...s,
       actions: s.actions.map((a, j) => j !== actionIndex ? a : {
@@ -153,7 +157,16 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
           <Button onClick={addActionSet} leftSection={<IconFolderPlus size={16} />} variant="light">
             {t('actions.addActionSet')}
           </Button>
-          <Button onClick={() => onUpdate(draft)} color="green">
+          <Button onClick={() => onUpdate(draft.map(s => ({
+              ...s,
+              actions: s.actions.map(a => ({
+                ...a,
+                damageDice: a.damageDice
+                  .filter(d => d.rawQuantity.trim() !== '')
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  .map(({ rawQuantity, ...d }) => ({ ...d, quantity: Math.max(1, parseInt(rawQuantity) || 1) })),
+              })),
+            })))} color="green">
             {t('actions.save')}
           </Button>
         </Group>
@@ -327,8 +340,8 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
                               <TextInput
                                 type="number"
                                 placeholder="Qty"
-                                value={die.quantity}
-                                onChange={(e) => updateDie(setIndex, actionIndex, dieIndex, { quantity: parseInt(e.target.value) || 1 })}
+                                value={die.rawQuantity}
+                                onChange={(e) => updateDie(setIndex, actionIndex, dieIndex, { rawQuantity: e.target.value })}
                                 style={{ width: 80 }}
                               />
                               <Select
