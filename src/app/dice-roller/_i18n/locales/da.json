@@ -11,12 +11,18 @@
   "tabs": {
     "stats": "Statistik",
     "actions": "Handlinger",
-    "physics": "Fysik",
-    "visuals": "Visuelle"
+    "dice": "Terning",
+    "diceBox": "Terningboks"
   },
   "stats": {
     "title": "Karakterstatistik",
-    "valueModifier": "Værdi: {{value}} (Modifikator: {{modifier}})"
+    "valueModifier": "Værdi: {{value}} (Mod: {{modifier}})",
+    "addStatSet": "Tilføj statsæt",
+    "noStatSets": "Ingen statsæt konfigureret endnu.",
+    "unnamedStatSet": "Unavngivet sæt",
+    "statSetNamePlaceholder": "Statsætnavn",
+    "proficiencyBonus": "Færdighedsbonus",
+    "abilityScores": "Evneværdier"
   },
   "actions": {
     "title": "Handlinger",
@@ -30,30 +36,34 @@
     "actionSetNamePlaceholder": "Handlingssætnavn",
     "actionsLabel": "Handlinger",
     "requiresAttackRoll": "Kræver angrebsrul (D20)",
-    "statModifier": "Statistikmodifikator",
+    "proficient": "Færdig (tilføj FB til angreb)",
+    "statModifier": "Statistikmodifikator (angreb & skade)",
     "damageDice": "Skadeterninger",
-    "addDamageDie": "Tilføj skadeterning"
+    "addDamageDie": "Tilføj skadeterning",
+    "linkedStatSet": "Tilknyttet statsæt",
+    "linkedStatSetDescription": "Vælger automatisk dette statsæt når handlingssættet vælges"
   },
-  "physics": {
-    "title": "Fysikkonfiguration",
-    "gravity": "Tyngdekraft",
-    "mass": "Masse",
-    "friction": "Friktion",
-    "massLight": "Let",
-    "massNormal": "Normal",
-    "massHeavy": "Tung",
-    "frictionNone": "Ingen",
-    "frictionMedium": "Medium",
-    "frictionHigh": "Høj"
+  "dice": {
+    "title": "Terningkonfiguration",
+    "diceWeight": "Terningevægt",
+    "light": "Let",
+    "medium": "Medium",
+    "heavy": "Tung",
+    "diceSize": "Terningestørrelse",
+    "small": "Lille",
+    "large": "Stor",
+    "diceTheme": "Terningetema",
+    "themeDefault": "Standard",
+    "themeRust": "Rust",
+    "diceColor": "Terningfarve",
+    "diceColorDescription": "Brugerdefineret farve til terningetema"
   },
   "visuals": {
-    "title": "Visuel konfiguration",
+    "title": "Terningboks-konfiguration",
     "uiTheme": "Brugergrænsefladetema",
     "light": "Lys",
     "dark": "Mørk",
     "auto": "Auto",
-    "diceColor": "Terningfarve",
-    "diceColorDescription": "Brugerdefineret farve til terningetema",
     "wallStyle": "Vægstil",
     "wallRepeat": "Væggentagelse",
     "wallRepeatDescription": "Hvor mange gange teksturen flises hen over vægoverfladen",
@@ -80,7 +90,20 @@
     "doesHit": "Rammer {{value}}?",
     "yes": "Ja",
     "no": "Nej",
-    "modifierLabel": "Modifikator"
+    "modifierLabel": "Modifikator",
+    "statSetLabel": "Statsæt",
+    "actionSetLabel": "Handlingssæt",
+    "statRolls": "Statistikrul",
+    "advantage": "Fordel",
+    "normal": "Normal",
+    "disadvantage": "Ulempe",
+    "criticalHit": "Kritisk træffer",
+    "critBonusLabel": "maks terningeværdi"
+  },
+  "common": {
+    "confirmDelete": "Er du sikker?",
+    "delete": "Slet",
+    "cancel": "Annuller"
   },
   "diceTypes": {
     "d4": "D4",

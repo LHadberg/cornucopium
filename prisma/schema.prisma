@@ -81,20 +81,26 @@ model CommanderSelection {
     favoriteTag         String?
     archetype           String?
     deckListUrl                  String?
-    commanderPreferredPrintId    String?
-    commanderPreferredPrintImage String?
-    commanderPreferredPrintArt   String?
-    partnerPreferredPrintId      String?
-    partnerPreferredPrintImage   String?
-    partnerPreferredPrintArt     String?
-    companionScryfallId          String?
-    companionName                String?
-    companionTypeLine            String?
-    companionImage               String?
-    companionArtCrop             String?
-    companionPreferredPrintId    String?
-    companionPreferredPrintImage String?
-    companionPreferredPrintArt   String?
+    commanderPreferredPrintId       String?
+    commanderPreferredPrintImage    String?
+    commanderPreferredPrintArt      String?
+    commanderPreferredPrintBackImage String?
+    commanderPreferredPrintBackArt   String?
+    partnerPreferredPrintId         String?
+    partnerPreferredPrintImage      String?
+    partnerPreferredPrintArt        String?
+    partnerPreferredPrintBackImage  String?
+    partnerPreferredPrintBackArt    String?
+    companionScryfallId             String?
+    companionName                   String?
+    companionTypeLine               String?
+    companionImage                  String?
+    companionArtCrop                String?
+    companionPreferredPrintId       String?
+    companionPreferredPrintImage    String?
+    companionPreferredPrintArt      String?
+    companionPreferredPrintBackImage String?
+    companionPreferredPrintBackArt   String?
     user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([userId, colorId])

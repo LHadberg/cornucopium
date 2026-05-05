@@ -11,12 +11,18 @@
   "tabs": {
     "stats": "Stats",
     "actions": "Actions",
-    "physics": "Physics",
-    "visuals": "Visuals"
+    "dice": "Dice",
+    "diceBox": "Dice-Box"
   },
   "stats": {
     "title": "Character Stats",
-    "valueModifier": "Value: {{value}} (Modifier: {{modifier}})"
+    "valueModifier": "Value: {{value}} (Mod: {{modifier}})",
+    "addStatSet": "Add Stat Set",
+    "noStatSets": "No stat sets configured yet.",
+    "unnamedStatSet": "Unnamed set",
+    "statSetNamePlaceholder": "Stat Set Name",
+    "proficiencyBonus": "Proficiency Bonus",
+    "abilityScores": "Ability Scores"
   },
   "actions": {
     "title": "Actions",
@@ -30,30 +36,34 @@
     "actionSetNamePlaceholder": "Action Set Name",
     "actionsLabel": "Actions",
     "requiresAttackRoll": "Requires Attack Roll (D20)",
-    "statModifier": "Stat Modifier",
+    "proficient": "Proficient (add PB to attack)",
+    "statModifier": "Stat Modifier (attack & damage)",
     "damageDice": "Damage Dice",
-    "addDamageDie": "Add Damage Die"
+    "addDamageDie": "Add Damage Die",
+    "linkedStatSet": "Linked Stat Set",
+    "linkedStatSetDescription": "Auto-selects this stat set when the action set is chosen"
   },
-  "physics": {
-    "title": "Physics Configuration",
-    "gravity": "Gravity",
-    "mass": "Mass",
-    "friction": "Friction",
-    "massLight": "Light",
-    "massNormal": "Normal",
-    "massHeavy": "Heavy",
-    "frictionNone": "None",
-    "frictionMedium": "Medium",
-    "frictionHigh": "High"
+  "dice": {
+    "title": "Dice Configuration",
+    "diceWeight": "Dice Weight",
+    "light": "Light",
+    "medium": "Medium",
+    "heavy": "Heavy",
+    "diceSize": "Dice Size",
+    "small": "Small",
+    "large": "Large",
+    "diceTheme": "Dice Theme",
+    "themeDefault": "Default",
+    "themeRust": "Rust",
+    "diceColor": "Dice Color",
+    "diceColorDescription": "Custom color for the dice theme"
   },
   "visuals": {
-    "title": "Visual Configuration",
+    "title": "Dice-Box Configuration",
     "uiTheme": "UI Theme",
     "light": "Light",
     "dark": "Dark",
     "auto": "Auto",
-    "diceColor": "Dice Color",
-    "diceColorDescription": "Custom color for the dice theme",
     "wallStyle": "Wall Style",
     "wallRepeat": "Wall Repetition",
     "wallRepeatDescription": "How many times the texture tiles across the wall surface",
@@ -80,7 +90,20 @@
     "doesHit": "Does {{value}} hit?",
     "yes": "Yes",
     "no": "No",
-    "modifierLabel": "Modifier"
+    "modifierLabel": "Modifier",
+    "statSetLabel": "Stat Set",
+    "actionSetLabel": "Action Set",
+    "statRolls": "Stat Rolls",
+    "advantage": "Adv",
+    "normal": "Normal",
+    "disadvantage": "Dis",
+    "criticalHit": "Critical Hit",
+    "critBonusLabel": "max die value"
+  },
+  "common": {
+    "confirmDelete": "Are you sure?",
+    "delete": "Delete",
+    "cancel": "Cancel"
   },
   "diceTypes": {
     "d4": "D4",

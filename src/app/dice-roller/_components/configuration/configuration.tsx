@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ActionIcon, Group, Tabs, useComputedColorScheme } from '@mantine/core';
 import StatsConfig from './stats-config';
 import ActionsConfig from './actions-config';
-import PhysicsConfig from './physics-config';
+import DiceConfig from './dice-config';
 import VisualsConfig from './visuals-config';
 import { IconDiceFilled } from '@tabler/icons-react';
 import type { LocalStorageConfigurationReturn } from '../../_hooks/use-local-storage-configuration';
@@ -22,15 +22,15 @@ export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox,
   const isDark = useComputedColorScheme('light') === 'dark';
   const { t } = useTranslation();
 
-  const { stats, actionSets, physicsConfig, visualConfig, handleStatsUpdate, handleActionSetsUpdate, handlePhysicsUpdate, handleVisualsUpdate } = configuration;
+  const { statSets, actionSets, physicsConfig, visualConfig, handleStatSetsUpdate, handleActionSetsUpdate, handlePhysicsUpdate, handleVisualsUpdate } = configuration;
   const tabs = {
-    stats: { key: 'stats', label: t('tabs.stats') },
-    actions: { key: 'actions', label: t('tabs.actions') },
-    physics: { key: 'physics', label: t('tabs.physics') },
-    visuals: { key: 'visuals', label: t('tabs.visuals') },
+    stats:   { key: 'stats',    label: t('tabs.stats') },
+    actions: { key: 'actions',  label: t('tabs.actions') },
+    dice:    { key: 'dice',     label: t('tabs.dice') },
+    diceBox: { key: 'dice-box', label: t('tabs.diceBox') },
   };
 
-  const validKeys = Object.keys(tabs);
+  const validKeys = Object.values(tabs).map(t => t.key);
   const savedTab = typeof window !== 'undefined' ? localStorage.getItem(LAST_TAB_KEY) : null;
   const [activeTab, setActiveTab] = useState<string>(
     savedTab && validKeys.includes(savedTab) ? savedTab : tabs.stats.key
@@ -92,18 +92,23 @@ export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox,
         </Group>
 
         <Tabs.Panel value="stats" pt="xs">
-          <StatsConfig stats={stats} onUpdate={handleStatsUpdate} />
+          <StatsConfig statSets={statSets} onUpdate={handleStatSetsUpdate} />
         </Tabs.Panel>
 
         <Tabs.Panel value="actions" pt="xs">
-          <ActionsConfig actionSets={actionSets} onUpdate={handleActionSetsUpdate} />
+          <ActionsConfig actionSets={actionSets} statSets={statSets} onUpdate={handleActionSetsUpdate} />
         </Tabs.Panel>
 
-        <Tabs.Panel value="physics" pt="xs">
-          <PhysicsConfig config={physicsConfig} onUpdate={handlePhysicsUpdate} />
+        <Tabs.Panel value="dice" pt="xs">
+          <DiceConfig
+            physicsConfig={physicsConfig}
+            visualConfig={visualConfig}
+            onPhysicsUpdate={handlePhysicsUpdate}
+            onVisualsUpdate={handleVisualsUpdate}
+          />
         </Tabs.Panel>
 
-        <Tabs.Panel value="visuals" pt="xs">
+        <Tabs.Panel value="dice-box" pt="xs">
           <VisualsConfig config={visualConfig} onUpdate={handleVisualsUpdate} />
         </Tabs.Panel>
       </Tabs>

@@ -32,7 +32,7 @@ const VALID_TAGS = [
   "Dinosaurs", "Discard", "Discover", "Dogs", "Donate", "Dragon's Approach", "Dragons",
   "Drakes", "Dredge", "Druids", "Dungeon", "Dwarves",
   "Earthbending", "Eggs", "Elders", "Eldrazi", "Elementals", "Elephants", "Elves",
-  "Enchantress", "Energy", "Enrage", "ETB", "European Highlander", "Evoke", "Exalted",
+  "Enchantress", "Energy", "Enrage", "Equipment", "ETB", "European Highlander", "Evoke", "Exalted",
   "Exile", "Experience Counters", "Exploit", "Explore", "Extra Combats", "Extra Turns",
   "Extra Upkeeps",
   "Faeries", "Fight", "Firebending", "Flash", "Flashback", "Fling", "Flying", "Food",
@@ -81,7 +81,7 @@ const VALID_TAGS = [
 ] as const;
 
 const VALID_ARCHETYPES = [
-  "Aggro", "Combo", "Control", "Midrange", "Stax", "Tempo",
+  "Aggro", "Combo", "Control", "Midrange", "Stax", "Tempo", "Vorthos",
 ] as const;
 
 // ── Validation helpers ────────────────────────────────────────────────────────
@@ -186,9 +186,13 @@ const selectionInput = z.object({
   commanderPreferredPrintId: z.string().max(64).nullable(),
   commanderPreferredPrintImage: scryfallImageUrl,
   commanderPreferredPrintArt: scryfallImageUrl,
+  commanderPreferredPrintBackImage: scryfallImageUrl,
+  commanderPreferredPrintBackArt: scryfallImageUrl,
   partnerPreferredPrintId: z.string().max(64).nullable(),
   partnerPreferredPrintImage: scryfallImageUrl,
   partnerPreferredPrintArt: scryfallImageUrl,
+  partnerPreferredPrintBackImage: scryfallImageUrl,
+  partnerPreferredPrintBackArt: scryfallImageUrl,
   companionScryfallId: z.string().max(64).nullable(),
   companionName: z.string().max(200).nullable(),
   companionTypeLine: z.string().max(200).nullable(),
@@ -197,6 +201,8 @@ const selectionInput = z.object({
   companionPreferredPrintId: z.string().max(64).nullable(),
   companionPreferredPrintImage: scryfallImageUrl,
   companionPreferredPrintArt: scryfallImageUrl,
+  companionPreferredPrintBackImage: scryfallImageUrl,
+  companionPreferredPrintBackArt: scryfallImageUrl,
 });
 
 // ── Router ────────────────────────────────────────────────────────────────────

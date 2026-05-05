@@ -14,11 +14,16 @@ export interface DiceBoxConfig {
   restitution: number;
   linearDamping: number;
   angularDamping: number;
+  spinForce: number;
+  throwForce: number;
+  startingHeight: number;
+  settleTimeout: number;
 }
 
 export interface VisualConfig {
   theme: string;
   themeColor: string;
+  scale: number;
   diceColor: string;
   textColor: string;
   trayColor: string;
@@ -54,12 +59,20 @@ export interface Stats {
   charisma: Stat;
 }
 
+export interface StatSet {
+  id: string;
+  name: string;
+  proficiencyBonus: number;
+  stats: Stats;
+}
+
 export type RollType = 'normal' | 'advantage' | 'disadvantage';
 
 export interface Action {
   id: string;
   name: string;
   requiresD20: boolean;
+  proficient?: boolean;
   statModifier?: keyof Stats;
   damageDice: {
     quantity: number;
@@ -71,6 +84,7 @@ export interface Action {
 export interface ActionSet {
   id: string;
   name: string;
+  statSetId?: string;
   actions: Action[];
 }
 

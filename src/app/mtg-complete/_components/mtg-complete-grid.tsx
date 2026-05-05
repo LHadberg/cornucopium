@@ -18,7 +18,9 @@ import { useClipboard, useDebouncedValue, useMediaQuery } from "@mantine/hooks";
 import { IconCheck, IconCopy, IconPencil } from "@tabler/icons-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "~/trpc/react";
+import "../_i18n/i18n";
 import { CommanderSlot, type SelectionData, type SlotSnapshot } from "./commander-selector";
 import { SelectionCharts } from "./selection-charts";
 
@@ -88,9 +90,13 @@ export type SelectionRow = {
   commanderPreferredPrintId: string | null;
   commanderPreferredPrintImage: string | null;
   commanderPreferredPrintArt: string | null;
+  commanderPreferredPrintBackImage: string | null;
+  commanderPreferredPrintBackArt: string | null;
   partnerPreferredPrintId: string | null;
   partnerPreferredPrintImage: string | null;
   partnerPreferredPrintArt: string | null;
+  partnerPreferredPrintBackImage: string | null;
+  partnerPreferredPrintBackArt: string | null;
   companionScryfallId: string | null;
   companionName: string | null;
   companionTypeLine: string | null;
@@ -99,6 +105,8 @@ export type SelectionRow = {
   companionPreferredPrintId: string | null;
   companionPreferredPrintImage: string | null;
   companionPreferredPrintArt: string | null;
+  companionPreferredPrintBackImage: string | null;
+  companionPreferredPrintBackArt: string | null;
 };
 
 function toInitialData(s: SelectionRow): SelectionData {
@@ -122,9 +130,13 @@ function toInitialData(s: SelectionRow): SelectionData {
     commanderPreferredPrintId: s.commanderPreferredPrintId,
     commanderPreferredPrintImage: s.commanderPreferredPrintImage,
     commanderPreferredPrintArt: s.commanderPreferredPrintArt,
+    commanderPreferredPrintBackImage: s.commanderPreferredPrintBackImage,
+    commanderPreferredPrintBackArt: s.commanderPreferredPrintBackArt,
     partnerPreferredPrintId: s.partnerPreferredPrintId,
     partnerPreferredPrintImage: s.partnerPreferredPrintImage,
     partnerPreferredPrintArt: s.partnerPreferredPrintArt,
+    partnerPreferredPrintBackImage: s.partnerPreferredPrintBackImage,
+    partnerPreferredPrintBackArt: s.partnerPreferredPrintBackArt,
     companionScryfallId: s.companionScryfallId,
     companionName: s.companionName,
     companionTypeLine: s.companionTypeLine,
@@ -133,18 +145,20 @@ function toInitialData(s: SelectionRow): SelectionData {
     companionPreferredPrintId: s.companionPreferredPrintId,
     companionPreferredPrintImage: s.companionPreferredPrintImage,
     companionPreferredPrintArt: s.companionPreferredPrintArt,
+    companionPreferredPrintBackImage: s.companionPreferredPrintBackImage,
+    companionPreferredPrintBackArt: s.companionPreferredPrintBackArt,
   };
 }
 
 // ── Validation helper (mirrors server PAGE_NAME_SCHEMA) ───────────────────────
 
-function getFormatError(value: string): string | null {
-  const t = value.trim();
-  if (t.length === 0) return null;
-  if (t.length < 2) return "Name must be at least 2 characters";
-  if (t.length > 32) return "Name must be at most 32 characters";
-  if (!/^[a-zA-Z0-9'\-]+$/.test(t))
-    return "Only letters, numbers, hyphens, and apostrophes are allowed (no spaces)";
+function getFormatError(value: string, t: (key: string) => string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length < 2) return t('mtg.nameModal.nameMinLength');
+  if (trimmed.length > 32) return t('mtg.nameModal.nameMaxLength');
+  if (!/^[a-zA-Z0-9'\-]+$/.test(trimmed))
+    return t('mtg.nameModal.nameFormat');
   return null;
 }
 
@@ -158,6 +172,7 @@ interface NameModalProps {
 }
 
 function NameModal({ opened, initialName, onDecline, onAccept }: NameModalProps) {
+  const { t } = useTranslation();
   const [pendingName, setPendingName] = useState(initialName);
 
   // Reset field whenever a new initial name arrives (generated or pre-filled)
@@ -167,7 +182,7 @@ function NameModal({ opened, initialName, onDecline, onAccept }: NameModalProps)
 
   const [debouncedName] = useDebouncedValue(pendingName, 200);
 
-  const formatError = getFormatError(pendingName);
+  const formatError = getFormatError(pendingName, t);
 
   const trimmedDebounced = debouncedName.trim();
   const debouncedFormatOk =
@@ -184,7 +199,7 @@ function NameModal({ opened, initialName, onDecline, onAccept }: NameModalProps)
 
   const availabilityError =
     !isTyping && debouncedFormatOk && nameCheck?.available === false
-      ? "Name already taken"
+      ? t('mtg.nameModal.nameTaken')
       : null;
 
   const nameError = formatError ?? availabilityError;
@@ -202,7 +217,7 @@ function NameModal({ opened, initialName, onDecline, onAccept }: NameModalProps)
     <Modal
       opened={opened}
       onClose={onDecline}
-      title="Name your public deck list"
+      title={t('mtg.nameModal.title')}
       centered
       closeOnClickOutside={false}
       closeOnEscape={false}
@@ -210,25 +225,24 @@ function NameModal({ opened, initialName, onDecline, onAccept }: NameModalProps)
     >
       <Stack gap="md">
         <Text size="sm" c="dimmed">
-          Choose a name for your public page. Others will see this when viewing your
-          commander collection.
+          {t('mtg.nameModal.description')}
         </Text>
         <TextInput
-          label="Page name"
-          description="2–32 characters. Letters, numbers, hyphens, and apostrophes only. No spaces."
+          label={t('mtg.nameModal.label')}
+          description={t('mtg.nameModal.inputDescription')}
           value={pendingName}
           onChange={(e) => setPendingName(e.currentTarget.value)}
           error={nameError}
-          placeholder="e.g. AncientDragon1024"
+          placeholder={t('mtg.nameModal.placeholder')}
           maxLength={64}
           rightSection={showLoader ? <Loader size={14} /> : undefined}
         />
         <Group justify="flex-end" gap="sm">
           <Button variant="subtle" color="gray" onClick={onDecline}>
-            Decline
+            {t('mtg.nameModal.decline')}
           </Button>
           <Button onClick={() => onAccept(pendingName.trim())} disabled={!canAccept}>
-            Accept
+            {t('mtg.nameModal.accept')}
           </Button>
         </Group>
       </Stack>
@@ -256,6 +270,7 @@ export function MtgCompleteGrid({
   readOnly?: boolean;
   preloadedSelections?: SelectionRow[];
 }) {
+  const { t } = useTranslation();
   const [view, setView] = useState<"condensed" | "visual">("visual");
   const [localSnapshots, setLocalSnapshots] = useState<Record<string, SlotSnapshot>>({});
   const isXs = useMediaQuery("(min-width: 576px)") ?? false;
@@ -382,14 +397,14 @@ export function MtgCompleteGrid({
           value={view}
           onChange={(v) => setView(v as "condensed" | "visual")}
           data={[
-            { label: "Visual", value: "visual" },
-            { label: "Condensed", value: "condensed" },
+            { label: t('mtg.grid.viewVisual'), value: "visual" },
+            { label: t('mtg.grid.viewCondensed'), value: "condensed" },
           ]}
         />
         {!readOnly && !!session?.user && (
           <Group gap="xs" wrap="nowrap">
             <Switch
-              label="Public page"
+              label={t('mtg.grid.publicPage')}
               checked={switchChecked}
               onChange={handleSwitchChange}
               disabled={generatingName}
@@ -397,7 +412,7 @@ export function MtgCompleteGrid({
             {generatingName && <Loader size={14} />}
             {shareUrl && (
               <>
-                <Tooltip label={clipboard.copied ? "Copied!" : "Copy link"} withArrow>
+                <Tooltip label={clipboard.copied ? t('mtg.grid.copied') : t('mtg.grid.copyLink')} withArrow>
                   <ActionIcon
                     variant="subtle"
                     onClick={() => clipboard.copy(shareUrl)}
@@ -406,7 +421,7 @@ export function MtgCompleteGrid({
                     {clipboard.copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Rename list" withArrow>
+                <Tooltip label={t('mtg.grid.renameList')} withArrow>
                   <ActionIcon variant="subtle" onClick={handleRename}>
                     <IconPencil size={16} />
                   </ActionIcon>

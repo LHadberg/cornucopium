@@ -34,6 +34,16 @@
   width: 100%;
 }
 
+/* Roll mode toggle - top right */
+.rollModeToggle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  border-radius: 8px;
+  padding: 0.25rem 0.4rem;
+}
+
 /* Actions toggle - right side, vertically centered */
 .actionsToggle {
   position: absolute;
@@ -175,6 +185,29 @@
 .rerollButton {
   flex: 1;
   max-height: 46px;
+}
+
+/* UI overlay — wraps all HUD elements so they can fade together on hold */
+.uiOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 1;
+}
+
+/* Re-enable interactions on children when visible */
+.uiOverlay > * {
+  pointer-events: auto;
+}
+
+/* Fade out all descendants when user is holding */
+.uiOverlayFaded {
+  opacity: 0;
+}
+
+.uiOverlayFaded * {
+  pointer-events: none !important;
 }
 
 /* Dark mode overrides */
