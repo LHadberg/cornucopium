@@ -1,0 +1,91 @@
+{
+  "mtg": {
+    "page": {
+      "title": "MTG Complete",
+      "loginRequired": "Log in to view or create your list",
+      "loginButton": "Log in",
+      "listNotFound": "List not found",
+      "listNotFoundDesc": "No commander collection exists at this address.",
+      "listPrivate": "This list is no longer visible",
+      "listPrivateDesc": "The owner has made their commander collection private."
+    },
+    "grid": {
+      "viewVisual": "Visual",
+      "viewCondensed": "Condensed",
+      "publicPage": "Public page",
+      "copyLink": "Copy link",
+      "copied": "Copied!",
+      "renameList": "Rename list"
+    },
+    "nameModal": {
+      "title": "Name your public deck list",
+      "description": "Choose a name for your public page. Others will see this when viewing your commander collection.",
+      "label": "Page name",
+      "inputDescription": "2–32 characters. Letters, numbers, hyphens, and apostrophes only. No spaces.",
+      "placeholder": "e.g. AncientDragon1024",
+      "decline": "Decline",
+      "accept": "Accept",
+      "nameTaken": "Name already taken",
+      "nameMinLength": "Name must be at least 2 characters",
+      "nameMaxLength": "Name must be at most 32 characters",
+      "nameFormat": "Only letters, numbers, hyphens, and apostrophes are allowed (no spaces)"
+    },
+    "selector": {
+      "noCommander": "No commander selected",
+      "commander": "Commander",
+      "rule0": "Rule 0",
+      "companion": "Companion",
+      "searchCommander": "Search commander…",
+      "searchBackground": "Search background…",
+      "searchPartner": "Search partner…",
+      "searchCompanion": "Search companion…",
+      "deckListUrl": "Deck list URL…",
+      "bracketPlaceholder": "Bracket…",
+      "archetypePlaceholder": "Archetype…",
+      "tagsPlaceholder": "Tags…",
+      "loading": "Loading…",
+      "searching": "Searching…",
+      "noResults": "No results",
+      "typeToSearch": "Type to search",
+      "openDeckList": "Open Deck List",
+      "goToMoxfield": "Go to Moxfield",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "selectArtVersion": "Select art version",
+      "showFrontFace": "Show front face",
+      "showBackFace": "Show back face",
+      "showTopFace": "Show top face",
+      "showFlippedFace": "Show flipped face",
+      "useDefaultArt": "Use default art",
+      "artVersions": "Art versions — {{cardName}}",
+      "options": "Options",
+      "clearSelection": "Clear selection"
+    },
+    "archetypes": {
+      "aggro": "Rush opponents with fast, cheap threats before they can set up.",
+      "combo": "Assemble a specific card combination to win on the spot.",
+      "control": "Dominate through counterspells, removal, and late-game card advantage.",
+      "midrange": "Flexible threats and answers that adapt to any board state.",
+      "stax": "Deny opponents resources through taxing effects and locks.",
+      "tempo": "Disrupt opponents while efficiently advancing your own game plan.",
+      "vorthos": "Build decks driven by flavor, lore, and narrative. Every card tells part of the story."
+    },
+    "brackets": {
+      "desc1": "Preconstructed or lightly modified decks with minimal synergy and no combos.",
+      "desc2": "Upgraded precons with focused themes. Casual power without infinite combos.",
+      "desc3": "Tuned synergy decks with tutors and some infinite combos.",
+      "desc4": "Highly optimized decks with efficient combos, fast mana, and full interaction.",
+      "desc5": "Maximum-power competitive decks focused on winning as fast as possible."
+    },
+    "charts": {
+      "collectionStats": "Collection stats",
+      "statsEmpty": "Fill out your MTG-Complete below to see your stats.",
+      "bracket": "Bracket",
+      "archetypes": "Archetypes",
+      "tags": "Tags",
+      "bracketLabel": "Bracket {{number}}",
+      "deck": "deck",
+      "decks": "decks"
+    }
+  }
+}

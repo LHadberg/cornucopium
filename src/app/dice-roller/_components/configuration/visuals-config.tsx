@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { ActionIcon, ColorInput, Group, SegmentedControl, Slider, Stack, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Group, SegmentedControl, Slider, Stack, Text, Tooltip } from '@mantine/core';
 import { IconRefresh } from '@tabler/icons-react';
 import type { VisualConfig } from '../../_types/types';
 import { defaultConfigs } from '../../_constants/default-configuration';
 import { useTranslation } from 'react-i18next';
 import { wallGeometricSvgRaw, diamondSvgRaw, linenSvgRaw } from '../texture-data';
+import NativeColorInput from './native-color-input';
 
 const { defaultVisualConfig } = defaultConfigs;
 
@@ -92,21 +93,6 @@ const VisualsConfig: React.FC<VisualsConfigProps> = ({ config, onUpdate }) => {
       <Text size="xl" fw={700}>
         {t('visuals.title')}
       </Text>
-      <Group align="flex-end" gap="xs">
-        <ColorInput
-          style={{ flex: 1 }}
-          label={t('visuals.diceColor')}
-          description={t('visuals.diceColorDescription')}
-          value={config.themeColor}
-          onChange={(value) => onUpdate({ ...config, themeColor: value })}
-          popoverProps={{ withinPortal: false }}
-        />
-        <Tooltip label={t('visuals.resetToDefault')} withinPortal={false}>
-          <ActionIcon variant="default" size={36} onClick={() => onUpdate({ ...config, themeColor: defaultVisualConfig.themeColor })}>
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
       <div>
         <Text size="sm" fw={500} mb={4}>{t('visuals.wallStyle')}</Text>
         <SegmentedControl
@@ -129,16 +115,15 @@ const VisualsConfig: React.FC<VisualsConfigProps> = ({ config, onUpdate }) => {
         />
       </div>
       <Group align="flex-end" gap="xs">
-        <ColorInput
+        <NativeColorInput
           style={{ flex: 1 }}
           label={t('visuals.wallColor')}
           description={t('visuals.wallColorDescription')}
           value={config.wallColor}
           onChange={(value) => onUpdate({ ...config, wallColor: value })}
-          popoverProps={{ withinPortal: false }}
         />
         <Tooltip label={t('visuals.resetToDefault')} withinPortal={false}>
-          <ActionIcon variant="default" size={36} onClick={() => onUpdate({ ...config, wallColor: defaultVisualConfig.wallColor })}>
+          <ActionIcon variant="default" size={36} style={{ alignSelf: 'flex-end' }} onClick={() => onUpdate({ ...config, wallColor: defaultVisualConfig.wallColor })}>
             <IconRefresh size={16} />
           </ActionIcon>
         </Tooltip>
@@ -169,16 +154,15 @@ const VisualsConfig: React.FC<VisualsConfigProps> = ({ config, onUpdate }) => {
         />
       </div>
       <Group align="flex-end" gap="xs">
-        <ColorInput
+        <NativeColorInput
           style={{ flex: 1 }}
           label={t('visuals.backgroundColor')}
           description={t('visuals.backgroundColorDescription')}
           value={config.backgroundColor}
           onChange={(value) => onUpdate({ ...config, backgroundColor: value })}
-          popoverProps={{ withinPortal: false }}
         />
         <Tooltip label={t('visuals.resetToDefault')} withinPortal={false}>
-          <ActionIcon variant="default" size={36} onClick={() => onUpdate({ ...config, backgroundColor: defaultVisualConfig.backgroundColor })}>
+          <ActionIcon variant="default" size={36} style={{ alignSelf: 'flex-end' }} onClick={() => onUpdate({ ...config, backgroundColor: defaultVisualConfig.backgroundColor })}>
             <IconRefresh size={16} />
           </ActionIcon>
         </Tooltip>

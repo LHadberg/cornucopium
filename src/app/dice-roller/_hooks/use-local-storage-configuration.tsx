@@ -2,32 +2,36 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import type { Stats, Action, ActionSet, DiceBoxConfig, VisualConfig } from '../_types/types';
+import type { Stats, StatSet, Action, ActionSet, DiceBoxConfig, VisualConfig } from '../_types/types';
 import { api } from '~/trpc/react';
 
 const STORAGE_KEYS = {
-  STATS: 'diceroller_stats',
+  STAT_SETS: 'diceroller_stat_sets',
+  SELECTED_STAT_SET: 'diceroller_selected_stat_set',
   ACTION_SETS: 'diceroller_action_sets',
   SELECTED_ACTION_SET: 'diceroller_selected_action_set',
-  PHYSICS: 'diceroller_physics_config',
+  PHYSICS: 'diceroller_physics_v2',
   VISUAL: 'diceroller_visual_config',
   LEGACY_ACTIONS: 'diceroller_actions',
+  LEGACY_STATS: 'diceroller_stats',
 };
 
 interface DefaultConfigs {
-  defaultStats: Stats;
+  defaultStatSets: StatSet[];
   defaultActionSets: ActionSet[];
   defaultPhysicsConfig: DiceBoxConfig;
   defaultVisualConfig: VisualConfig;
 }
 
 export interface LocalStorageConfigurationReturn {
-  stats: Stats;
+  statSets: StatSet[];
+  selectedStatSetId: string | null;
   actionSets: ActionSet[];
   selectedActionSetId: string | null;
   physicsConfig: DiceBoxConfig;
   visualConfig: VisualConfig;
-  handleStatsUpdate: (newStats: Stats) => void;
+  handleStatSetsUpdate: (newSets: StatSet[]) => void;
+  handleSelectedStatSetUpdate: (id: string | null) => void;
   handleActionSetsUpdate: (newSets: ActionSet[]) => void;
   handleSelectedActionSetUpdate: (id: string | null) => void;
   handlePhysicsUpdate: (config: DiceBoxConfig) => void;
@@ -38,7 +42,8 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
 
-  const [stats, setStats] = useState<Stats>(defaults.defaultStats);
+  const [statSets, setStatSets] = useState<StatSet[]>(defaults.defaultStatSets);
+  const [selectedStatSetId, setSelectedStatSetId] = useState<string | null>(defaults.defaultStatSets[0]?.id ?? null);
   const [actionSets, setActionSets] = useState<ActionSet[]>(defaults.defaultActionSets);
   const [selectedActionSetId, setSelectedActionSetId] = useState<string | null>(null);
   const [physicsConfig, setPhysicsConfig] = useState<DiceBoxConfig>(defaults.defaultPhysicsConfig);
@@ -49,12 +54,14 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
   const dbSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Latest refs for capturing current values when debounce fires
-  const latestStats = useRef(stats);
-  latestStats.current = stats;
+  const latestStatSets = useRef(statSets);
+  latestStatSets.current = statSets;
+  const latestSelectedStatSetId = useRef(selectedStatSetId);
+  latestSelectedStatSetId.current = selectedStatSetId;
   const latestActionSets = useRef(actionSets);
   latestActionSets.current = actionSets;
-  const latestSelectedId = useRef(selectedActionSetId);
-  latestSelectedId.current = selectedActionSetId;
+  const latestSelectedActionSetId = useRef(selectedActionSetId);
+  latestSelectedActionSetId.current = selectedActionSetId;
   const latestPhysics = useRef(physicsConfig);
   latestPhysics.current = physicsConfig;
   const latestVisuals = useRef(visualConfig);
@@ -78,7 +85,28 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
       return defaultValue;
     };
 
-    setStats(loadFromStorage(STORAGE_KEYS.STATS, defaults.defaultStats));
+    // Stat sets — try new format, fall back to legacy stats
+    const storedStatSets = loadFromStorage<StatSet[] | null>(STORAGE_KEYS.STAT_SETS, null);
+    if (storedStatSets && Array.isArray(storedStatSets) && storedStatSets.length > 0) {
+      setStatSets(storedStatSets);
+      const savedId = localStorage.getItem(STORAGE_KEYS.SELECTED_STAT_SET);
+      const validId = savedId && storedStatSets.some(s => s.id === savedId) ? savedId : (storedStatSets[0]?.id ?? null);
+      setSelectedStatSetId(validId);
+    } else {
+      // Migrate from legacy single-stats format
+      const legacyStats = loadFromStorage<Stats | null>(STORAGE_KEYS.LEGACY_STATS, null);
+      if (legacyStats && !Array.isArray(legacyStats) && 'strength' in legacyStats) {
+        const migratedSet: StatSet = { id: 'default', name: 'Character', proficiencyBonus: 2, stats: legacyStats };
+        setStatSets([migratedSet]);
+        setSelectedStatSetId(migratedSet.id);
+        localStorage.setItem(STORAGE_KEYS.STAT_SETS, JSON.stringify([migratedSet]));
+        localStorage.setItem(STORAGE_KEYS.SELECTED_STAT_SET, migratedSet.id);
+      } else {
+        setStatSets(defaults.defaultStatSets);
+        setSelectedStatSetId(defaults.defaultStatSets[0]?.id ?? null);
+      }
+    }
+
     setPhysicsConfig(loadFromStorage(STORAGE_KEYS.PHYSICS, defaults.defaultPhysicsConfig));
     const storedVisual = loadFromStorage(STORAGE_KEYS.VISUAL, defaults.defaultVisualConfig);
     setVisualConfig({ ...defaults.defaultVisualConfig, ...storedVisual });
@@ -93,9 +121,9 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
     }
     setActionSets(sets);
 
-    const savedId = localStorage.getItem(STORAGE_KEYS.SELECTED_ACTION_SET);
-    const validId = savedId && sets.some(s => s.id === savedId) ? savedId : (sets[0]?.id ?? null);
-    setSelectedActionSetId(validId);
+    const savedActionSetId = localStorage.getItem(STORAGE_KEYS.SELECTED_ACTION_SET);
+    const validActionSetId = savedActionSetId && sets.some(s => s.id === savedActionSetId) ? savedActionSetId : (sets[0]?.id ?? null);
+    setSelectedActionSetId(validActionSetId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -106,9 +134,25 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
 
     if (dbConfig.diceRollerStats) {
       try {
-        const s = JSON.parse(dbConfig.diceRollerStats) as Stats;
-        setStats(s);
-        localStorage.setItem(STORAGE_KEYS.STATS, dbConfig.diceRollerStats);
+        const parsed = JSON.parse(dbConfig.diceRollerStats);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // New format: StatSet[]
+          const sets = parsed as StatSet[];
+          setStatSets(sets);
+          localStorage.setItem(STORAGE_KEYS.STAT_SETS, dbConfig.diceRollerStats);
+          const savedId = localStorage.getItem(STORAGE_KEYS.SELECTED_STAT_SET);
+          const validId = savedId && sets.some(s => s.id === savedId) ? savedId : (sets[0]?.id ?? null);
+          setSelectedStatSetId(validId);
+          if (validId) localStorage.setItem(STORAGE_KEYS.SELECTED_STAT_SET, validId);
+        } else if (!Array.isArray(parsed) && 'strength' in parsed) {
+          // Legacy format: Stats object → migrate
+          const legacyStats = parsed as Stats;
+          const migratedSet: StatSet = { id: 'default', name: 'Character', proficiencyBonus: 2, stats: legacyStats };
+          setStatSets([migratedSet]);
+          setSelectedStatSetId(migratedSet.id);
+          localStorage.setItem(STORAGE_KEYS.STAT_SETS, JSON.stringify([migratedSet]));
+          localStorage.setItem(STORAGE_KEYS.SELECTED_STAT_SET, migratedSet.id);
+        }
       } catch { /* keep localStorage value */ }
     }
     if (dbConfig.diceRollerPhysics) {
@@ -144,9 +188,9 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
     if (dbSaveTimer.current) clearTimeout(dbSaveTimer.current);
     dbSaveTimer.current = setTimeout(() => {
       saveDbConfig({
-        stats: JSON.stringify(latestStats.current),
+        stats: JSON.stringify(latestStatSets.current),
         actionSets: JSON.stringify(latestActionSets.current),
-        selectedActionSet: latestSelectedId.current,
+        selectedActionSet: latestSelectedActionSetId.current,
         physics: JSON.stringify(latestPhysics.current),
         visuals: JSON.stringify(latestVisuals.current),
       });
@@ -158,10 +202,24 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
     try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
   };
 
-  const handleStatsUpdate = (newStats: Stats) => {
-    setStats(newStats);
-    saveToStorage(STORAGE_KEYS.STATS, newStats);
+  const handleStatSetsUpdate = (newSets: StatSet[]) => {
+    setStatSets(newSets);
+    saveToStorage(STORAGE_KEYS.STAT_SETS, newSets);
+    setSelectedStatSetId(prev => {
+      if (newSets.some(s => s.id === prev)) return prev;
+      const fallback = newSets[0]?.id ?? null;
+      if (fallback !== null) localStorage.setItem(STORAGE_KEYS.SELECTED_STAT_SET, fallback);
+      else localStorage.removeItem(STORAGE_KEYS.SELECTED_STAT_SET);
+      return fallback;
+    });
     scheduleDbSave();
+  };
+
+  const handleSelectedStatSetUpdate = (id: string | null) => {
+    setSelectedStatSetId(id);
+    if (id !== null) localStorage.setItem(STORAGE_KEYS.SELECTED_STAT_SET, id);
+    else localStorage.removeItem(STORAGE_KEYS.SELECTED_STAT_SET);
+    // No DB save needed — selection is local preference only
   };
 
   const handleActionSetsUpdate = (newSets: ActionSet[]) => {
@@ -197,8 +255,8 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
   };
 
   return {
-    stats, actionSets, selectedActionSetId, physicsConfig, visualConfig,
-    handleStatsUpdate, handleActionSetsUpdate, handleSelectedActionSetUpdate,
-    handlePhysicsUpdate, handleVisualsUpdate,
+    statSets, selectedStatSetId, actionSets, selectedActionSetId, physicsConfig, visualConfig,
+    handleStatSetsUpdate, handleSelectedStatSetUpdate, handleActionSetsUpdate,
+    handleSelectedActionSetUpdate, handlePhysicsUpdate, handleVisualsUpdate,
   };
 };

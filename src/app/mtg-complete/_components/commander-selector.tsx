@@ -7,6 +7,7 @@ import {
   Card,
   Collapse,
   Combobox,
+  Divider,
   Group,
   HoverCard,
   Image,
@@ -14,6 +15,7 @@ import {
   Loader,
   Modal,
   MultiSelect,
+  Popover,
   ScrollArea,
   Select,
   SimpleGrid,
@@ -29,6 +31,8 @@ import { useDebouncedValue, useDisclosure, useIntersection } from "@mantine/hook
 import {
   IconChevronDown,
   IconChevronUp,
+  IconDots,
+  IconEraser,
   IconExternalLink,
   IconFlipVertical,
   IconList,
@@ -37,6 +41,7 @@ import {
   IconStarFilled,
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "~/trpc/react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -94,9 +99,13 @@ export interface SelectionData {
   commanderPreferredPrintId: string | null;
   commanderPreferredPrintImage: string | null;
   commanderPreferredPrintArt: string | null;
+  commanderPreferredPrintBackImage: string | null;
+  commanderPreferredPrintBackArt: string | null;
   partnerPreferredPrintId: string | null;
   partnerPreferredPrintImage: string | null;
   partnerPreferredPrintArt: string | null;
+  partnerPreferredPrintBackImage: string | null;
+  partnerPreferredPrintBackArt: string | null;
   companionScryfallId: string | null;
   companionName: string | null;
   companionTypeLine: string | null;
@@ -105,6 +114,8 @@ export interface SelectionData {
   companionPreferredPrintId: string | null;
   companionPreferredPrintImage: string | null;
   companionPreferredPrintArt: string | null;
+  companionPreferredPrintBackImage: string | null;
+  companionPreferredPrintBackArt: string | null;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -125,13 +136,14 @@ const BRACKETS = [
   { value: "5", label: "5 — cEDH" },
 ];
 
-const ARCHETYPES: { value: string; label: string; description: string }[] = [
-  { value: "Aggro",    label: "Aggro",    description: "Rush opponents with fast, cheap threats before they can set up." },
-  { value: "Combo",    label: "Combo",    description: "Assemble a specific card combination to win on the spot." },
-  { value: "Control",  label: "Control",  description: "Dominate through counterspells, removal, and late-game card advantage." },
-  { value: "Midrange", label: "Midrange", description: "Flexible threats and answers that adapt to any board state." },
-  { value: "Stax",     label: "Stax",     description: "Deny opponents resources through taxing effects and locks." },
-  { value: "Tempo",    label: "Tempo",    description: "Disrupt opponents while efficiently advancing your own game plan." },
+const ARCHETYPES: { value: string; label: string }[] = [
+  { value: "Aggro",    label: "Aggro" },
+  { value: "Combo",    label: "Combo" },
+  { value: "Control",  label: "Control" },
+  { value: "Midrange", label: "Midrange" },
+  { value: "Stax",     label: "Stax" },
+  { value: "Tempo",    label: "Tempo" },
+  { value: "Vorthos",  label: "Vorthos" },
 ];
 
 const TAGS = [
@@ -153,7 +165,7 @@ const TAGS = [
   "Dinosaurs", "Discard", "Discover", "Dogs", "Donate", "Dragon's Approach", "Dragons",
   "Drakes", "Dredge", "Druids", "Dungeon", "Dwarves",
   "Earthbending", "Eggs", "Elders", "Eldrazi", "Elementals", "Elephants", "Elves",
-  "Enchantress", "Energy", "Enrage", "ETB", "European Highlander", "Evoke", "Exalted",
+  "Enchantress", "Energy", "Enrage", "Equipment", "ETB", "European Highlander", "Evoke", "Exalted",
   "Exile", "Experience Counters", "Exploit", "Explore", "Extra Combats", "Extra Turns",
   "Extra Upkeeps",
   "Faeries", "Fight", "Firebending", "Flash", "Flashback", "Fling", "Flying", "Food",
@@ -306,6 +318,7 @@ interface CardSearchProps {
 }
 
 function CardSearch({ placeholder, query, results, loading, store, onQueryChange, onSelect, tooltipSide = "right" }: CardSearchProps) {
+  const { t } = useTranslation();
   return (
     <Combobox store={store} onOptionSubmit={(id) => {
       const card = results.find((c) => c.id === id) ?? null;
@@ -343,7 +356,7 @@ function CardSearch({ placeholder, query, results, loading, store, onQueryChange
           )) : (
             <Combobox.Empty>
               <Text size="xs">
-                {loading ? "Searching…" : query.length >= 2 ? "No results" : "Type to search"}
+                {loading ? t('mtg.selector.searching') : query.length >= 2 ? t('mtg.selector.noResults') : t('mtg.selector.typeToSearch')}
               </Text>
             </Combobox.Empty>
           )}
@@ -361,9 +374,10 @@ interface TagSelectorProps {
 }
 
 function TagSelector({ tags, setTags, favoriteTag, setFavoriteTag }: TagSelectorProps) {
+  const { t } = useTranslation();
   return (
     <MultiSelect
-      size="xs" placeholder="Tags…" data={TAGS} value={tags}
+      size="xs" placeholder={t('mtg.selector.tagsPlaceholder')} data={TAGS} value={tags}
       onChange={(next) => {
         setTags(next);
         if (favoriteTag && !next.includes(favoriteTag)) setFavoriteTag(null);
@@ -408,6 +422,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
   canFlip?: boolean;
   tooltipSide?: "left" | "right" | "bottom";
 }) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const [hoverKey, setHoverKey] = useState(0);
   const [showBack, setShowBack] = useState(false);
@@ -448,7 +463,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
               className="art-glimmer-btn"
               style={{ position: "absolute", bottom: 4, right: 4, zIndex: 1 }}
               onClick={(e) => { e.stopPropagation(); setHoverKey((k) => k + 1); onGlimmerClick(); }}
-              title="Select art version"
+              title={t('mtg.selector.selectArtVersion')}
             >
               <GlimmerSvg />
             </button>
@@ -466,7 +481,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
               className="art-glimmer-btn"
               style={{ position: "absolute", bottom: 8, left: 8, zIndex: 1 }}
               onClick={(e) => { e.stopPropagation(); setShowBack((v) => !v); }}
-              title={showBack ? "Show front face" : "Show back face"}
+              title={showBack ? t('mtg.selector.showFrontFace') : t('mtg.selector.showBackFace')}
             >
               <IconRotate2 size={28} color="#FFD700" />
             </button>
@@ -476,7 +491,7 @@ function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNorma
               className="art-glimmer-btn"
               style={{ position: "absolute", bottom: 8, right: 8, zIndex: 1 }}
               onClick={(e) => { e.stopPropagation(); setFlipped((v) => !v); }}
-              title={flipped ? "Show top face" : "Show flipped face"}
+              title={flipped ? t('mtg.selector.showTopFace') : t('mtg.selector.showFlippedFace')}
             >
               <IconFlipVertical size={28} color="#FFD700" />
             </button>
@@ -493,11 +508,12 @@ interface PrintPickerModalProps {
   onClose: () => void;
   cardName: string;
   currentPrintId: string | null;
-  onSelect: (id: string, image: string, artCrop: string) => void;
+  onSelect: (id: string, image: string, artCrop: string, backImage: string | null, backArtCrop: string | null) => void;
   onClear: () => void;
 }
 
 function PrintPickerModal({ opened, onClose, cardName, currentPrintId, onSelect, onClear }: PrintPickerModalProps) {
+  const { t } = useTranslation();
   const [prints, setPrints] = useState<ScryfallPrint[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -509,7 +525,7 @@ function PrintPickerModal({ opened, onClose, cardName, currentPrintId, onSelect,
   }, [opened, cardName]);
 
   return (
-    <Modal opened={opened} onClose={onClose} title={`Art versions — ${cardName}`} size="xl" centered>
+    <Modal opened={opened} onClose={onClose} title={t('mtg.selector.artVersions', { cardName })} size="xl" centered>
       {loading ? (
         <Group justify="center" py="xl"><Loader /></Group>
       ) : (
@@ -524,7 +540,12 @@ function PrintPickerModal({ opened, onClose, cardName, currentPrintId, onSelect,
                 return (
                   <div
                     key={print.id}
-                    onClick={() => { onSelect(print.id, pImg, pArt); onClose(); }}
+                    onClick={() => {
+                      const backImg = print.card_faces?.[1]?.image_uris?.normal ?? null;
+                      const backArt = print.card_faces?.[1]?.image_uris?.art_crop ?? null;
+                      onSelect(print.id, pImg, pArt, backImg, backArt);
+                      onClose();
+                    }}
                     style={{
                       cursor: "pointer",
                       borderRadius: 6,
@@ -544,7 +565,7 @@ function PrintPickerModal({ opened, onClose, cardName, currentPrintId, onSelect,
           {currentPrintId && (
             <Group justify="flex-end">
               <Button size="xs" variant="subtle" color="gray" onClick={() => { onClear(); onClose(); }}>
-                Use default art
+                {t('mtg.selector.useDefaultArt')}
               </Button>
             </Group>
           )}
@@ -581,6 +602,7 @@ export function CommanderSlot({
   tooltipSide = "right",
   onLocalChange,
 }: CommanderSlotProps) {
+  const { t } = useTranslation();
   const [expanded, { open, close }] = useDisclosure(false);
   const [collapseVisible, setCollapseVisible] = useState(false);
 
@@ -639,9 +661,10 @@ export function CommanderSlot({
   const [archetype, setArchetype] = useState<string | null>(null);
   const [deckListUrl, setDeckListUrl] = useState<string | null>(null);
 
+  type PreferredPrint = { id: string; image: string; artCrop: string; backImage: string | null; backArtCrop: string | null } | null;
   // Preferred print overrides (id + image URLs for commander / partner)
-  const [cmdPreferredPrint, setCmdPreferredPrint] = useState<{ id: string; image: string; artCrop: string } | null>(null);
-  const [ptnPreferredPrint, setPtnPreferredPrint] = useState<{ id: string; image: string; artCrop: string } | null>(null);
+  const [cmdPreferredPrint, setCmdPreferredPrint] = useState<PreferredPrint>(null);
+  const [ptnPreferredPrint, setPtnPreferredPrint] = useState<PreferredPrint>(null);
   // null = closed, 'commander' | 'partner' | 'companion' = open for that card
   const [printPickerFor, setPrintPickerFor] = useState<"commander" | "partner" | "companion" | null>(null);
 
@@ -656,7 +679,7 @@ export function CommanderSlot({
   const [debouncedCompanion] = useDebouncedValue(companionQuery, 300);
   const [companionResults, setCompanionResults] = useState<ScryfallCard[]>([]);
   const [companionLoading, setCompanionLoading] = useState(false);
-  const [companionPreferredPrint, setCompanionPreferredPrint] = useState<{ id: string; image: string; artCrop: string } | null>(null);
+  const [companionPreferredPrint, setCompanionPreferredPrint] = useState<PreferredPrint>(null);
 
   const userModified = useRef(false);
   const hasHydrated = useRef(false);
@@ -715,10 +738,10 @@ export function CommanderSlot({
     setArchetype(initialData.archetype);
     setDeckListUrl(initialData.deckListUrl);
     if (initialData.commanderPreferredPrintId && initialData.commanderPreferredPrintImage && initialData.commanderPreferredPrintArt) {
-      setCmdPreferredPrint({ id: initialData.commanderPreferredPrintId, image: initialData.commanderPreferredPrintImage, artCrop: initialData.commanderPreferredPrintArt });
+      setCmdPreferredPrint({ id: initialData.commanderPreferredPrintId, image: initialData.commanderPreferredPrintImage, artCrop: initialData.commanderPreferredPrintArt, backImage: initialData.commanderPreferredPrintBackImage, backArtCrop: initialData.commanderPreferredPrintBackArt });
     }
     if (initialData.partnerPreferredPrintId && initialData.partnerPreferredPrintImage && initialData.partnerPreferredPrintArt) {
-      setPtnPreferredPrint({ id: initialData.partnerPreferredPrintId, image: initialData.partnerPreferredPrintImage, artCrop: initialData.partnerPreferredPrintArt });
+      setPtnPreferredPrint({ id: initialData.partnerPreferredPrintId, image: initialData.partnerPreferredPrintImage, artCrop: initialData.partnerPreferredPrintArt, backImage: initialData.partnerPreferredPrintBackImage, backArtCrop: initialData.partnerPreferredPrintBackArt });
     }
     if (initialData.companionName) {
       setHasCompanion(true);
@@ -734,7 +757,7 @@ export function CommanderSlot({
       });
     }
     if (initialData.companionPreferredPrintId && initialData.companionPreferredPrintImage && initialData.companionPreferredPrintArt) {
-      setCompanionPreferredPrint({ id: initialData.companionPreferredPrintId, image: initialData.companionPreferredPrintImage, artCrop: initialData.companionPreferredPrintArt });
+      setCompanionPreferredPrint({ id: initialData.companionPreferredPrintId, image: initialData.companionPreferredPrintImage, artCrop: initialData.companionPreferredPrintArt, backImage: initialData.companionPreferredPrintBackImage, backArtCrop: initialData.companionPreferredPrintBackArt });
     }
   }, [initialData]);
 
@@ -813,7 +836,7 @@ export function CommanderSlot({
     // derivable (oracle_text absent on hydrated card) so we'd incorrectly clear it.
     if (!userModified.current) return;
     if (!commander || !partnerType) {
-      setPartner(null); setPartnerQuery(""); setPartnerResults([]); setSavedPartnerType(null);
+      setPartner(null); setPartnerQuery(""); setPartnerResults([]); setSavedPartnerType(null); setPtnPreferredPrint(null);
       return;
     }
     if (partnerType === "partner-with" && partnerWithName) {
@@ -883,9 +906,13 @@ export function CommanderSlot({
     commanderPreferredPrintId: cmdPreferredPrint?.id ?? null,
     commanderPreferredPrintImage: cmdPreferredPrint?.image ?? null,
     commanderPreferredPrintArt: cmdPreferredPrint?.artCrop ?? null,
+    commanderPreferredPrintBackImage: cmdPreferredPrint?.backImage ?? null,
+    commanderPreferredPrintBackArt: cmdPreferredPrint?.backArtCrop ?? null,
     partnerPreferredPrintId: ptnPreferredPrint?.id ?? null,
     partnerPreferredPrintImage: ptnPreferredPrint?.image ?? null,
     partnerPreferredPrintArt: ptnPreferredPrint?.artCrop ?? null,
+    partnerPreferredPrintBackImage: ptnPreferredPrint?.backImage ?? null,
+    partnerPreferredPrintBackArt: ptnPreferredPrint?.backArtCrop ?? null,
     companionScryfallId: companion?.id ?? null,
     companionName: companion?.name ?? null,
     companionTypeLine: companion?.type_line ?? null,
@@ -894,6 +921,8 @@ export function CommanderSlot({
     companionPreferredPrintId: companionPreferredPrint?.id ?? null,
     companionPreferredPrintImage: companionPreferredPrint?.image ?? null,
     companionPreferredPrintArt: companionPreferredPrint?.artCrop ?? null,
+    companionPreferredPrintBackImage: companionPreferredPrint?.backImage ?? null,
+    companionPreferredPrintBackArt: companionPreferredPrint?.backArtCrop ?? null,
   });
   const [debouncedSaveJson] = useDebouncedValue(saveJson, 1000);
   useEffect(() => {
@@ -921,6 +950,18 @@ export function CommanderSlot({
   const displayTag = favoriteTag ?? tags[0] ?? null;
   const bracketLabel = BRACKETS.find((b) => b.value === bracket)?.label ?? null;
   const mark = () => { userModified.current = true; };
+
+  const handleClearSelection = () => {
+    mark();
+    setCommander(null); setQuery(""); setResults([]); setCmdPreferredPrint(null);
+    setPartner(null); setPartnerQuery(""); setPartnerResults([]); setSavedPartnerType(null); setPtnPreferredPrint(null);
+    setHasCompanion(false); setCompanion(null); setCompanionQuery(""); setCompanionResults([]); setCompanionPreferredPrint(null);
+    setBracket(null);
+    setTags([]); setFavoriteTag(null);
+    setArchetype(null);
+    setDeckListUrl(null);
+    setAllowRule0(false);
+  };
 
   // True for the one render frame between initialData arriving and the hydration effect running.
   // During that frame commander is null even though we have data — show skeleton instead of flash.
@@ -975,7 +1016,7 @@ export function CommanderSlot({
             : colors.map((c) => <ManaSymbol key={c} color={c} />)
           }
           {isValidUrl(deckListUrl) && (
-            <Tooltip label="Open Deck List" withArrow position="top" openDelay={400}>
+            <Tooltip label={t('mtg.selector.openDeckList')} withArrow position="top" openDelay={400}>
               <ActionIcon
                 size="xs" variant="subtle" color="blue"
                 component="a" href={deckListUrl!} target="_blank" rel="noopener noreferrer"
@@ -985,7 +1026,7 @@ export function CommanderSlot({
             </Tooltip>
           )}
           {!readOnly && (
-            <Tooltip label={expanded ? "Collapse" : "Expand"} withArrow position="top" openDelay={400}>
+            <Tooltip label={expanded ? t('mtg.selector.collapse') : t('mtg.selector.expand')} withArrow position="top" openDelay={400}>
               <ActionIcon size="xs" variant="subtle" onClick={handleToggle}>
                 {expanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
               </ActionIcon>
@@ -1024,8 +1065,8 @@ export function CommanderSlot({
                             half={partnerArt ? "left" : undefined}
                             flex="1 1 100%"
                             onGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("commander")}
-                            backNormal={cmdBackFace?.normal}
-                            backArtCrop={cmdBackFace?.art_crop}
+                            backNormal={cmdPreferredPrint?.backImage ?? cmdBackFace?.normal}
+                            backArtCrop={cmdPreferredPrint?.backArtCrop ?? cmdBackFace?.art_crop}
                             canFlip={cmdIsFlip}
                             tooltipSide={tooltipSide}
                           />
@@ -1035,8 +1076,8 @@ export function CommanderSlot({
                             artCrop={partnerArt} normal={partnerImg} name={partner!.name}
                             half="right"
                             onGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("partner")}
-                            backNormal={ptnBackFace?.normal}
-                            backArtCrop={ptnBackFace?.art_crop}
+                            backNormal={ptnPreferredPrint?.backImage ?? ptnBackFace?.normal}
+                            backArtCrop={ptnPreferredPrint?.backArtCrop ?? ptnBackFace?.art_crop}
                             canFlip={ptnIsFlip}
                             tooltipSide={tooltipSide}
                           />
@@ -1047,8 +1088,8 @@ export function CommanderSlot({
                           artCrop={companionArt} normal={companionImg} name={companion!.name}
                           flex="1 1 100%"
                           onGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("companion")}
-                          backNormal={cmpBackFace?.normal}
-                          backArtCrop={cmpBackFace?.art_crop}
+                          backNormal={companionPreferredPrint?.backImage ?? cmpBackFace?.normal}
+                          backArtCrop={companionPreferredPrint?.backArtCrop ?? cmpBackFace?.art_crop}
                           canFlip={cmpIsFlip}
                           tooltipSide={tooltipSide}
                         />
@@ -1066,7 +1107,7 @@ export function CommanderSlot({
                     </>
                   )
                 ) : (
-                  <Text size="xs" c="dimmed">No commander selected</Text>
+                  <Text size="xs" c="dimmed">{t('mtg.selector.noCommander')}</Text>
                 )}
               </Stack>
             </HoverCard.Target>
@@ -1081,18 +1122,61 @@ export function CommanderSlot({
       {!readOnly && <Collapse in={expanded} onTransitionEnd={() => { if (!expanded) setCollapseVisible(false); }}>
         <Stack gap="xs">
           <Group justify="space-between" align="center" wrap="nowrap">
-            <Text size="xs" c="dimmed" fw={500}>Commander</Text>
-            <Switch
-              size="xs" label="Rule 0" labelPosition="left"
-              checked={allowRule0}
-              onChange={(e) => { mark(); setAllowRule0(e.currentTarget.checked); }}
-            />
+            <Text size="xs" c="dimmed" fw={500}>{t('mtg.selector.commander')}</Text>
+            <Popover position="bottom-end" withArrow shadow="sm" width={190} withinPortal>
+              <Popover.Target>
+                <ActionIcon size="xs" variant="subtle" aria-label={t('mtg.selector.options')}>
+                  <IconDots size={14} />
+                </ActionIcon>
+              </Popover.Target>
+              <Popover.Dropdown p="xs">
+                <Stack gap="xs">
+                  <Switch
+                    size="xs"
+                    label={t('mtg.selector.rule0')}
+                    labelPosition="left"
+                    checked={allowRule0}
+                    onChange={(e) => { mark(); setAllowRule0(e.currentTarget.checked); }}
+                    styles={{ body: { justifyContent: 'space-between', width: '100%' } }}
+                  />
+                  <Switch
+                    size="xs"
+                    label={t('mtg.selector.companion')}
+                    labelPosition="left"
+                    checked={hasCompanion}
+                    onChange={(e) => {
+                      mark();
+                      setHasCompanion(e.currentTarget.checked);
+                      if (!e.currentTarget.checked) {
+                        setCompanion(null);
+                        setCompanionQuery("");
+                        setCompanionResults([]);
+                        setCompanionPreferredPrint(null);
+                      }
+                    }}
+                    styles={{ body: { justifyContent: 'space-between', width: '100%' } }}
+                  />
+                  <Divider />
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    color="red"
+                    leftSection={<IconEraser size={12} />}
+                    fullWidth
+                    justify="flex-start"
+                    onClick={handleClearSelection}
+                  >
+                    {t('mtg.selector.clearSelection')}
+                  </Button>
+                </Stack>
+              </Popover.Dropdown>
+            </Popover>
           </Group>
           <CardSearch
-            placeholder="Search commander…"
+            placeholder={t('mtg.selector.searchCommander')}
             query={query} results={results} loading={loading} store={cmdStore}
-            onQueryChange={(q) => { mark(); setQuery(q); setCommander(null); setSavedPartnerType(null); }}
-            onSelect={(card) => { mark(); setCommander(card); setQuery(card?.name ?? ""); }}
+            onQueryChange={(q) => { mark(); setQuery(q); setCommander(null); setSavedPartnerType(null); setCmdPreferredPrint(null); }}
+            onSelect={(card) => { mark(); setCommander(card); setQuery(card?.name ?? ""); setCmdPreferredPrint(null); }}
             tooltipSide={tooltipSide}
           />
 
@@ -1102,81 +1186,73 @@ export function CommanderSlot({
               {partnerType === "partner-with" ? (
                 <InputBase
                   size="xs"
-                  value={partnerLoading ? "Loading…" : (partnerQuery || (partnerWithName ?? ""))}
+                  value={partnerLoading ? t('mtg.selector.loading') : (partnerQuery || (partnerWithName ?? ""))}
                   disabled
                   rightSection={partnerLoading ? <Loader size={12} /> : undefined}
                 />
               ) : (
                 <CardSearch
-                  placeholder={partnerType === "background" ? "Search background…" : "Search partner…"}
+                  placeholder={partnerType === "background" ? t('mtg.selector.searchBackground') : t('mtg.selector.searchPartner')}
                   query={partnerQuery} results={partnerResults} loading={partnerLoading} store={ptnStore}
-                  onQueryChange={(q) => { mark(); setPartnerQuery(q); setPartner(null); }}
-                  onSelect={(card) => { mark(); setPartner(card); setPartnerQuery(card?.name ?? ""); }}
+                  onQueryChange={(q) => { mark(); setPartnerQuery(q); setPartner(null); setPtnPreferredPrint(null); }}
+                  onSelect={(card) => { mark(); setPartner(card); setPartnerQuery(card?.name ?? ""); setPtnPreferredPrint(null); }}
                   tooltipSide={tooltipSide}
                 />
               )}
             </>
           )}
 
-          <Switch
-            size="xs" label="Companion" checked={hasCompanion}
-            onChange={(e) => {
-              mark();
-              setHasCompanion(e.currentTarget.checked);
-              if (!e.currentTarget.checked) {
-                setCompanion(null);
-                setCompanionQuery("");
-                setCompanionResults([]);
-                setCompanionPreferredPrint(null);
-              }
-            }}
-          />
           {hasCompanion && (
             <>
-              <Text size="xs" c="dimmed" fw={500}>Companion</Text>
+              <Text size="xs" c="dimmed" fw={500}>{t('mtg.selector.companion')}</Text>
               <CardSearch
-                placeholder="Search companion…"
+                placeholder={t('mtg.selector.searchCompanion')}
                 query={companionQuery} results={companionResults} loading={companionLoading} store={cmpStore}
-                onQueryChange={(q) => { mark(); setCompanionQuery(q); setCompanion(null); }}
-                onSelect={(card) => { mark(); setCompanion(card); setCompanionQuery(card?.name ?? ""); }}
+                onQueryChange={(q) => { mark(); setCompanionQuery(q); setCompanion(null); setCompanionPreferredPrint(null); }}
+                onSelect={(card) => { mark(); setCompanion(card); setCompanionQuery(card?.name ?? ""); setCompanionPreferredPrint(null); }}
                 tooltipSide={tooltipSide}
               />
             </>
           )}
 
-          <Select size="xs" placeholder="Bracket…" data={BRACKETS} value={bracket}
-            onChange={(v) => { mark(); setBracket(v); }} clearable />
+          <Select size="xs" placeholder={t('mtg.selector.bracketPlaceholder')} data={BRACKETS} value={bracket}
+            onChange={(v) => { mark(); setBracket(v); }} clearable
+            renderOption={({ option }) => (
+              <Stack gap={1} py={2}>
+                <Text size="xs" fw={500}>{option.label}</Text>
+                <Text size="xs" c="dimmed" lh={1.3}>{t(`mtg.brackets.desc${option.value}`)}</Text>
+              </Stack>
+            )}
+          />
           <TagSelector
             tags={tags} setTags={(v) => { mark(); setTags(v); }}
             favoriteTag={favoriteTag} setFavoriteTag={(v) => { mark(); setFavoriteTag(v); }}
           />
           <Select
             size="xs"
-            placeholder="Archetype…"
+            placeholder={t('mtg.selector.archetypePlaceholder')}
             data={ARCHETYPES}
             value={archetype}
             onChange={(v) => { mark(); setArchetype(v); }}
             clearable
             renderOption={({ option }) => {
-              const entry = ARCHETYPES.find((a) => a.value === option.value);
+              const descKey = `mtg.archetypes.${option.value.toLowerCase()}`;
               return (
                 <Stack gap={1} py={2}>
                   <Text size="xs" fw={500}>{option.label}</Text>
-                  {entry && (
-                    <Text size="xs" c="dimmed" lh={1.3}>{entry.description}</Text>
-                  )}
+                  <Text size="xs" c="dimmed" lh={1.3}>{t(descKey)}</Text>
                 </Stack>
               );
             }}
           />
           <Group gap="xs" wrap="nowrap">
             <TextInput
-              size="xs" placeholder="Deck list URL…"
+              size="xs" placeholder={t('mtg.selector.deckListUrl')}
               value={deckListUrl ?? ""}
               onChange={(e) => { mark(); setDeckListUrl(e.currentTarget.value || null); }}
               style={{ flex: 1 }}
             />
-            <Tooltip label="Go to Moxfield" withArrow position="top">
+            <Tooltip label={t('mtg.selector.goToMoxfield')} withArrow position="top">
               <ActionIcon
                 size="sm" variant="subtle" color="blue"
                 component="a" href={deckListUrl ?? "https://moxfield.com/decks"} target="_blank" rel="noopener noreferrer"
@@ -1201,11 +1277,11 @@ export function CommanderSlot({
           printPickerFor === "partner" ? (ptnPreferredPrint?.id ?? null) :
           (companionPreferredPrint?.id ?? null)
         }
-        onSelect={(id, image, artCrop) => {
+        onSelect={(id, image, artCrop, backImage, backArtCrop) => {
           mark();
-          if (printPickerFor === "commander") setCmdPreferredPrint({ id, image, artCrop });
-          else if (printPickerFor === "partner") setPtnPreferredPrint({ id, image, artCrop });
-          else setCompanionPreferredPrint({ id, image, artCrop });
+          if (printPickerFor === "commander") setCmdPreferredPrint({ id, image, artCrop, backImage, backArtCrop });
+          else if (printPickerFor === "partner") setPtnPreferredPrint({ id, image, artCrop, backImage, backArtCrop });
+          else setCompanionPreferredPrint({ id, image, artCrop, backImage, backArtCrop });
         }}
         onClear={() => {
           mark();

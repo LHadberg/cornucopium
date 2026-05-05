@@ -1,0 +1,91 @@
+{
+  "mtg": {
+    "page": {
+      "title": "MTG Komplet",
+      "loginRequired": "Log ind for at se eller oprette din liste",
+      "loginButton": "Log ind",
+      "listNotFound": "Liste ikke fundet",
+      "listNotFoundDesc": "Der eksisterer ingen commander-samling på denne adresse.",
+      "listPrivate": "Denne liste er ikke længere synlig",
+      "listPrivateDesc": "Ejeren har gjort sin commander-samling privat."
+    },
+    "grid": {
+      "viewVisual": "Visuel",
+      "viewCondensed": "Kompakt",
+      "publicPage": "Offentlig side",
+      "copyLink": "Kopier link",
+      "copied": "Kopieret!",
+      "renameList": "Omdøb liste"
+    },
+    "nameModal": {
+      "title": "Navngiv din offentlige dækliste",
+      "description": "Vælg et navn til din offentlige side. Andre vil se dette, når de ser din commander-samling.",
+      "label": "Sidenavn",
+      "inputDescription": "2–32 tegn. Kun bogstaver, tal, bindestreger og apostroffer. Ingen mellemrum.",
+      "placeholder": "f.eks. GammeltDrake1024",
+      "decline": "Afslå",
+      "accept": "Accepter",
+      "nameTaken": "Navn er allerede taget",
+      "nameMinLength": "Navn skal være mindst 2 tegn",
+      "nameMaxLength": "Navn må højst være 32 tegn",
+      "nameFormat": "Kun bogstaver, tal, bindestreger og apostroffer er tilladt (ingen mellemrum)"
+    },
+    "selector": {
+      "noCommander": "Ingen commander valgt",
+      "commander": "Commander",
+      "rule0": "Regel 0",
+      "companion": "Companion",
+      "searchCommander": "Søg commander…",
+      "searchBackground": "Søg background…",
+      "searchPartner": "Søg partner…",
+      "searchCompanion": "Søg companion…",
+      "deckListUrl": "Dækliste URL…",
+      "bracketPlaceholder": "Bracket…",
+      "archetypePlaceholder": "Arketype…",
+      "tagsPlaceholder": "Tags…",
+      "loading": "Indlæser…",
+      "searching": "Søger…",
+      "noResults": "Ingen resultater",
+      "typeToSearch": "Skriv for at søge",
+      "openDeckList": "Åbn dækliste",
+      "goToMoxfield": "Gå til Moxfield",
+      "collapse": "Skjul",
+      "expand": "Udvid",
+      "selectArtVersion": "Vælg kunstversion",
+      "showFrontFace": "Vis forside",
+      "showBackFace": "Vis bagside",
+      "showTopFace": "Vis topside",
+      "showFlippedFace": "Vis vendt side",
+      "useDefaultArt": "Brug standardkunst",
+      "artVersions": "Kunstversioner — {{cardName}}",
+      "options": "Indstillinger",
+      "clearSelection": "Ryd valg"
+    },
+    "archetypes": {
+      "aggro": "Overvæld modstandere med hurtige, billige trusler, inden de kan komme i gang.",
+      "combo": "Saml en specifik kortkombination for at vinde på stedet.",
+      "control": "Dominér med modtrylleri, fjernelse og sent-spil kortfordel.",
+      "midrange": "Fleksible trusler og svar, der tilpasser sig enhver brætposition.",
+      "stax": "Nægt modstandere ressourcer gennem afgiftseffekter og låse.",
+      "tempo": "Forstyr modstandere, mens du effektivt fremmer din egen spilplan.",
+      "vorthos": "Byg dæk drevet af smag, lore og narrativ. Hvert kort fortæller en del af historien."
+    },
+    "brackets": {
+      "desc1": "Fortryllede eller let modificerede dæk med minimal synergi og ingen kombos.",
+      "desc2": "Opgraderede fortryllede dæk med fokuserede temaer. Uformel styrke uden uendelige kombos.",
+      "desc3": "Finindstillede synergidæk med tutors og nogle uendelige kombos.",
+      "desc4": "Stærkt optimerede dæk med effektive kombos, hurtig mana og fuld interaktion.",
+      "desc5": "Maksimal styrke til konkurrencedygtige dæk fokuseret på at vinde så hurtigt som muligt."
+    },
+    "charts": {
+      "collectionStats": "Samlingsstatistik",
+      "statsEmpty": "Udfyld din MTG-Komplet nedenfor for at se dine statistikker.",
+      "bracket": "Bracket",
+      "archetypes": "Arketyper",
+      "tags": "Tags",
+      "bracketLabel": "Bracket {{number}}",
+      "deck": "dæk",
+      "decks": "dæk"
+    }
+  }
+}

@@ -3,12 +3,13 @@
 import { Group, Paper, SimpleGrid, Stack, Text, UnstyledButton, useMantineColorScheme, useMantineTheme } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { SelectionRow } from "./mtg-complete-grid";
 
 // ── Constants (mirrors commander-selector) ────────────────────────────────────
 
-const ARCHETYPES = ["Aggro", "Combo", "Control", "Midrange", "Stax", "Tempo"];
+const ARCHETYPES = ["Aggro", "Combo", "Control", "Midrange", "Stax", "Tempo", "Vorthos"];
 
 const TAGS = [
   "-1/-1 Counters", "+1/+1 Counters",
@@ -29,7 +30,7 @@ const TAGS = [
   "Dinosaurs", "Discard", "Discover", "Dogs", "Donate", "Dragon's Approach", "Dragons",
   "Drakes", "Dredge", "Druids", "Dungeon", "Dwarves",
   "Earthbending", "Eggs", "Elders", "Eldrazi", "Elementals", "Elephants", "Elves",
-  "Enchantress", "Energy", "Enrage", "ETB", "European Highlander", "Evoke", "Exalted",
+  "Enchantress", "Energy", "Enrage", "Equipment", "ETB", "European Highlander", "Evoke", "Exalted",
   "Exile", "Experience Counters", "Exploit", "Explore", "Extra Combats", "Extra Turns",
   "Extra Upkeeps",
   "Faeries", "Fight", "Firebending", "Flash", "Flashback", "Fling", "Flying", "Food",
@@ -79,11 +80,11 @@ const TAGS = [
 
 // ── Data aggregation ──────────────────────────────────────────────────────────
 
-function countBrackets(selections: SelectionRow[]) {
+function countBrackets(selections: SelectionRow[], bracketLabel: (n: string) => string) {
   const filled = selections.filter((s) => !!s.commanderScryfallId);
   return ["1", "2", "3", "4", "5"]
     .map((v) => ({
-      name: `Bracket ${v}`,
+      name: bracketLabel(v),
       value: filled.filter((s) => s.bracket === v).length,
     }))
     .filter((d) => d.value > 0);
@@ -134,6 +135,7 @@ interface TooltipEntry {
 }
 
 function ChartTooltip({ active, payload }: { active?: boolean; payload?: TooltipEntry[] }) {
+  const { t } = useTranslation();
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
   const isDark = colorScheme === "dark";
@@ -159,7 +161,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: Tooltip
       <span style={{ color, fontWeight: 600 }}>{name}</span>
       <br />
       <span style={{ color: isDark ? theme.colors.dark[1] : theme.colors.gray[7] }}>
-        {value} {Number(value) === 1 ? "deck" : "decks"}
+        {value} {Number(value) === 1 ? t('mtg.charts.deck') : t('mtg.charts.decks')}
       </span>
     </div>
   );
@@ -214,9 +216,9 @@ function MiniChart({ title, data, colors }: MiniChartProps) {
 }
 
 const CHART_DEFS = [
-  { key: "bracket",   title: "Bracket",    colors: BRACKET_COLORS },
-  { key: "archetype", title: "Archetypes", colors: ARCHETYPE_COLORS },
-  { key: "tags",      title: "Tags",       colors: TAG_COLORS },
+  { key: "bracket",   titleKey: "mtg.charts.bracket",    colors: BRACKET_COLORS },
+  { key: "archetype", titleKey: "mtg.charts.archetypes", colors: ARCHETYPE_COLORS },
+  { key: "tags",      titleKey: "mtg.charts.tags",       colors: TAG_COLORS },
 ] as const;
 
 // ── Public component ──────────────────────────────────────────────────────────
@@ -226,6 +228,7 @@ interface SelectionChartsProps {
 }
 
 export function SelectionCharts({ selections }: SelectionChartsProps) {
+  const { t } = useTranslation();
   const [opened, setOpened] = useLocalStorage({
     key: "mtg-stats-expanded",
     defaultValue: false,
@@ -235,7 +238,7 @@ export function SelectionCharts({ selections }: SelectionChartsProps) {
   if (filled.length === 0) return null;
 
   const dataByKey = {
-    bracket:   countBrackets(selections),
+    bracket:   countBrackets(selections, (n) => t('mtg.charts.bracketLabel', { number: n })),
     archetype: countArchetypes(selections),
     tags:      countTags(selections),
   };
@@ -247,7 +250,7 @@ export function SelectionCharts({ selections }: SelectionChartsProps) {
     <Stack gap="xs">
       <UnstyledButton onClick={() => setOpened((v) => !v)}>
         <Group gap="xs">
-          <Text size="sm" fw={500}>Collection stats</Text>
+          <Text size="sm" fw={500}>{t('mtg.charts.collectionStats')}</Text>
           {opened ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
         </Group>
       </UnstyledButton>
@@ -264,12 +267,12 @@ export function SelectionCharts({ selections }: SelectionChartsProps) {
             {hasAnyChart ? (
               <SimpleGrid cols={{ base: 1, sm: visibleCharts.length }} spacing="xl">
                 {visibleCharts.map((c) => (
-                  <MiniChart key={c.key} title={c.title} data={dataByKey[c.key]} colors={c.colors} />
+                  <MiniChart key={c.key} title={t(c.titleKey)} data={dataByKey[c.key]} colors={c.colors} />
                 ))}
               </SimpleGrid>
             ) : (
               <Text size="sm" c="dimmed" ta="center" py="md">
-                Fill out your MTG-Complete below to see your stats.
+                {t('mtg.charts.statsEmpty')}
               </Text>
             )}
           </Paper>

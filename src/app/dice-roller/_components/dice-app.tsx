@@ -2,13 +2,13 @@
 
 import * as THREE from 'three';
 
-import { Html, PerspectiveCamera } from '@react-three/drei';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { PerspectiveCamera } from '@react-three/drei';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSpring, animated } from '@react-spring/three';
-import { Canvas, useLoader, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 
 import { ActionIcon, Center, Loader, MantineProvider, Slider, Stack, Text, useComputedColorScheme } from '@mantine/core';
-import { IconBulb, IconX } from '@tabler/icons-react';
+import { IconX } from '@tabler/icons-react';
 import { Configuration } from './configuration/configuration';
 import { useLocalStorageConfiguration } from '../_hooks/use-local-storage-configuration';
 import { defaultConfigs } from '../_constants/default-configuration';
@@ -26,7 +26,6 @@ const Thing: React.FC<DiceBoxContainerProps> = ({ configuration }) => {
   const ref = useRef<THREE.Mesh>(null);
   const {
     viewport: { width: viewportWidth, height: viewportHeight },
-    size,
   } = useThree();
   const { wallStyle, wallRepeat, wallColor, backgroundColor, backgroundStyle, backgroundRepeat } = configuration.visualConfig;
   const wallThickness = 0.5;
@@ -77,27 +76,22 @@ const Thing: React.FC<DiceBoxContainerProps> = ({ configuration }) => {
 
   return (
     <group>
-      {/* Top Wall */}
       <mesh position={[0, (viewportHeight - wallThickness) / 2, 0.5]}>
         <boxGeometry attach="geometry" args={[viewportWidth, 0.5, wallThickness]} />
         <meshStandardMaterial map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
-      {/* Left Wall */}
       <mesh position={[-(viewportWidth - wallThickness) / 2, 0, 0.5]}>
         <boxGeometry attach="geometry" args={[0.5, viewportHeight, wallThickness]} />
         <meshStandardMaterial map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
-      {/* Right Wall */}
       <mesh position={[(viewportWidth - wallThickness) / 2, 0, 0.5]}>
         <boxGeometry attach="geometry" args={[0.5, viewportHeight, wallThickness]} />
         <meshStandardMaterial map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
-      {/* Bottom Wall */}
       <mesh position={[0, -(viewportHeight - wallThickness) / 2, 0.5]}>
         <boxGeometry attach="geometry" args={[viewportWidth, 0.5, wallThickness]} />
         <meshStandardMaterial map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
-      {/* Background */}
       <mesh ref={ref} scale={[viewportWidth, viewportHeight, 1]}>
         <boxGeometry attach="geometry" args={[1, 1, 0.1]} />
         <meshStandardMaterial map={backgroundMesh} color={backgroundColor} roughness={0.7} metalness={0.8} />
@@ -114,74 +108,38 @@ export interface LightingConfig {
   pointZ: number;
 }
 
+// Inside-canvas component: camera + background only.
+// Drives the DOM flip card directly via useFrame to avoid React re-render overhead.
 interface DiceAppProps {
   configuration: ReturnType<typeof useLocalStorageConfiguration>;
   lighting: LightingConfig;
-  colorScheme: 'light' | 'dark';
+  isFlipped: boolean;
+  flipCardRef: React.RefObject<HTMLDivElement | null>;
+  onFlipRest: (flippedToBack: boolean) => void;
 }
 
-export const DiceApp: React.FC<DiceAppProps> = ({ configuration, lighting, colorScheme }) => {
-  const { size, viewport } = useThree();
-
-  const [isRotated, setIsRotated] = useState(false);
-
-  const [showDiceBox, setShowDiceBox] = useState(true);
-  const [showConfiguration, setShowConfiguration] = useState(false);
-  const [diceBoxMounted, setDiceBoxMounted] = useState(false);
-  const [configKey, setConfigKey] = useState(0);
+export const DiceApp: React.FC<DiceAppProps> = ({ configuration, lighting, isFlipped, flipCardRef, onFlipRest }) => {
+  const isFlippedRef = useRef(isFlipped);
+  isFlippedRef.current = isFlipped;
 
   const { rotation } = useSpring({
-    rotation: isRotated ? Math.PI : 0,
-    config: {
-      mass: 1,
-      tension: 50,
-      friction: 10,
-      precision: 0.001,
+    rotation: isFlipped ? Math.PI : 0,
+    config: { mass: 1, tension: 50, friction: 10, precision: 0.001 },
+    onRest: () => {
+      setTimeout(() => onFlipRest(isFlippedRef.current), 0);
     },
   });
 
   const cameraZOffset = rotation.to((r: number) => Math.sin(r) * 5);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDiceBoxMounted(true);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const toggleCamera = () => {
-    setIsRotated(!isRotated);
-
-    setTimeout(() => {
-      setShowDiceBox(!showDiceBox);
-      setShowConfiguration(!showConfiguration);
-    }, 600);
-  };
-
-  useEffect(() => {
-    if (!showConfiguration) return;
-    const timer = setTimeout(() => setConfigKey((k) => k + 1), 520);
-    return () => clearTimeout(timer);
-  }, [showConfiguration]);
-
-  const htmlScale = 0.4;
-  const cameraZ = 10;
-  const frontHtmlZ = 0.2;
-  const dynamicDistanceFactor = 400 * (cameraZ - frontHtmlZ) * viewport.height / (htmlScale * cameraZ * size.height);
-
-  const toggleShowDiceBox = (value?: React.SetStateAction<boolean> | undefined) => {
-    const newValue = value !== undefined ?
-      (typeof value === 'function' ? (value as Function)(showDiceBox) : value) :
-      !showDiceBox;
-
-    if (!isRotated) {
-      toggleCamera();
-    } else {
-      setShowDiceBox(newValue);
-      setShowConfiguration(!newValue);
+  // Drive the DOM flip card directly — no React state update, no re-render.
+  // Negated: CSS rotateY and Three.js Y-rotation appear opposite from the viewer.
+  useFrame(() => {
+    if (flipCardRef.current) {
+      const deg = (rotation.get() / Math.PI) * 180;
+      flipCardRef.current.style.transform = `rotateY(${-deg}deg)`;
     }
-  };
+  });
 
   return (
     <>
@@ -190,53 +148,9 @@ export const DiceApp: React.FC<DiceAppProps> = ({ configuration, lighting, color
           <PerspectiveCamera makeDefault position={[0, 0, 10]} lookAt={() => [0, 0, 10]} />
         </animated.group>
       </animated.group>
-      <Thing
-        onClick={toggleCamera}
-        configuration={configuration}
-      />
-
+      <Thing onClick={() => {}} configuration={configuration} />
       <ambientLight intensity={lighting.ambientIntensity} />
       <pointLight position={[lighting.pointX, lighting.pointY, lighting.pointZ]} intensity={lighting.pointIntensity} />
-
-      {/* DiceBox Component (frontside) */}
-      {showDiceBox && diceBoxMounted && !isRotated && (
-        <Html transform distanceFactor={dynamicDistanceFactor} scale={[0.4, 0.4, 1]} rotation={[0, 0, 0]} position={[0, 0, 0.2]}>
-          <div
-            style={{
-              width: size.width,
-              height: size.height,
-              padding: '0',
-            }}
-          >
-            <MantineProvider forceColorScheme={colorScheme}>
-              <DiceBoxComponent
-                configuration={configuration}
-                toggleShowDiceBox={toggleShowDiceBox}
-              />
-            </MantineProvider>
-          </div>
-        </Html>
-      )}
-
-      {/* Configuration Panel (backside) */}
-      {showConfiguration && (
-        <Html transform occlude distanceFactor={dynamicDistanceFactor} scale={[0.4, 0.4, 1]} rotation={[0, Math.PI, 0]} position={[0, 0, -0.1]}>
-          <div style={{ width: size.width, height: size.height, overflow: 'hidden' }}>
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                padding: '1rem',
-                boxSizing: 'border-box',
-              }}
-            >
-              <MantineProvider forceColorScheme={colorScheme}>
-                <Configuration key={configKey} toggleShowDiceBox={toggleCamera} configuration={configuration} />
-              </MantineProvider>
-            </div>
-          </div>
-        </Html>
-      )}
     </>
   );
 };
@@ -325,7 +239,20 @@ export const DiceAppWrapper = () => {
   const [ready, setReady] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
   const colorScheme = useComputedColorScheme('light');
-  // const [debugOpen, setDebugOpen] = useState(false);
+
+  // Flip state
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [diceBoxMounted, setDiceBoxMounted] = useState(false);
+  const [configMounted, setConfigMounted] = useState(false);
+  // Which side accepts pointer events (switches only after animation completes)
+  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+
+  const flipCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDiceBoxMounted(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const originalWarn = console.warn;
@@ -337,8 +264,25 @@ export const DiceAppWrapper = () => {
     return () => { console.warn = originalWarn; };
   }, []);
 
-  useEffect(() => {
-    setReady(true);
+  useEffect(() => { setReady(true); }, []);
+
+  const toggle = useCallback(() => {
+    setIsFlipped((prev) => {
+      const next = !prev;
+      if (next) {
+        // Going to config — mount it if first visit, disable front interactions immediately
+        setConfigMounted(true);
+        setActiveSide('none' as 'front');
+      } else {
+        // Going to dice — disable back interactions immediately
+        setActiveSide('none' as 'front');
+      }
+      return next;
+    });
+  }, []);
+
+  const handleFlipRest = useCallback((flippedToBack: boolean) => {
+    setActiveSide(flippedToBack ? 'back' : 'front');
   }, []);
 
   const handleCreated = ({ gl }: { gl: THREE.WebGLRenderer }) => {
@@ -372,30 +316,67 @@ export const DiceAppWrapper = () => {
 
   return (
     <div style={darkBg}>
-      <Canvas key={canvasKey} style={{ width: '100%', height: '100%', background: '#1a1b1e' }} onCreated={handleCreated}>
-        <DiceApp configuration={configuration} lighting={lighting} colorScheme={colorScheme} />
+      {/* Three.js canvas: background scene only */}
+      <Canvas key={canvasKey} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: '#1a1b1e' }} onCreated={handleCreated}>
+        <DiceApp
+          configuration={configuration}
+          lighting={lighting}
+          isFlipped={isFlipped}
+          flipCardRef={flipCardRef}
+          onFlipRest={handleFlipRest}
+        />
       </Canvas>
+
+      {/* DOM overlay: CSS 3D flip card — rendered outside the canvas so text is native and sharp */}
+      <div style={{ position: 'absolute', inset: 0, perspective: '1200px', pointerEvents: 'none' }}>
+        <div
+          ref={flipCardRef}
+          style={{
+            width: '100%',
+            height: '100%',
+            transformStyle: 'preserve-3d',
+            transform: 'rotateY(0deg)',
+          }}
+        >
+          {/* Front face: DiceBox */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            pointerEvents: activeSide === 'front' ? 'auto' : 'none',
+          }}>
+            <MantineProvider forceColorScheme={colorScheme}>
+              {diceBoxMounted && (
+                <DiceBoxComponent configuration={configuration} toggleShowDiceBox={toggle} />
+              )}
+            </MantineProvider>
+          </div>
+
+          {/* Back face: Configuration */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)',
+            padding: '1rem',
+            boxSizing: 'border-box',
+            pointerEvents: activeSide === 'back' ? 'auto' : 'none',
+          }}>
+            <MantineProvider forceColorScheme={colorScheme}>
+              {configMounted && (
+                <Configuration toggleShowDiceBox={toggle} configuration={configuration} />
+              )}
+            </MantineProvider>
+          </div>
+        </div>
+      </div>
 
       {/* Lighting debug overlay — uncomment to enable
       {debugOpen ? (
-        <LightingDebugOverlay
-          lighting={lighting}
-          onChange={setLighting}
-          onClose={() => setDebugOpen(false)}
-        />
-      ) : (
-        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 100 }}>
-          <ActionIcon
-            size="md"
-            variant="light"
-            color="yellow"
-            onClick={() => setDebugOpen(true)}
-            title="Open lighting debug"
-          >
-            <IconBulb size={16} />
-          </ActionIcon>
-        </div>
-      )}
+        <LightingDebugOverlay ... />
+      ) : ( ... )}
       */}
     </div>
   );

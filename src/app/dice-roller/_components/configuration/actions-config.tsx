@@ -1,22 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, Group, Stack, TextInput, Switch, Select, ActionIcon, Paper, Text, Collapse, Divider } from '@mantine/core';
+import { Button, Group, Stack, TextInput, Switch, Select, ActionIcon, Paper, Text, Collapse, Divider, Popover } from '@mantine/core';
 import { IconPlus, IconTrash, IconChevronDown, IconChevronUp, IconFolderPlus } from '@tabler/icons-react';
-import type { Action, ActionSet, DiceSelections, Stats } from '../../_types/types';
+import type { Action, ActionSet, DiceSelections, StatSet, Stats } from '../../_types/types';
 import { useTranslation } from 'react-i18next';
 
 interface ActionsConfigProps {
   actionSets: ActionSet[];
+  statSets: StatSet[];
   onUpdate: (actionSets: ActionSet[]) => void;
 }
 
-const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, onUpdate }) => {
+const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onUpdate }) => {
   const [draft, setDraft] = useState<ActionSet[]>(() =>
     actionSets.map(s => ({ ...s, actions: s.actions.map(a => ({ ...a, damageDice: a.damageDice.map(d => ({ ...d })) })) }))
   );
   const [expandedSetIds, setExpandedSetIds] = useState<Set<string>>(new Set());
   const [expandedActionIds, setExpandedActionIds] = useState<Set<string>>(new Set());
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const { t } = useTranslation();
 
   const diceOptions = [
@@ -82,6 +84,10 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, onUpdate }) =
 
   const updateSetName = (setIndex: number, name: string) => {
     setDraft(prev => prev.map((s, i) => i === setIndex ? { ...s, name } : s));
+  };
+
+  const updateSetStatSetId = (setIndex: number, statSetId: string | null) => {
+    setDraft(prev => prev.map((s, i) => i === setIndex ? { ...s, statSetId: statSetId ?? undefined } : s));
   };
 
   const addAction = (setIndex: number) => {
@@ -172,14 +178,37 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, onUpdate }) =
                 {set.name || t('actions.unnamedActionSet')}
               </Text>
               <Group gap={4}>
-                <ActionIcon
-                  color="red"
-                  variant="subtle"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); removeActionSet(setIndex); }}
+                <Popover
+                  opened={confirmDeleteId === set.id}
+                  onClose={() => setConfirmDeleteId(null)}
+                  position="bottom-end"
+                  withArrow
+                  withinPortal={false}
                 >
-                  <IconTrash size={14} />
-                </ActionIcon>
+                  <Popover.Target>
+                    <ActionIcon
+                      color="red"
+                      variant="subtle"
+                      size={{ base: 'md', md: 'sm' }}
+                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(set.id); }}
+                    >
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  </Popover.Target>
+                  <Popover.Dropdown onClick={(e) => e.stopPropagation()}>
+                    <Stack gap="xs" align="center">
+                      <Text size="sm" fw={500}>{t('common.confirmDelete')}</Text>
+                      <Group gap="xs">
+                        <Button size="xs" color="red" onClick={(e) => { e.stopPropagation(); removeActionSet(setIndex); setConfirmDeleteId(null); }}>
+                          {t('common.delete')}
+                        </Button>
+                        <Button size="xs" variant="subtle" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>
+                          {t('common.cancel')}
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </Popover.Dropdown>
+                </Popover>
                 <ActionIcon variant="subtle" size="sm">
                   {isSetExpanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
                 </ActionIcon>
@@ -193,6 +222,18 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, onUpdate }) =
                   value={set.name}
                   onChange={(e) => updateSetName(setIndex, e.target.value)}
                 />
+
+                {statSets.length > 0 && (
+                  <Select
+                    label={t('actions.linkedStatSet')}
+                    description={t('actions.linkedStatSetDescription')}
+                    data={statSets.map((s) => ({ value: s.id, label: s.name || t('stats.unnamedStatSet') }))}
+                    value={set.statSetId ?? null}
+                    onChange={(id) => updateSetStatSetId(setIndex, id)}
+                    clearable
+                    comboboxProps={{ withinPortal: false }}
+                  />
+                )}
 
                 {set.actions.length > 0 && <Divider label={t('actions.actionsLabel')} labelPosition="left" />}
 
@@ -210,14 +251,37 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, onUpdate }) =
                           {action.name || t('actions.unnamedAction')}
                         </Text>
                         <Group gap={4}>
-                          <ActionIcon
-                            color="red"
-                            variant="subtle"
-                            size="sm"
-                            onClick={(e) => { e.stopPropagation(); removeAction(setIndex, actionIndex); }}
+                          <Popover
+                            opened={confirmDeleteId === action.id}
+                            onClose={() => setConfirmDeleteId(null)}
+                            position="bottom-end"
+                            withArrow
+                            withinPortal={false}
                           >
-                            <IconTrash size={14} />
-                          </ActionIcon>
+                            <Popover.Target>
+                              <ActionIcon
+                                color="red"
+                                variant="subtle"
+                                size={{ base: 'md', md: 'sm' }}
+                                onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(action.id); }}
+                              >
+                                <IconTrash size={16} />
+                              </ActionIcon>
+                            </Popover.Target>
+                            <Popover.Dropdown onClick={(e) => e.stopPropagation()}>
+                              <Stack gap="xs" align="center">
+                                <Text size="sm" fw={500}>{t('common.confirmDelete')}</Text>
+                                <Group gap="xs">
+                                  <Button size="xs" color="red" onClick={(e) => { e.stopPropagation(); removeAction(setIndex, actionIndex); setConfirmDeleteId(null); }}>
+                                    {t('common.delete')}
+                                  </Button>
+                                  <Button size="xs" variant="subtle" onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}>
+                                    {t('common.cancel')}
+                                  </Button>
+                                </Group>
+                              </Stack>
+                            </Popover.Dropdown>
+                          </Popover>
                           <ActionIcon variant="subtle" size="sm">
                             {isActionExpanded ? <IconChevronUp size={14} /> : <IconChevronDown size={14} />}
                           </ActionIcon>
@@ -239,13 +303,21 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, onUpdate }) =
                           />
 
                           {action.requiresD20 && (
-                            <Select
-                              label={t('actions.statModifier')}
-                              data={statOptions}
-                              value={action.statModifier}
-                              onChange={(value) => updateAction(setIndex, actionIndex, { statModifier: value as keyof Stats })}
-                              comboboxProps={{ withinPortal: false }}
-                            />
+                            <>
+                              <Switch
+                                label={t('actions.proficient')}
+                                checked={action.proficient ?? false}
+                                onChange={(e) => updateAction(setIndex, actionIndex, { proficient: e.currentTarget.checked })}
+                              />
+                              <Select
+                                label={t('actions.statModifier')}
+                                data={statOptions}
+                                value={action.statModifier ?? null}
+                                onChange={(value) => updateAction(setIndex, actionIndex, { statModifier: (value ?? undefined) as keyof Stats | undefined })}
+                                clearable
+                                comboboxProps={{ withinPortal: false }}
+                              />
+                            </>
                           )}
 
                           <Text size="sm" fw={500}>{t('actions.damageDice')}</Text>
