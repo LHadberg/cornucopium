@@ -7,6 +7,7 @@ import {
   Group,
   ActionIcon,
   Center,
+  Divider,
   Loader,
   Drawer,
   Transition,
@@ -25,6 +26,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconInfoCircle,
+  IconMinus,
   IconSettings,
   IconSword,
   IconWand,
@@ -495,6 +497,69 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
     setIsHolding(false);
   }, []);
 
+  // ─── Quick Dice ────────────────────────────────────────────────────────────
+
+  const QUICK_DIE_TYPES = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'] as const;
+  type QuickDieType = typeof QUICK_DIE_TYPES[number];
+
+  const [showQuickDice, setShowQuickDice] = useState(false);
+  const [quickDicePool, setQuickDicePool] = useState<Partial<Record<QuickDieType, number>>>({});
+  const quickDicePoolRef = useRef(quickDicePool);
+  quickDicePoolRef.current = quickDicePool;
+
+  const addToDicePool = useCallback((die: QuickDieType) => {
+    setQuickDicePool(prev => ({ ...prev, [die]: (prev[die] ?? 0) + 1 }));
+  }, []);
+
+  const removeFromDicePool = useCallback((die: QuickDieType) => {
+    setQuickDicePool(prev => {
+      const next = { ...prev };
+      const cur = next[die] ?? 0;
+      if (cur <= 1) delete next[die]; else next[die] = cur - 1;
+      return next;
+    });
+  }, []);
+
+  const clearDicePool = useCallback(() => setQuickDicePool({}), []);
+
+  const rollQuickDicePool = useCallback(async () => {
+    if (!diceBoxRef.current) return;
+    const pool = quickDicePoolRef.current;
+    const notations = QUICK_DIE_TYPES
+      .filter(die => (pool[die] ?? 0) > 0)
+      .map(die => `${pool[die]}${die}`);
+    if (notations.length === 0) return;
+
+    setLastAction(null);
+    setAttackHitPrompt(null);
+    setResults([]);
+    setIsRandomizing(true);
+    setIsDamageRoll(false);
+    setActiveStatModifier(null);
+    setCritBonus(null);
+    isCritRef.current = false;
+    isD20RollRef.current = false;
+    rollPhaseRef.current = 'normal';
+    currentDamageTypesRef.current = [];
+    currentStatModifierRef.current = null;
+
+    try {
+      await diceBoxRef.current.roll(notations);
+    } catch (e) {
+      console.error('Error during quick dice roll:', e);
+      setIsRandomizing(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const totalDiceInPool = Object.values(quickDicePool).reduce((s, n) => s + (n ?? 0), 0);
+  const poolSummary = QUICK_DIE_TYPES
+    .filter(die => (quickDicePool[die] ?? 0) > 0)
+    .map(die => `${quickDicePool[die]}${die}`)
+    .join(' + ');
+
+  // ───────────────────────────────────────────────────────────────────────────
+
   const diceTotal = results.reduce((a, r) => a + r.value, 0);
   const grandTotal = diceTotal + (activeStatModifier?.value ?? 0) + (critBonus ?? 0);
   const modSuffix = activeStatModifier
@@ -581,6 +646,93 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
           >
             {showActions ? <IconChevronRight size={24} /> : <IconChevronLeft size={24} />}
           </ActionIcon>
+        </div>
+
+        {/* QUICK DICE - left side, vertically centered */}
+        <div className={styles.quickDiceContainer}>
+          <div className={`${styles.diffusedBackground} ${styles.quickDiceTogglePill}`}>
+            <ActionIcon variant="subtle" size="lg" onClick={() => setShowQuickDice(v => !v)}>
+              {showQuickDice ? <IconChevronLeft size={24} /> : <IconChevronRight size={24} />}
+            </ActionIcon>
+          </div>
+
+          <Transition
+            mounted={showQuickDice}
+            transition={{
+              transitionProperty: 'opacity, transform',
+              in:  { opacity: 1, transform: 'translateX(0)' },
+              out: { opacity: 0, transform: 'translateX(-8px)' },
+              common: { transition: 'opacity 180ms ease, transform 180ms ease' },
+            }}
+          >
+            {(style) => (
+              <div
+                className={`${styles.diffusedBackground} ${styles.quickDicePanel}`}
+                style={style}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {totalDiceInPool > 0 && (
+                  <Text size="xs" c="dimmed" ta="center" style={{ lineHeight: 1.2 }}>
+                    {poolSummary}
+                  </Text>
+                )}
+
+                {QUICK_DIE_TYPES.map(die => {
+                  const count = quickDicePool[die] ?? 0;
+                  return (
+                    <div key={die} className={styles.quickDieRow}>
+                      <UnstyledButton
+                        className={`${styles.quickDieButton} ${count > 0 ? styles.quickDieButtonActive : ''}`}
+                        onClick={() => addToDicePool(die)}
+                      >
+                        <Text size="sm" fw={700}>{die.toUpperCase()}</Text>
+                        {count > 0 && (
+                          <Badge
+                            size="xs"
+                            variant="filled"
+                            circle
+                            style={{ position: 'absolute', top: -5, right: -5, minWidth: 16, height: 16, fontSize: 9 }}
+                          >
+                            {count}
+                          </Badge>
+                        )}
+                      </UnstyledButton>
+                      <ActionIcon
+                        size="xs"
+                        variant="subtle"
+                        color="red"
+                        style={{ opacity: count > 0 ? 1 : 0, pointerEvents: count > 0 ? 'auto' : 'none', flexShrink: 0 }}
+                        onClick={(e) => { e.stopPropagation(); removeFromDicePool(die); }}
+                      >
+                        <IconMinus size={10} />
+                      </ActionIcon>
+                    </div>
+                  );
+                })}
+
+                <Divider my={2} />
+
+                <Button
+                  size="xs"
+                  fullWidth
+                  color="blue"
+                  disabled={totalDiceInPool === 0 || isRandomizing}
+                  onClick={rollQuickDicePool}
+                >
+                  {t('diceBox.roll')}
+                </Button>
+                <Button
+                  size="xs"
+                  fullWidth
+                  variant="subtle"
+                  disabled={totalDiceInPool === 0}
+                  onClick={clearDicePool}
+                >
+                  {t('diceBox.clear')}
+                </Button>
+              </div>
+            )}
+          </Transition>
         </div>
 
         {/* RESULTS PANEL */}

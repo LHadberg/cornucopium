@@ -98,7 +98,9 @@
     "normal": "Normal",
     "disadvantage": "Dis",
     "criticalHit": "Critical Hit",
-    "critBonusLabel": "max die value"
+    "critBonusLabel": "max die value",
+    "roll": "Roll",
+    "clear": "Clear"
   },
   "common": {
     "confirmDelete": "Are you sure?",

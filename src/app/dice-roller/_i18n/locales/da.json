@@ -98,7 +98,9 @@
     "normal": "Normal",
     "disadvantage": "Ulempe",
     "criticalHit": "Kritisk træffer",
-    "critBonusLabel": "maks terningeværdi"
+    "critBonusLabel": "maks terningeværdi",
+    "roll": "Kast",
+    "clear": "Ryd"
   },
   "common": {
     "confirmDelete": "Er du sikker?",
