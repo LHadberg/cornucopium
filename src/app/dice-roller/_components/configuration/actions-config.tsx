@@ -1,28 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Button, Group, Stack, TextInput, Switch, Select, ActionIcon, Paper, Text, Collapse, Divider, Popover } from '@mantine/core';
 import { IconPlus, IconTrash, IconChevronDown, IconChevronUp, IconFolderPlus } from '@tabler/icons-react';
-import type { Action, ActionSet, DiceSelections, StatSet, Stats } from '../../_types/types';
+import type { Action, ActionSet, ConfigPanelHandle, DiceSelections, StatSet, Stats } from '../../_types/types';
 import { useTranslation } from 'react-i18next';
 
 interface ActionsConfigProps {
   actionSets: ActionSet[];
   statSets: StatSet[];
   onUpdate: (actionSets: ActionSet[]) => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 type DraftDie = Action['damageDice'][number] & { rawQuantity: string };
 type DraftAction = Omit<Action, 'damageDice'> & { damageDice: DraftDie[] };
 type DraftActionSet = Omit<ActionSet, 'actions'> & { actions: DraftAction[] };
 
-const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onUpdate }) => {
-  const [draft, setDraft] = useState<DraftActionSet[]>(() =>
-    actionSets.map(s => ({ ...s, actions: s.actions.map(a => ({ ...a, damageDice: a.damageDice.map(d => ({ ...d, rawQuantity: String(d.quantity) })) })) }))
-  );
+const initDraft = (sets: ActionSet[]): DraftActionSet[] =>
+  sets.map(s => ({ ...s, actions: s.actions.map(a => ({ ...a, damageDice: a.damageDice.map(d => ({ ...d, rawQuantity: String(d.quantity) })) })) }));
+
+const sanitizeDraft = (sets: DraftActionSet[]): ActionSet[] =>
+  sets.map(s => ({
+    ...s,
+    actions: s.actions.map(a => ({
+      ...a,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      damageDice: a.damageDice.filter(d => d.rawQuantity.trim() !== '').map(({ rawQuantity, ...d }) => ({ ...d, quantity: Math.max(1, parseInt(rawQuantity) || 1) })),
+    })),
+  }));
+
+const ActionsConfig = forwardRef<ConfigPanelHandle, ActionsConfigProps>(({ actionSets, statSets, onUpdate, onDirtyChange }, ref) => {
+  const [draft, setDraft] = useState<DraftActionSet[]>(() => initDraft(actionSets));
   const [expandedSetIds, setExpandedSetIds] = useState<Set<string>>(new Set());
   const [expandedActionIds, setExpandedActionIds] = useState<Set<string>>(new Set());
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const savedRef = useRef(actionSets);
+  savedRef.current = actionSets;
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
+  const onDirtyChangeRef = useRef(onDirtyChange);
+  onDirtyChangeRef.current = onDirtyChange;
+
+  useImperativeHandle(ref, () => ({
+    isDirty: () => JSON.stringify(sanitizeDraft(draftRef.current)) !== JSON.stringify(savedRef.current),
+    save: () => onUpdateRef.current(sanitizeDraft(draftRef.current)),
+    discard: () => setDraft(initDraft(savedRef.current)),
+  }), []);
+
+  useEffect(() => {
+    onDirtyChangeRef.current?.(JSON.stringify(sanitizeDraft(draft)) !== JSON.stringify(actionSets));
+  }, [draft, actionSets]);
   const { t } = useTranslation();
 
   const diceOptions = [
@@ -32,6 +63,7 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
     { value: 'd10', label: t('diceTypes.d10') },
     { value: 'd12', label: t('diceTypes.d12') },
     { value: 'd20', label: t('diceTypes.d20') },
+    { value: 'd100', label: t('diceTypes.d100') },
   ];
 
   const damageTypeOptions = [
@@ -153,23 +185,9 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
     <Stack gap="md" pb="xl">
       <Group justify="space-between">
         <Text size="xl" fw={700}>{t('actions.title')}</Text>
-        <Group gap="xs">
-          <Button onClick={addActionSet} leftSection={<IconFolderPlus size={16} />} variant="light">
-            {t('actions.addActionSet')}
-          </Button>
-          <Button onClick={() => onUpdate(draft.map(s => ({
-              ...s,
-              actions: s.actions.map(a => ({
-                ...a,
-                damageDice: a.damageDice
-                  .filter(d => d.rawQuantity.trim() !== '')
-                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                  .map(({ rawQuantity, ...d }) => ({ ...d, quantity: Math.max(1, parseInt(rawQuantity) || 1) })),
-              })),
-            })))} color="green">
-            {t('actions.save')}
-          </Button>
-        </Group>
+        <Button onClick={addActionSet} leftSection={<IconFolderPlus size={16} />} variant="light">
+          {t('actions.addActionSet')}
+        </Button>
       </Group>
 
       {draft.length === 0 && (
@@ -396,6 +414,7 @@ const ActionsConfig: React.FC<ActionsConfigProps> = ({ actionSets, statSets, onU
       })}
     </Stack>
   );
-};
+});
 
+ActionsConfig.displayName = 'ActionsConfig';
 export default ActionsConfig;

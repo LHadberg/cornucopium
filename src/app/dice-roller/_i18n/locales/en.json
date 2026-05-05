@@ -103,7 +103,11 @@
   "common": {
     "confirmDelete": "Are you sure?",
     "delete": "Delete",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "save": "Save",
+    "discard": "Discard",
+    "unsavedChanges": "Unsaved Changes",
+    "unsavedChangesMessage": "You have unsaved changes. Save them before leaving or discard?"
   },
   "diceTypes": {
     "d4": "D4",
@@ -111,7 +115,8 @@
     "d8": "D8",
     "d10": "D10",
     "d12": "D12",
-    "d20": "D20"
+    "d20": "D20",
+    "d100": "D100"
   },
   "damageTypes": {
     "none": "None",

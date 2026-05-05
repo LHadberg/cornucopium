@@ -5,6 +5,13 @@ export interface DiceSelections {
   d10: number;
   d12: number;
   d20: number;
+  d100: number;
+}
+
+export interface ConfigPanelHandle {
+  isDirty: () => boolean;
+  save: () => void;
+  discard: () => void;
 }
 
 export interface DiceBoxConfig {

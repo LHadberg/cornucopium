@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Button, Group, Stack, TextInput, ActionIcon, Paper, Text, Collapse, Divider, Popover } from '@mantine/core';
 import { IconPlus, IconMinus, IconTrash, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
-import type { StatSet, Stats } from '../../_types/types';
+import type { ConfigPanelHandle, StatSet, Stats } from '../../_types/types';
 import { useTranslation } from 'react-i18next';
 
 interface StatsConfigProps {
   statSets: StatSet[];
   onUpdate: (statSets: StatSet[]) => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 const calculateModifier = (value: number): number => Math.floor((value - 10) / 2);
@@ -22,7 +23,7 @@ const defaultStats = (): Stats => ({
   charisma:     { name: 'Charisma',     value: 10, modifier: 0 },
 });
 
-const StatsConfig: React.FC<StatsConfigProps> = ({ statSets, onUpdate }) => {
+const StatsConfig = forwardRef<ConfigPanelHandle, StatsConfigProps>(({ statSets, onUpdate, onDirtyChange }, ref) => {
   const { t } = useTranslation();
   const [draft, setDraft] = useState<StatSet[]>(() =>
     statSets.map(s => ({ ...s, stats: { ...s.stats } }))
@@ -31,6 +32,25 @@ const StatsConfig: React.FC<StatsConfigProps> = ({ statSets, onUpdate }) => {
     new Set(statSets.length === 1 ? [statSets[0]!.id] : [])
   );
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const savedRef = useRef(statSets);
+  savedRef.current = statSets;
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
+  const onDirtyChangeRef = useRef(onDirtyChange);
+  onDirtyChangeRef.current = onDirtyChange;
+
+  useImperativeHandle(ref, () => ({
+    isDirty: () => JSON.stringify(draftRef.current) !== JSON.stringify(savedRef.current),
+    save: () => onUpdateRef.current(draftRef.current),
+    discard: () => setDraft(savedRef.current.map(s => ({ ...s, stats: { ...s.stats } }))),
+  }), []);
+
+  useEffect(() => {
+    onDirtyChangeRef.current?.(JSON.stringify(draft) !== JSON.stringify(statSets));
+  }, [draft, statSets]);
 
   const toggleExpanded = (id: string) => {
     setExpandedIds(prev => {
@@ -86,14 +106,9 @@ const StatsConfig: React.FC<StatsConfigProps> = ({ statSets, onUpdate }) => {
     <Stack gap="md" pb="xl">
       <Group justify="space-between">
         <Text size="xl" fw={700}>{t('stats.title')}</Text>
-        <Group gap="xs">
-          <Button onClick={addStatSet} leftSection={<IconPlus size={16} />} variant="light">
-            {t('stats.addStatSet')}
-          </Button>
-          <Button onClick={() => onUpdate(draft)} color="green">
-            {t('actions.save')}
-          </Button>
-        </Group>
+        <Button onClick={addStatSet} leftSection={<IconPlus size={16} />} variant="light">
+          {t('stats.addStatSet')}
+        </Button>
       </Group>
 
       {draft.length === 0 && (
@@ -223,6 +238,7 @@ const StatsConfig: React.FC<StatsConfigProps> = ({ statSets, onUpdate }) => {
       })}
     </Stack>
   );
-};
+});
 
+StatsConfig.displayName = 'StatsConfig';
 export default StatsConfig;
