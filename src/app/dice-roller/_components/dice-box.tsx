@@ -641,6 +641,9 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   quickCalcTokensRef.current = quickCalcTokens;
   const quickCalcPendingRef = useRef(quickCalcPending);
   quickCalcPendingRef.current = quickCalcPending;
+  const [quickCalcHistory, setQuickCalcHistory] = useState<QuickCalcToken[][]>([]);
+  const quickCalcHistoryRef = useRef(quickCalcHistory);
+  quickCalcHistoryRef.current = quickCalcHistory;
 
   const calcAddDigit = useCallback((d: string) => {
     setQuickCalcPending(p => {
@@ -651,13 +654,23 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
 
   const calcAddDie = useCallback((die: QuickDieType) => {
     const qty = parseInt(quickCalcPendingRef.current, 10) || 1;
-    setQuickCalcTokens(prev => [...prev, { type: 'dice', quantity: qty, die }]);
+    setQuickCalcHistory(prev => [...prev, quickCalcTokensRef.current]);
+    setQuickCalcTokens(prev => {
+      const idx = prev.findIndex(t => t.type === 'dice' && t.die === die);
+      if (idx !== -1) {
+        return prev.map((t, i) =>
+          i === idx && t.type === 'dice' ? { ...t, quantity: t.quantity + qty } : t
+        );
+      }
+      return [...prev, { type: 'dice', quantity: qty, die }];
+    });
     setQuickCalcPending('');
   }, []);
 
   const calcAddStat = useCallback((statKey: keyof Stats) => {
     const stats = activeStatSetRef.current?.stats;
     if (!stats) return;
+    setQuickCalcHistory(prev => [...prev, quickCalcTokensRef.current]);
     setQuickCalcTokens(prev => [...prev, { type: 'modifier', value: stats[statKey].modifier, stat: statKey }]);
     setQuickCalcPending('');
   }, []);
@@ -665,14 +678,17 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   const calcUndo = useCallback(() => {
     if (quickCalcPendingRef.current) {
       setQuickCalcPending('');
-    } else {
-      setQuickCalcTokens(prev => prev.slice(0, -1));
+    } else if (quickCalcHistoryRef.current.length > 0) {
+      const snapshot = quickCalcHistoryRef.current[quickCalcHistoryRef.current.length - 1]!;
+      setQuickCalcHistory(prev => prev.slice(0, -1));
+      setQuickCalcTokens(snapshot);
     }
   }, []);
 
   const calcClear = useCallback(() => {
     setQuickCalcTokens([]);
     setQuickCalcPending('');
+    setQuickCalcHistory([]);
   }, []);
 
   const rollCalcExpression = useCallback(async () => {
