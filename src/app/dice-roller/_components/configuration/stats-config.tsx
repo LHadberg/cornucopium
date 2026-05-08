@@ -140,7 +140,7 @@ const StatsConfig = forwardRef<ConfigPanelHandle, StatsConfigProps>(({ statSets,
                     <ActionIcon
                       color="red"
                       variant="subtle"
-                      size={{ base: 'md', md: 'sm' }}
+                      size="sm"
                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(set.id); }}
                     >
                       <IconTrash size={16} />
