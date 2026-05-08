@@ -59,6 +59,8 @@ model User {
     accounts             Account[]
     sessions             Session[]
     commanderSelections  CommanderSelection[]
+    decks                    Deck[]
+    deckListImportPromptSeen Boolean @default(false)
 }
 
 model CommanderSelection {
@@ -104,6 +106,39 @@ model CommanderSelection {
     user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([userId, colorId])
+}
+
+model Deck {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name                String?
+  commanderScryfallId String?
+  commanderName       String?
+  commanderTypeLine   String?
+  commanderImage      String?
+  commanderArtCrop    String?
+  partnerScryfallId   String?
+  partnerName         String?
+  partnerTypeLine     String?
+  partnerImage        String?
+  partnerArtCrop      String?
+  partnerType         String?
+  companionScryfallId String?
+  companionName       String?
+  companionTypeLine   String?
+  companionImage      String?
+  companionArtCrop    String?
+  bracket             String?
+  tags                String  @default("[]")
+  favoriteTag         String?
+  archetype           String?
+  deckListUrl         String?
+  colorId             String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

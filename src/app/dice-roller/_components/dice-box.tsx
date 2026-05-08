@@ -7,7 +7,6 @@ import {
   Group,
   ActionIcon,
   Center,
-  Divider,
   Loader,
   Drawer,
   Transition,
@@ -23,13 +22,14 @@ import {
 import DiceBox from '@3d-dice/dice-box';
 import type { Action, ActionSet, DiceResult, DiceSelections, Stats, StatSet, RollType } from '../_types/types';
 import {
+  IconBackspace,
   IconChevronLeft,
   IconChevronRight,
   IconInfoCircle,
-  IconMinus,
   IconSettings,
   IconSword,
   IconWand,
+  IconX,
 } from '@tabler/icons-react';
 import styles from '../_styles/DiceBox.module.css';
 import type { LocalStorageConfigurationReturn } from '../_hooks/use-local-storage-configuration';
@@ -43,27 +43,27 @@ declare global {
 }
 
 const DAMAGE_TYPE_STYLES: Record<string, { backgroundColor: string; borderColor: string }> = {
-  acid:        { backgroundColor: 'rgba(139, 195, 74, 0.2)',  borderColor: '#8bc34a' },
-  bludgeoning: { backgroundColor: 'rgba(121, 85, 72, 0.2)',   borderColor: '#795548' },
-  cold:        { backgroundColor: 'rgba(79, 195, 247, 0.2)',  borderColor: '#4fc3f7' },
-  fire:        { backgroundColor: 'rgba(255, 87, 34, 0.2)',   borderColor: '#ff5722' },
-  force:       { backgroundColor: 'rgba(224, 64, 251, 0.2)',  borderColor: '#e040fb' },
-  lightning:   { backgroundColor: 'rgba(255, 214, 0, 0.2)',   borderColor: '#ffd600' },
-  necrotic:    { backgroundColor: 'rgba(55, 71, 79, 0.3)',    borderColor: '#546e7a' },
-  piercing:    { backgroundColor: 'rgba(120, 144, 156, 0.2)', borderColor: '#78909c' },
-  poison:      { backgroundColor: 'rgba(123, 31, 162, 0.2)',  borderColor: '#7b1fa2' },
-  psychic:     { backgroundColor: 'rgba(240, 98, 146, 0.2)',  borderColor: '#f06292' },
-  radiant:     { backgroundColor: 'rgba(255, 235, 59, 0.2)',  borderColor: '#ffeb3b' },
-  slashing:    { backgroundColor: 'rgba(239, 83, 80, 0.2)',   borderColor: '#ef5350' },
-  thunder:     { backgroundColor: 'rgba(126, 87, 194, 0.2)',  borderColor: '#7e57c2' },
+  acid: { backgroundColor: 'rgba(139, 195, 74, 0.2)', borderColor: '#8bc34a' },
+  bludgeoning: { backgroundColor: 'rgba(121, 85, 72, 0.2)', borderColor: '#795548' },
+  cold: { backgroundColor: 'rgba(79, 195, 247, 0.2)', borderColor: '#4fc3f7' },
+  fire: { backgroundColor: 'rgba(255, 87, 34, 0.2)', borderColor: '#ff5722' },
+  force: { backgroundColor: 'rgba(224, 64, 251, 0.2)', borderColor: '#e040fb' },
+  lightning: { backgroundColor: 'rgba(255, 214, 0, 0.2)', borderColor: '#ffd600' },
+  necrotic: { backgroundColor: 'rgba(55, 71, 79, 0.3)', borderColor: '#546e7a' },
+  piercing: { backgroundColor: 'rgba(120, 144, 156, 0.2)', borderColor: '#78909c' },
+  poison: { backgroundColor: 'rgba(123, 31, 162, 0.2)', borderColor: '#7b1fa2' },
+  psychic: { backgroundColor: 'rgba(240, 98, 146, 0.2)', borderColor: '#f06292' },
+  radiant: { backgroundColor: 'rgba(255, 235, 59, 0.2)', borderColor: '#ffeb3b' },
+  slashing: { backgroundColor: 'rgba(239, 83, 80, 0.2)', borderColor: '#ef5350' },
+  thunder: { backgroundColor: 'rgba(126, 87, 194, 0.2)', borderColor: '#7e57c2' },
 };
 const STAT_STYLES: Record<string, { backgroundColor: string; borderColor: string }> = {
-  strength:     { backgroundColor: 'rgba(244, 67, 54, 0.2)',  borderColor: '#f44336' },
-  dexterity:    { backgroundColor: 'rgba(76, 175, 80, 0.2)',  borderColor: '#4caf50' },
-  constitution: { backgroundColor: 'rgba(255, 152, 0, 0.2)',  borderColor: '#ff9800' },
+  strength: { backgroundColor: 'rgba(244, 67, 54, 0.2)', borderColor: '#f44336' },
+  dexterity: { backgroundColor: 'rgba(76, 175, 80, 0.2)', borderColor: '#4caf50' },
+  constitution: { backgroundColor: 'rgba(255, 152, 0, 0.2)', borderColor: '#ff9800' },
   intelligence: { backgroundColor: 'rgba(33, 150, 243, 0.2)', borderColor: '#2196f3' },
-  wisdom:       { backgroundColor: 'rgba(0, 188, 212, 0.2)',  borderColor: '#00bcd4' },
-  charisma:     { backgroundColor: 'rgba(156, 39, 176, 0.2)', borderColor: '#9c27b0' },
+  wisdom: { backgroundColor: 'rgba(0, 188, 212, 0.2)', borderColor: '#00bcd4' },
+  charisma: { backgroundColor: 'rgba(156, 39, 176, 0.2)', borderColor: '#9c27b0' },
 };
 
 if (typeof window !== 'undefined' && !window.__DICEBOX_AMMO_INIT__) {
@@ -73,12 +73,15 @@ if (typeof window !== 'undefined' && !window.__DICEBOX_AMMO_INIT__) {
 export interface DiceBoxProps {
   configuration: LocalStorageConfigurationReturn;
   toggleShowDiceBox: () => void;
+  isActive?: boolean;
 }
 
 const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   configuration,
   toggleShowDiceBox,
+  isActive = true,
 }) => {
+  console.log('[DiceBox] render | isActive:', isActive, '| configuration:', configuration);
   const { actionSets, selectedActionSetId, handleSelectedActionSetUpdate, physicsConfig, visualConfig, statSets, selectedStatSetId, handleSelectedStatSetUpdate } = configuration;
 
   const activeStatSet: StatSet | null = statSets.find(s => s.id === selectedStatSetId) ?? statSets[0] ?? null;
@@ -88,16 +91,16 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   const statRollsId = '__stat-rolls__';
   const statRollActionSet: ActionSet | null = activeStatSet
     ? {
-        id: statRollsId,
-        name: t('diceBox.statRolls'),
-        actions: (Object.keys(activeStatSet.stats) as Array<keyof Stats>).map((key) => ({
-          id: `stat-roll-${key}`,
-          name: t(`statNames.${key}`),
-          requiresD20: false,
-          damageDice: [{ quantity: 1, dieType: 'd20' as keyof DiceSelections }],
-          statModifier: key,
-        })),
-      }
+      id: statRollsId,
+      name: t('diceBox.statRolls'),
+      actions: (Object.keys(activeStatSet.stats) as Array<keyof Stats>).map((key) => ({
+        id: `stat-roll-${key}`,
+        name: t(`statNames.${key}`),
+        requiresD20: false,
+        damageDice: [{ quantity: 1, dieType: 'd20' as keyof DiceSelections }],
+        statModifier: key,
+      })),
+    }
     : null;
 
   const allActionSets: ActionSet[] = statRollActionSet
@@ -117,12 +120,15 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   const [showResults, setShowResults] = useState(false);
   const [isRandomizing, setIsRandomizing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [displayTotal, setDisplayTotal] = useState(0);
   const [isDamageRoll, setIsDamageRollState] = useState(false);
-  const [activeStatModifier, setActiveStatModifier] = useState<{ stat: keyof Stats; value: number } | null>(null);
+  const [activeStatModifier, setActiveStatModifier] = useState<{ stat?: keyof Stats; value: number } | null>(null);
 
   const isDamageRollRef = useRef<boolean>(isDamageRoll);
   const diceBoxRef = useRef<InstanceType<typeof DiceBox> | null>(null);
+  console.log('[DiceBox] diceBoxRef initialized:', !!diceBoxRef.current, diceBoxRef.current, diceBoxRef);
+  const diceBoxReadyRef = useRef(false);
+  const initializingRef = useRef(false);
+  const initAttemptRef = useRef(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<ResizeObserver | null>(null);
   const updatingRef = useRef<boolean>(false);
@@ -146,6 +152,7 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   const isCritRef = useRef<boolean>(false);
   const isD20RollRef = useRef<boolean>(false);
   const attackRollValuesRef = useRef<number[]>([]);
+  const quickCalcModifierRef = useRef<{ value: number; stat?: keyof Stats } | null>(null);
 
   const physicsRef = useRef(configuration.physicsConfig);
   const visualRef = useRef(configuration.visualConfig);
@@ -187,15 +194,20 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   }, []);
 
   const initializeDiceBox = useCallback(async () => {
-    if (!containerRef.current) return;
+    console.log('[DiceBox] initializeDiceBox called | containerRef:', !!containerRef.current, '| AMMO_INIT:', window.__DICEBOX_AMMO_INIT__, '| diceBoxRef:', !!diceBoxRef.current);
+    if (!containerRef.current) { console.log('[DiceBox] init aborted: no container'); return; }
 
     if (window.__DICEBOX_AMMO_INIT__ && diceBoxRef.current) {
+      console.log('[DiceBox] init skipped: already initialized');
       return;
     }
 
-    if (diceBoxRef.current) return;
+    if (diceBoxRef.current) { console.log('[DiceBox] init skipped: diceBoxRef already set'); return; }
+    if (initializingRef.current) { console.log('[DiceBox] init skipped: already initializing'); return; }
 
     try {
+      initializingRef.current = true;
+      const attemptId = ++initAttemptRef.current;
       const p = physicsRef.current;
       const box = new DiceBox({
         container: `#${containerId.current}`,
@@ -213,9 +225,22 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
         offscreen: false,
       });
 
-      diceBoxRef.current = box;
+      const initTimeout = setTimeout(() => {
+        if (initAttemptRef.current !== attemptId || diceBoxReadyRef.current) return;
+        console.warn('[DiceBox] init timed out; falling back to local random rolls');
+        initAttemptRef.current += 1;
+        initializingRef.current = false;
+        diceBoxRef.current = null;
+        setIsLoading(false);
+      }, 6000);
 
       await box.init();
+      clearTimeout(initTimeout);
+      if (initAttemptRef.current !== attemptId) return;
+
+      diceBoxRef.current = box;
+      diceBoxReadyRef.current = true;
+      initializingRef.current = false;
 
       window.__DICEBOX_AMMO_INIT__ = true;
 
@@ -223,9 +248,9 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
       setIsLoading(false);
 
       box.onRollComplete = (rollResults: any[]) => {
+        console.log('[DiceBox] onRollComplete fired | phase:', rollPhaseRef.current, '| isD20:', isD20RollRef.current, '| results:', JSON.stringify(rollResults));
         setIsRandomizing(false);
         const allValues: number[] = rollResults.map((r: { value: number }) => r.value);
-        const rawTotal = allValues.reduce((a, b) => a + b, 0);
 
         const pickByMode = (vals: number[]): number => {
           if (vals.length === 0) return 0;
@@ -243,17 +268,14 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
           const attackValue = pickByMode(individualDieValues);
           attackRollValuesRef.current = individualDieValues;
           isCritRef.current = attackValue === 20;
-          setDisplayTotal(attackValue);
           setAttackHitPrompt({ action: pendingActionRef.current!, value: attackValue });
 
         } else if (isD20RollRef.current) {
           isD20RollRef.current = false;
           const chosen = pickByMode(individualDieValues);
-          setDisplayTotal(chosen);
           setResults([{ qty: 1, value: chosen, rolls: [{ dieType: 'd20', value: chosen }] }]);
 
         } else {
-          setDisplayTotal(rawTotal);
           if (!isDamageRollRef.current) {
             const damageTypes = currentDamageTypesRef.current;
             currentDamageTypesRef.current = [];
@@ -268,6 +290,10 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
               const statsObj = activeStatSetRef.current?.stats;
               const stat = statsObj ? statsObj[statKey] : undefined;
               if (stat) setActiveStatModifier({ stat: statKey as keyof Stats, value: stat.modifier });
+            } else if (quickCalcModifierRef.current !== null) {
+              const mod = quickCalcModifierRef.current;
+              quickCalcModifierRef.current = null;
+              setActiveStatModifier(mod);
             } else {
               setActiveStatModifier(null);
             }
@@ -281,7 +307,10 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
       }
       window.addEventListener('resize', updateCanvasSize);
     } catch (err) {
-      console.error('Failed to initialize dice box:', err);
+      console.error('[DiceBox] Failed to initialize dice box:', err);
+      initializingRef.current = false;
+      diceBoxReadyRef.current = false;
+      diceBoxRef.current = null;
       setIsLoading(false);
     }
   }, [updateCanvasSize]);
@@ -289,6 +318,7 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   const containerCallbackRef = useCallback(
     (node: HTMLDivElement | null) => {
       containerRef.current = node;
+      console.log('[DiceBox] containerCallbackRef fired, node:', node ? 'attached' : 'detached', '| diceBoxRef:', diceBoxRef.current ? 'exists' : 'null');
       if (node && !diceBoxRef.current) {
         requestAnimationFrame(() => {
           if (containerRef.current) {
@@ -328,7 +358,7 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
     if (set?.statSetId) {
       handleSelectedStatSetUpdate(set.statSetId);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedActionSetId]);
 
   useEffect(() => {
@@ -336,6 +366,8 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
       if (diceBoxRef.current) {
         diceBoxRef.current = null;
       }
+      diceBoxReadyRef.current = false;
+      initializingRef.current = false;
       window.__DICEBOX_AMMO_INIT__ = false;
 
       if (observerRef.current) {
@@ -355,8 +387,35 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
     };
   }, []);
 
+  const randomDie = useCallback((sides: number) => Math.floor(Math.random() * sides) + 1, []);
+
+  const pickD20ByMode = useCallback((values: number[]) => {
+    if (values.length === 0) return 0;
+    if (rollModeRef.current === 'advantage') return Math.max(...values);
+    if (rollModeRef.current === 'disadvantage') return Math.min(...values);
+    return values[0]!;
+  }, []);
+
+  const rollFallbackNotations = useCallback((notations: string[]): DiceResult[] => {
+    return notations.flatMap((notation) => {
+      const match = notation.match(/^(\d+)d(\d+)$/i);
+      if (!match) return [];
+      const qty = Number(match[1]);
+      const sides = Number(match[2]);
+      const rolls = Array.from({ length: qty }, () => ({
+        dieType: `d${sides}`,
+        value: randomDie(sides),
+      }));
+      return [{
+        qty,
+        value: rolls.reduce((sum, roll) => sum + (roll.value ?? 0), 0),
+        rolls,
+      }];
+    });
+  }, [randomDie]);
+
   const rollD20 = useCallback(async () => {
-    if (!diceBoxRef.current) return;
+    console.log('[DiceBox] rollD20 called | diceBoxRef:', !!diceBoxRef.current, '| ready:', diceBoxReadyRef.current);
 
     setLastAction(null);
     setResults([]);
@@ -368,19 +427,33 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
     currentStatModifierRef.current = null;
     isD20RollRef.current = true;
 
+
     const notation = rollModeRef.current !== 'normal' ? ['2d20'] : ['1d20'];
+    if (!diceBoxRef.current || !diceBoxReadyRef.current) {
+      const values = Array.from({ length: rollModeRef.current !== 'normal' ? 2 : 1 }, () => randomDie(20));
+      const chosen = pickD20ByMode(values);
+      setResults([{ qty: 1, value: chosen, rolls: values.map((value) => ({ dieType: 'd20', value })) }]);
+      setIsRandomizing(false);
+      isD20RollRef.current = false;
+      return;
+    }
+
+    console.log('[DiceBox] rolling d20 with notation:', notation, '| mode:', rollModeRef.current);
+    const hangTimeout = setTimeout(() => console.error('[DiceBox] roll() has been pending for 8s — physics never settled'), 8000);
     try {
       await diceBoxRef.current.roll(notation);
-      // Result handled by onRollComplete via isD20RollRef
+      clearTimeout(hangTimeout);
+      console.log('[DiceBox] roll() promise resolved for d20');
     } catch (e) {
-      console.error('Error during d20 roll:', e);
+      clearTimeout(hangTimeout);
+      console.error('[DiceBox] Error during d20 roll:', e);
       setIsRandomizing(false);
       isD20RollRef.current = false;
     }
   }, []);
 
   const rollAction = useCallback(async (action: Action) => {
-    if (!diceBoxRef.current) return;
+    console.log('[DiceBox] rollAction called | action:', action.name, '| requiresD20:', action.requiresD20, '| diceBoxRef:', !!diceBoxRef.current, '| ready:', diceBoxReadyRef.current);
 
     setLastAction(action);
     setShowActions(false);
@@ -396,29 +469,58 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
       pendingActionRef.current = action;
       rollPhaseRef.current = 'attack';
       const attackNotation = rollModeRef.current !== 'normal' ? ['2d20'] : ['1d20'];
+      if (!diceBoxRef.current || !diceBoxReadyRef.current) {
+        const values = Array.from({ length: rollModeRef.current !== 'normal' ? 2 : 1 }, () => randomDie(20));
+        const chosen = pickD20ByMode(values);
+        attackRollValuesRef.current = values;
+        isCritRef.current = chosen === 20;
+        setAttackHitPrompt({ action, value: chosen });
+        setIsRandomizing(false);
+        return;
+      }
+      console.log('[DiceBox] rolling attack d20 with notation:', attackNotation);
       try {
         await diceBoxRef.current.roll(attackNotation);
+        console.log('[DiceBox] roll() promise resolved for attack');
       } catch (e) {
-        console.error('Error during attack roll:', e);
+        console.error('[DiceBox] Error during attack roll:', e);
         setIsRandomizing(false);
         rollPhaseRef.current = 'normal';
         pendingActionRef.current = null;
       }
     } else {
       const notations = action.damageDice.map((die) => `${die.quantity}${die.dieType}`);
-      if (notations.length === 0) { setIsRandomizing(false); return; }
+      if (notations.length === 0) { console.warn('[DiceBox] rollAction aborted: no dice in action'); setIsRandomizing(false); return; }
       currentDamageTypesRef.current = action.damageDice.map((die) => die.damageType ?? '');
+      if (!diceBoxRef.current || !diceBoxReadyRef.current) {
+        const fallbackResults = rollFallbackNotations(notations).map((result, index) => ({
+          ...result,
+          damageType: currentDamageTypesRef.current[index] ?? '',
+        }));
+        currentDamageTypesRef.current = [];
+        setResults(fallbackResults);
+        const statKey = currentStatModifierRef.current;
+        currentStatModifierRef.current = null;
+        if (statKey) {
+          const stat = activeStatSetRef.current?.stats[statKey];
+          if (stat) setActiveStatModifier({ stat: statKey, value: stat.modifier });
+        }
+        setIsRandomizing(false);
+        return;
+      }
+      console.log('[DiceBox] rolling action dice:', notations);
       try {
         await diceBoxRef.current.roll(notations);
+        console.log('[DiceBox] roll() promise resolved for action');
       } catch (e) {
-        console.error('Error during action roll:', e);
+        console.error('[DiceBox] Error during action roll:', e);
         setIsRandomizing(false);
       }
     }
   }, []);
 
   const reroll = useCallback(async () => {
-    if (!diceBoxRef.current) return;
+    console.log('[DiceBox] reroll called | diceBoxRef:', !!diceBoxRef.current, '| lastAction:', lastAction?.name ?? null, '| results.length:', results.length);
 
     setAttackHitPrompt(null);
     pendingActionRef.current = null;
@@ -432,22 +534,30 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
     if (results.length === 0) return;
 
     const notations = results.map((r) => `${r.qty}${r.rolls[0]?.dieType ?? 'd6'}`);
+    console.log('[DiceBox] rerolling with notations:', notations);
     setResults([]);
     setIsRandomizing(true);
 
+    if (!diceBoxRef.current || !diceBoxReadyRef.current) {
+      setResults(rollFallbackNotations(notations));
+      setIsRandomizing(false);
+      return;
+    }
+
     try {
       await diceBoxRef.current.roll(notations);
+      console.log('[DiceBox] roll() promise resolved for reroll');
     } catch (e) {
-      console.error('Error during reroll:', e);
+      console.error('[DiceBox] Error during reroll:', e);
       setIsRandomizing(false);
     }
-  }, [lastAction, results, rollAction]);
+  }, [lastAction, results, rollAction, rollFallbackNotations]);
 
   const handleHitYes = useCallback(async () => {
     const action = attackHitPrompt?.action;
     setAttackHitPrompt(null);
     pendingActionRef.current = null;
-    if (!action || !diceBoxRef.current) return;
+    if (!action) return;
 
     // Compute crit bonus: max face value × quantity for each damage die group
     if (isCritRef.current) {
@@ -464,13 +574,31 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
     currentStatModifierRef.current = action.statModifier ?? null;
     setIsRandomizing(true);
     setIsDamageRoll(false);
+    if (!diceBoxRef.current || !diceBoxReadyRef.current) {
+      const fallbackResults = rollFallbackNotations(notations).map((result, index) => ({
+        ...result,
+        damageType: currentDamageTypesRef.current[index] ?? '',
+      }));
+      currentDamageTypesRef.current = [];
+      setResults(fallbackResults);
+      const statKey = currentStatModifierRef.current;
+      currentStatModifierRef.current = null;
+      if (statKey) {
+        const stat = activeStatSetRef.current?.stats[statKey];
+        if (stat) setActiveStatModifier({ stat: statKey, value: stat.modifier });
+      }
+      setIsRandomizing(false);
+      return;
+    }
+    console.log('[DiceBox] rolling damage dice after hit:', notations);
     try {
       await diceBoxRef.current.roll(notations);
+      console.log('[DiceBox] roll() promise resolved for damage');
     } catch (e) {
-      console.error('Error during damage roll:', e);
+      console.error('[DiceBox] Error during damage roll:', e);
       setIsRandomizing(false);
     }
-  }, [attackHitPrompt]);
+  }, [attackHitPrompt, rollFallbackNotations]);
 
   const handleHitNo = useCallback(() => {
     setAttackHitPrompt(null);
@@ -497,38 +625,70 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
     setIsHolding(false);
   }, []);
 
-  // ─── Quick Dice ────────────────────────────────────────────────────────────
+  // ─── Quick Dice Calculator ─────────────────────────────────────────────────
 
   const QUICK_DIE_TYPES = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100'] as const;
   type QuickDieType = typeof QUICK_DIE_TYPES[number];
 
+  type QuickCalcToken =
+    | { type: 'dice'; quantity: number; die: QuickDieType }
+    | { type: 'modifier'; value: number; stat?: keyof Stats };
+
   const [showQuickDice, setShowQuickDice] = useState(false);
-  const [quickDicePool, setQuickDicePool] = useState<Partial<Record<QuickDieType, number>>>({});
-  const quickDicePoolRef = useRef(quickDicePool);
-  quickDicePoolRef.current = quickDicePool;
+  const [quickCalcTokens, setQuickCalcTokens] = useState<QuickCalcToken[]>([]);
+  const [quickCalcPending, setQuickCalcPending] = useState('');
+  const quickCalcTokensRef = useRef(quickCalcTokens);
+  quickCalcTokensRef.current = quickCalcTokens;
+  const quickCalcPendingRef = useRef(quickCalcPending);
+  quickCalcPendingRef.current = quickCalcPending;
 
-  const addToDicePool = useCallback((die: QuickDieType) => {
-    setQuickDicePool(prev => ({ ...prev, [die]: (prev[die] ?? 0) + 1 }));
-  }, []);
-
-  const removeFromDicePool = useCallback((die: QuickDieType) => {
-    setQuickDicePool(prev => {
-      const next = { ...prev };
-      const cur = next[die] ?? 0;
-      if (cur <= 1) delete next[die]; else next[die] = cur - 1;
-      return next;
+  const calcAddDigit = useCallback((d: string) => {
+    setQuickCalcPending(p => {
+      const next = p + d;
+      return parseInt(next, 10) > 99 ? p : next;
     });
   }, []);
 
-  const clearDicePool = useCallback(() => setQuickDicePool({}), []);
+  const calcAddDie = useCallback((die: QuickDieType) => {
+    const qty = parseInt(quickCalcPendingRef.current, 10) || 1;
+    setQuickCalcTokens(prev => [...prev, { type: 'dice', quantity: qty, die }]);
+    setQuickCalcPending('');
+  }, []);
 
-  const rollQuickDicePool = useCallback(async () => {
-    if (!diceBoxRef.current) return;
-    const pool = quickDicePoolRef.current;
+  const calcAddStat = useCallback((statKey: keyof Stats) => {
+    const stats = activeStatSetRef.current?.stats;
+    if (!stats) return;
+    setQuickCalcTokens(prev => [...prev, { type: 'modifier', value: stats[statKey].modifier, stat: statKey }]);
+    setQuickCalcPending('');
+  }, []);
+
+  const calcUndo = useCallback(() => {
+    if (quickCalcPendingRef.current) {
+      setQuickCalcPending('');
+    } else {
+      setQuickCalcTokens(prev => prev.slice(0, -1));
+    }
+  }, []);
+
+  const calcClear = useCallback(() => {
+    setQuickCalcTokens([]);
+    setQuickCalcPending('');
+  }, []);
+
+  const rollCalcExpression = useCallback(async () => {
+    const tokens = quickCalcTokensRef.current;
+    const diceTokens = tokens.filter((t): t is { type: 'dice'; quantity: number; die: QuickDieType } => t.type === 'dice');
+    const modTokens = tokens.filter((t): t is { type: 'modifier'; value: number; stat?: keyof Stats } => t.type === 'modifier');
+    if (diceTokens.length === 0) return;
+
+    const grouped: Partial<Record<QuickDieType, number>> = {};
+    for (const t of diceTokens) grouped[t.die] = (grouped[t.die] ?? 0) + t.quantity;
     const notations = QUICK_DIE_TYPES
-      .filter(die => (pool[die] ?? 0) > 0)
-      .map(die => `${pool[die]}${die}`);
-    if (notations.length === 0) return;
+      .filter(die => (grouped[die] ?? 0) > 0)
+      .map(die => `${grouped[die]}${die}`);
+
+    const totalMod = modTokens.reduce((s, t) => s + t.value, 0);
+    const singleStat = modTokens.length === 1 ? modTokens[0]?.stat : undefined;
 
     setLastAction(null);
     setAttackHitPrompt(null);
@@ -542,21 +702,38 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
     rollPhaseRef.current = 'normal';
     currentDamageTypesRef.current = [];
     currentStatModifierRef.current = null;
+    quickCalcModifierRef.current = totalMod !== 0 ? { value: totalMod, stat: singleStat } : null;
 
+    if (!diceBoxRef.current || !diceBoxReadyRef.current) {
+      setResults(rollFallbackNotations(notations));
+      if (quickCalcModifierRef.current !== null) {
+        const mod = quickCalcModifierRef.current;
+        quickCalcModifierRef.current = null;
+        setActiveStatModifier(mod);
+      }
+      setIsRandomizing(false);
+      return;
+    }
+
+    console.log('[DiceBox] rolling calc expression:', notations, '| totalMod:', totalMod);
     try {
       await diceBoxRef.current.roll(notations);
+      console.log('[DiceBox] roll() promise resolved for calc expression');
     } catch (e) {
-      console.error('Error during quick dice roll:', e);
+      console.error('[DiceBox] Error during calculator roll:', e);
       setIsRandomizing(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rollFallbackNotations]);
 
-  const totalDiceInPool = Object.values(quickDicePool).reduce((s, n) => s + (n ?? 0), 0);
-  const poolSummary = QUICK_DIE_TYPES
-    .filter(die => (quickDicePool[die] ?? 0) > 0)
-    .map(die => `${quickDicePool[die]}${die}`)
-    .join(' + ');
+  const calcHasDice = quickCalcTokens.some(t => t.type === 'dice');
+  const calcExpressionParts = quickCalcTokens.map(t =>
+    t.type === 'dice' ? `${t.quantity}${t.die}` : `${t.value >= 0 ? '+' : ''}${t.value}`
+  );
+  const calcDisplayStr = [
+    calcExpressionParts.join(' '),
+    quickCalcPending,
+  ].filter(Boolean).join(calcExpressionParts.length > 0 ? ' ' : '');
 
   // ───────────────────────────────────────────────────────────────────────────
 
@@ -579,6 +756,7 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   return (
     <div
       id="dicebox-container"
+      className={!isActive ? styles.inactive : undefined}
       style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', position: 'relative' }}
       onClick={(e) => { e.stopPropagation(); setShowResults(false); }}
       onPointerUp={handlePointerRelease}
@@ -607,6 +785,14 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
 
       {/* UI OVERLAY — fades on hold so dice are visible beneath */}
       <div className={`${styles.uiOverlay} ${isHolding ? styles.uiOverlayFaded : ''}`}>
+        {/* Backdrop: closes results when clicking outside the panel */}
+        {showResults && (
+          <div
+            style={{ position: 'absolute', inset: 0 }}
+            onClick={() => setShowResults(false)}
+          />
+        )}
+
         {/* TOTAL - top left, position absolute */}
         <div className={`${styles.diffusedBackground} ${styles.totalBox}`}>
           <Button
@@ -648,7 +834,7 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
           </ActionIcon>
         </div>
 
-        {/* QUICK DICE - left side, vertically centered */}
+        {/* QUICK DICE CALCULATOR - left side, vertically centered */}
         <div className={styles.quickDiceContainer}>
           <div className={`${styles.diffusedBackground} ${styles.quickDiceTogglePill}`}>
             <ActionIcon variant="subtle" size="lg" onClick={() => setShowQuickDice(v => !v)}>
@@ -660,76 +846,114 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
             mounted={showQuickDice}
             transition={{
               transitionProperty: 'opacity, transform',
-              in:  { opacity: 1, transform: 'translateX(0)' },
+              in: { opacity: 1, transform: 'translateX(0)' },
               out: { opacity: 0, transform: 'translateX(-8px)' },
               common: { transition: 'opacity 180ms ease, transform 180ms ease' },
             }}
           >
             {(style) => (
               <div
-                className={`${styles.diffusedBackground} ${styles.quickDicePanel}`}
+                className={`${styles.diffusedBackground} ${styles.quickCalcPanel}`}
                 style={style}
                 onClick={(e) => e.stopPropagation()}
               >
-                {totalDiceInPool > 0 && (
-                  <Text size="xs" c="dimmed" ta="center" style={{ lineHeight: 1.2 }}>
-                    {poolSummary}
+                {/* Expression display */}
+                <div className={styles.quickCalcDisplay} style={{ position: 'relative', paddingRight: calcDisplayStr ? 22 : 8 }}>
+                  <Text
+                    size="xs"
+                    ff="monospace"
+                    ta="right"
+                    c={calcDisplayStr ? undefined : 'dimmed'}
+                    style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', display: 'block' }}
+                  >
+                    {calcDisplayStr || '—'}
                   </Text>
+                  {calcDisplayStr && (
+                    <ActionIcon
+                      variant="transparent"
+                      size={16}
+                      style={{ position: 'absolute', top: '50%', right: 4, transform: 'translateY(-50%)' }}
+                      onClick={calcClear}
+                    >
+                      <IconX size={11} />
+                    </ActionIcon>
+                  )}
+                </div>
+
+                {/* Dice grid: d4–d20 in 3 cols, d100 full-width */}
+                <div className={styles.quickCalcGrid}>
+                  {(['d4', 'd6', 'd8', 'd10', 'd12', 'd20'] as QuickDieType[]).map(die => (
+                    <UnstyledButton
+                      key={die}
+                      className={styles.quickCalcBtn}
+                      onClick={() => calcAddDie(die)}
+                    >
+                      <Text size="xs" fw={700}>{die.toUpperCase()}</Text>
+                    </UnstyledButton>
+                  ))}
+                  <UnstyledButton
+                    className={styles.quickCalcBtn}
+                    style={{ gridColumn: '1 / -1' }}
+                    onClick={() => calcAddDie('d100')}
+                  >
+                    <Text size="xs" fw={700}>D100</Text>
+                  </UnstyledButton>
+                </div>
+
+                {/* Stats grid (3 cols) — only shown when a stat set is active */}
+                {activeStatSet && (
+                  <div className={styles.quickCalcGrid}>
+                    {(Object.keys(activeStatSet.stats) as Array<keyof Stats>).map(statKey => {
+                      const mod = activeStatSet.stats[statKey].modifier;
+                      return (
+                        <UnstyledButton
+                          key={statKey}
+                          className={styles.quickCalcBtn}
+                          style={STAT_STYLES[statKey]}
+                          onClick={() => calcAddStat(statKey)}
+                        >
+                          <Text size="xs" fw={700}>{statKey.slice(0, 3).toUpperCase()}</Text>
+                          <Text size="xs">{mod >= 0 ? '+' : ''}{mod}</Text>
+                        </UnstyledButton>
+                      );
+                    })}
+                  </div>
                 )}
 
-                {QUICK_DIE_TYPES.map(die => {
-                  const count = quickDicePool[die] ?? 0;
-                  return (
-                    <div key={die} className={styles.quickDieRow}>
-                      <UnstyledButton
-                        className={`${styles.quickDieButton} ${count > 0 ? styles.quickDieButtonActive : ''}`}
-                        onClick={() => addToDicePool(die)}
-                      >
-                        <Text size="sm" fw={700}>{die.toUpperCase()}</Text>
-                        {count > 0 && (
-                          <Badge
-                            size="xs"
-                            variant="filled"
-                            circle
-                            style={{ position: 'absolute', top: -5, right: -5, minWidth: 16, height: 16, fontSize: 9 }}
-                          >
-                            {count}
-                          </Badge>
-                        )}
-                      </UnstyledButton>
-                      <ActionIcon
-                        size="xs"
-                        variant="subtle"
-                        color="red"
-                        style={{ opacity: count > 0 ? 1 : 0, pointerEvents: count > 0 ? 'auto' : 'none', flexShrink: 0 }}
-                        onClick={(e) => { e.stopPropagation(); removeFromDicePool(die); }}
-                      >
-                        <IconMinus size={10} />
-                      </ActionIcon>
-                    </div>
-                  );
-                })}
-
-                <Divider my={2} />
-
-                <Button
-                  size="xs"
-                  fullWidth
-                  color="blue"
-                  disabled={totalDiceInPool === 0 || isRandomizing}
-                  onClick={rollQuickDicePool}
-                >
-                  {t('diceBox.roll')}
-                </Button>
-                <Button
-                  size="xs"
-                  fullWidth
-                  variant="subtle"
-                  disabled={totalDiceInPool === 0}
-                  onClick={clearDicePool}
-                >
-                  {t('diceBox.clear')}
-                </Button>
+                {/* Number pad + undo + roll */}
+                <div className={styles.quickCalcGrid}>
+                  {[7, 8, 9, 4, 5, 6, 1, 2, 3].map(n => (
+                    <UnstyledButton
+                      key={n}
+                      className={styles.quickCalcBtn}
+                      onClick={() => calcAddDigit(String(n))}
+                    >
+                      <Text size="sm" fw={600}>{n}</Text>
+                    </UnstyledButton>
+                  ))}
+                  <UnstyledButton
+                    className={styles.quickCalcBtn}
+                    style={{ opacity: (quickCalcTokens.length > 0 || quickCalcPending) ? 1 : 0.35 }}
+                    onClick={calcUndo}
+                  >
+                    <IconBackspace size={15} />
+                  </UnstyledButton>
+                  <UnstyledButton
+                    className={styles.quickCalcBtn}
+                    onClick={() => calcAddDigit('0')}
+                  >
+                    <Text size="sm" fw={600}>0</Text>
+                  </UnstyledButton>
+                  <ActionIcon
+                    variant="light"
+                    color="blue"
+                    style={{ width: '100%', height: 36, borderRadius: 6 }}
+                    disabled={!calcHasDice || isRandomizing}
+                    onClick={() => { void rollCalcExpression(); if (window.innerWidth <= 1024) setShowQuickDice(false); }}
+                  >
+                    <D20Icon size={18} />
+                  </ActionIcon>
+                </div>
               </div>
             )}
           </Transition>
@@ -790,15 +1014,17 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
                 {activeStatModifier && (
                   <div
                     className={styles.resultCard}
-                    style={STAT_STYLES[activeStatModifier.stat]}
+                    style={activeStatModifier.stat ? STAT_STYLES[activeStatModifier.stat] : undefined}
                   >
                     <Text fw={600} size="md">{t('diceBox.modifierLabel')}</Text>
                     <Text size="xl" fw={700}>
                       {activeStatModifier.value >= 0 ? '+' : ''}{activeStatModifier.value}
                     </Text>
-                    <Text size="xs" c="dimmed" style={{ textTransform: 'capitalize' }}>
-                      {t(`statNames.${activeStatModifier.stat}`)}
-                    </Text>
+                    {activeStatModifier.stat && (
+                      <Text size="xs" c="dimmed" style={{ textTransform: 'capitalize' }}>
+                        {t(`statNames.${activeStatModifier.stat}`)}
+                      </Text>
+                    )}
                   </div>
                 )}
                 {critBonus !== null && critBonus > 0 && (

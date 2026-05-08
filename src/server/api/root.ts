@@ -1,5 +1,6 @@
 import { mtgRouter } from "~/server/api/routers/mtg";
 import { diceRouter } from "~/server/api/routers/dice";
+import { decksRouter } from "~/server/api/routers/decks";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -10,6 +11,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 export const appRouter = createTRPCRouter({
   mtg: mtgRouter,
   dice: diceRouter,
+  decks: decksRouter,
 });
 
 // export type definition of API

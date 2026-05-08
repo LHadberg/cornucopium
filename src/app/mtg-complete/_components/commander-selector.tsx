@@ -2,7 +2,6 @@
 
 import {
   ActionIcon,
-  Badge,
   Button,
   Card,
   Collapse,
@@ -19,7 +18,6 @@ import {
   ScrollArea,
   Select,
   SimpleGrid,
-  Skeleton,
   Stack,
   Switch,
   Text,
@@ -32,14 +30,16 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconDots,
+  IconDownload,
   IconEraser,
   IconExternalLink,
-  IconFlipVertical,
+  IconLayersIntersect,
   IconList,
-  IconRotate2,
   IconStar,
   IconStarFilled,
 } from "@tabler/icons-react";
+import { ArtImage, CommanderCardBody, GlimmerSvg, ManaSymbol } from "~/app/_components/commander-card-body";
+import type { Deck } from "../../../../generated/prisma";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "~/trpc/react";
@@ -119,14 +119,6 @@ export interface SelectionData {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-const COLOR_MAP: Record<string, { bg: string; border: string }> = {
-  W: { bg: "#f5f0e8", border: "#c8b87a" },
-  U: { bg: "#1a6fac", border: "#0d4f8a" },
-  B: { bg: "#0a0a0a", border: "#3a3a3a" },
-  R: { bg: "#d44026", border: "#a03020" },
-  G: { bg: "#2d7a3a", border: "#1a5227" },
-};
 
 const BRACKETS = [
   { value: "1", label: "1 — Exhibition" },
@@ -296,16 +288,6 @@ async function searchCompanionsRule0(query: string) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function ManaSymbol({ color }: { color: string }) {
-  const s = COLOR_MAP[color];
-  return (
-    <div style={{
-      width: 14, height: 14, borderRadius: "50%", flexShrink: 0,
-      background: s?.bg ?? "#aaa", border: `2px solid ${s?.border ?? "#888"}`,
-    }} />
-  );
-}
-
 interface CardSearchProps {
   placeholder: string;
   query: string;
@@ -403,104 +385,6 @@ function TagSelector({ tags, setTags, favoriteTag, setFavoriteTag }: TagSelector
   );
 }
 
-// Golden glimmer sparkle
-function GlimmerSvg() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 18 18" fill="none">
-      <path d="M9 1L10.6 7.4L17 9L10.6 10.6L9 17L7.4 10.6L1 9L7.4 7.4Z" fill="#FFD700" stroke="#B8860B" strokeWidth="0.4" />
-      <path d="M14.5 2L15.2 4.8L18 5.5L15.2 6.2L14.5 9L13.8 6.2L11 5.5L13.8 4.8Z" fill="#FFD700" opacity="0.75" />
-      <path d="M3.5 11L4 12.9L6 13.4L4 13.9L3.5 15.8L3 13.9L1 13.4L3 12.9Z" fill="#FFD700" opacity="0.6" />
-    </svg>
-  );
-}
-
-// Art image with hover card preview and optional glimmer for print selection
-function ArtImage({ artCrop, normal, name, flex, half, onGlimmerClick, backNormal, backArtCrop, canFlip, tooltipSide = "right" }: {
-  artCrop: string; normal: string; name: string; flex?: string; half?: "left" | "right";
-  onGlimmerClick?: () => void;
-  backNormal?: string; backArtCrop?: string;
-  canFlip?: boolean;
-  tooltipSide?: "left" | "right" | "bottom";
-}) {
-  const { t } = useTranslation();
-  const [hovered, setHovered] = useState(false);
-  const [hoverKey, setHoverKey] = useState(0);
-  const [showBack, setShowBack] = useState(false);
-  const [flipped, setFlipped] = useState(false);
-
-  const displayNormal = showBack && backNormal ? backNormal : normal;
-
-  const wrapperStyle: React.CSSProperties = half
-    ? {
-      flex: "0 0 calc(50% - 2px)",
-      overflow: "hidden",
-      minWidth: 0,
-      position: "relative",
-      cursor: "default",
-      aspectRatio: "313/457",
-      borderRadius: half === "left"
-        ? "var(--mantine-radius-sm) 0 0 var(--mantine-radius-sm)"
-        : "0 var(--mantine-radius-sm) var(--mantine-radius-sm) 0",
-    }
-    : { flex: flex ?? "1 1 100%", minWidth: 0, position: "relative", cursor: "default" };
-
-  return (
-    <HoverCard key={hoverKey} width="auto" position={tooltipSide} openDelay={300} closeDelay={150} withinPortal middlewares={{ flip: true, shift: true }}>
-      <HoverCard.Target>
-        <div style={wrapperStyle} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-          {half ? (
-            <Image src={artCrop} alt={name} radius={0} loading="lazy"
-              style={{ width: "200%", maxWidth: "none", marginLeft: "-50%", display: "block", aspectRatio: "626/457", objectFit: "cover" }}
-            />
-          ) : (
-            <Image
-              src={artCrop} alt={name} radius="sm" loading="lazy"
-              style={{ display: "block", aspectRatio: "626/457", objectFit: "cover", width: "100%" }}
-            />
-          )}
-          {onGlimmerClick && hovered && (
-            <button
-              className="art-glimmer-btn"
-              style={{ position: "absolute", bottom: 4, right: 4, zIndex: 1 }}
-              onClick={(e) => { e.stopPropagation(); setHoverKey((k) => k + 1); onGlimmerClick(); }}
-              title={t('mtg.selector.selectArtVersion')}
-            >
-              <GlimmerSvg />
-            </button>
-          )}
-        </div>
-      </HoverCard.Target>
-      <HoverCard.Dropdown p={4}>
-        <div style={{ position: "relative" }}>
-          <Image
-            src={displayNormal} alt={name} radius={20} loading="lazy"
-            style={{ maxWidth: "min(260px, calc(100vw - 16px))", width: "100%", transform: flipped ? "rotate(180deg)" : undefined }}
-          />
-          {backNormal && (
-            <button
-              className="art-glimmer-btn"
-              style={{ position: "absolute", bottom: 8, left: 8, zIndex: 1 }}
-              onClick={(e) => { e.stopPropagation(); setShowBack((v) => !v); }}
-              title={showBack ? t('mtg.selector.showFrontFace') : t('mtg.selector.showBackFace')}
-            >
-              <IconRotate2 size={28} color="#FFD700" />
-            </button>
-          )}
-          {canFlip && (
-            <button
-              className="art-glimmer-btn"
-              style={{ position: "absolute", bottom: 8, right: 8, zIndex: 1 }}
-              onClick={(e) => { e.stopPropagation(); setFlipped((v) => !v); }}
-              title={flipped ? t('mtg.selector.showTopFace') : t('mtg.selector.showFlippedFace')}
-            >
-              <IconFlipVertical size={28} color="#FFD700" />
-            </button>
-          )}
-        </div>
-      </HoverCard.Dropdown>
-    </HoverCard>
-  );
-}
 
 // Print version picker modal
 interface PrintPickerModalProps {
@@ -951,6 +835,50 @@ export function CommanderSlot({
   const bracketLabel = BRACKETS.find((b) => b.value === bracket)?.label ?? null;
   const mark = () => { userModified.current = true; };
 
+  // ── Deck list integration ─────────────────────────────────────────────────────
+  const [importingToDeckList, setImportingToDeckList] = useState(false);
+  const addToDeckList = api.decks.create.useMutation();
+
+  const [importDeckModalOpen, setImportDeckModalOpen] = useState(false);
+  const { data: userDecks = [] } = api.decks.getAll.useQuery(undefined, {
+    enabled: !readOnly && importDeckModalOpen,
+  });
+  const matchingDecks = userDecks.filter((d) => d.colorId === colorId);
+
+  const handleImportToDeckList = async () => {
+    if (!commander) return;
+    setImportingToDeckList(true);
+    try {
+      await addToDeckList.mutateAsync({
+        name: commander.name,
+        commanderScryfallId: commander.id,
+        commanderName: commander.name,
+        commanderTypeLine: commander.type_line,
+        commanderImage: img ?? null,
+        commanderArtCrop: art ?? null,
+        partnerScryfallId: partner?.id ?? null,
+        partnerName: partner?.name ?? null,
+        partnerTypeLine: partner?.type_line ?? null,
+        partnerImage: partnerImg ?? null,
+        partnerArtCrop: partnerArt ?? null,
+        partnerType: savedPartnerType ?? null,
+        companionScryfallId: companion?.id ?? null,
+        companionName: companion?.name ?? null,
+        companionTypeLine: companion?.type_line ?? null,
+        companionImage: companionImg ?? null,
+        companionArtCrop: companionArt ?? null,
+        bracket: (bracket as "1" | "2" | "3" | "4" | "5" | null) ?? null,
+        tags: tags as Parameters<typeof addToDeckList.mutateAsync>[0]["tags"],
+        favoriteTag: (favoriteTag as Parameters<typeof addToDeckList.mutateAsync>[0]["favoriteTag"]) ?? null,
+        archetype: (archetype as Parameters<typeof addToDeckList.mutateAsync>[0]["archetype"]) ?? null,
+        deckListUrl: deckListUrl ?? null,
+        colorId: colorId ?? null,
+      });
+    } finally {
+      setImportingToDeckList(false);
+    }
+  };
+
   const handleClearSelection = () => {
     mark();
     setCommander(null); setQuery(""); setResults([]); setCmdPreferredPrint(null);
@@ -961,6 +889,69 @@ export function CommanderSlot({
     setArchetype(null);
     setDeckListUrl(null);
     setAllowRule0(false);
+  };
+
+  const handleImportFromDeck = (deck: Deck) => {
+    mark();
+    enrichedCmdId.current = null;
+    enrichedPtnId.current = null;
+    enrichedCmpId.current = null;
+
+    if (deck.commanderName) {
+      setQuery(deck.commanderName);
+      setCommander({
+        id: deck.commanderScryfallId ?? "",
+        name: deck.commanderName,
+        type_line: deck.commanderTypeLine ?? "",
+        mana_cost: "",
+        image_uris: deck.commanderImage && deck.commanderArtCrop
+          ? { normal: deck.commanderImage, art_crop: deck.commanderArtCrop }
+          : undefined,
+      });
+    }
+
+    if (deck.partnerName) {
+      setPartnerQuery(deck.partnerName);
+      setPartner({
+        id: deck.partnerScryfallId ?? "",
+        name: deck.partnerName,
+        type_line: deck.partnerTypeLine ?? "",
+        mana_cost: "",
+        image_uris: deck.partnerImage && deck.partnerArtCrop
+          ? { normal: deck.partnerImage, art_crop: deck.partnerArtCrop }
+          : undefined,
+      });
+      setSavedPartnerType((deck.partnerType as PartnerType) ?? null);
+    } else {
+      setPartner(null); setPartnerQuery(""); setPartnerResults([]);
+      setSavedPartnerType(null); setPtnPreferredPrint(null);
+    }
+
+    if (deck.companionName) {
+      setHasCompanion(true);
+      setCompanionQuery(deck.companionName);
+      setCompanion({
+        id: deck.companionScryfallId ?? "",
+        name: deck.companionName,
+        type_line: deck.companionTypeLine ?? "",
+        mana_cost: "",
+        image_uris: deck.companionImage && deck.companionArtCrop
+          ? { normal: deck.companionImage, art_crop: deck.companionArtCrop }
+          : undefined,
+      });
+    } else {
+      setHasCompanion(false); setCompanion(null);
+      setCompanionQuery(""); setCompanionResults([]); setCompanionPreferredPrint(null);
+    }
+
+    setCmdPreferredPrint(null);
+    setPtnPreferredPrint(null);
+    setBracket(deck.bracket);
+    try { setTags(JSON.parse(deck.tags) as string[]); } catch { setTags([]); }
+    setFavoriteTag(deck.favoriteTag);
+    setArchetype(deck.archetype);
+    setDeckListUrl(deck.deckListUrl);
+    setImportDeckModalOpen(false);
   };
 
   // True for the one render frame between initialData arriving and the hydration effect running.
@@ -997,14 +988,6 @@ export function CommanderSlot({
   // 42 = card padding-top(12) + header-height(18) + card padding-bottom(12)
   const cardMinHeight = 42 + summaryH;
 
-  const badges = (
-    <>
-      {bracketLabel && <Badge size="xs" variant="filled" color="blue">{bracketLabel}</Badge>}
-      {displayTag && <Badge size="xs" variant="filled" color="yellow">{displayTag}</Badge>}
-      {archetype && <Badge size="xs" variant="filled" color="grape">{archetype}</Badge>}
-    </>
-  );
-
   return (
     <Card ref={cardRef} withBorder padding="sm" style={{ minHeight: cardMinHeight }} onMouseDownCapture={() => { clickedInsideCard.current = true; }}>
       {/* ── Header ── */}
@@ -1037,85 +1020,37 @@ export function CommanderSlot({
 
       {/* ── Contracted summary ── */}
       {!collapseVisible && (
-        (isLoading || pendingHydration) ? (
-          <Stack gap={6} mt={4}>
-            <Skeleton height={11} width="70%" radius="sm" />
-            <Skeleton height={9} width="45%" radius="sm" />
-          </Stack>
-        ) : (
-          <HoverCard width="auto" position={tooltipSide} openDelay={400} closeDelay={0} disabled={!img || visual} withinPortal middlewares={{ flip: true, shift: true }}>
-            <HoverCard.Target>
-              <Stack gap={4}>
-                {commander ? (
-                  visual ? (
-                    <>
-                      <div style={{ minHeight: 60, display: "flex", flexDirection: "column", gap: 4 }}>
-                        <Text size="xs" fw={500} lineClamp={1}>{commander.name}</Text>
-                        {partner && (
-                          <Text size="xs" c="dimmed" lineClamp={1}>
-                            {partnerLabel}: {partner.name}
-                          </Text>
-                        )}
-                        <Group gap={4} wrap="wrap">{badges}</Group>
-                      </div>
-                      <Group gap={4} wrap="nowrap" align="flex-start">
-                        {art && img && (
-                          <ArtImage
-                            artCrop={art} normal={img} name={commander.name}
-                            half={partnerArt ? "left" : undefined}
-                            flex="1 1 100%"
-                            onGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("commander")}
-                            backNormal={cmdPreferredPrint?.backImage ?? cmdBackFace?.normal}
-                            backArtCrop={cmdPreferredPrint?.backArtCrop ?? cmdBackFace?.art_crop}
-                            canFlip={cmdIsFlip}
-                            tooltipSide={tooltipSide}
-                          />
-                        )}
-                        {partnerArt && partnerImg && (
-                          <ArtImage
-                            artCrop={partnerArt} normal={partnerImg} name={partner!.name}
-                            half="right"
-                            onGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("partner")}
-                            backNormal={ptnPreferredPrint?.backImage ?? ptnBackFace?.normal}
-                            backArtCrop={ptnPreferredPrint?.backArtCrop ?? ptnBackFace?.art_crop}
-                            canFlip={ptnIsFlip}
-                            tooltipSide={tooltipSide}
-                          />
-                        )}
-                      </Group>
-                      {companionArt && companionImg && (
-                        <ArtImage
-                          artCrop={companionArt} normal={companionImg} name={companion!.name}
-                          flex="1 1 100%"
-                          onGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("companion")}
-                          backNormal={companionPreferredPrint?.backImage ?? cmpBackFace?.normal}
-                          backArtCrop={companionPreferredPrint?.backArtCrop ?? cmpBackFace?.art_crop}
-                          canFlip={cmpIsFlip}
-                          tooltipSide={tooltipSide}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <Text size="xs" fw={500} lineClamp={1}>{commander.name}</Text>
-                      {partner && (
-                        <Text size="xs" c="dimmed" lineClamp={1}>
-                          {partnerLabel}: {partner.name}
-                        </Text>
-                      )}
-                      <Group gap={4} wrap="wrap">{badges}</Group>
-                    </>
-                  )
-                ) : (
-                  <Text size="xs" c="dimmed">{t('mtg.selector.noCommander')}</Text>
-                )}
-              </Stack>
-            </HoverCard.Target>
-            <HoverCard.Dropdown p={4}>
-              <Image src={img!} alt={commander?.name} radius={20} loading="lazy" style={{ maxWidth: "min(250px, calc(100vw - 16px))", width: "100%" }} />
-            </HoverCard.Dropdown>
-          </HoverCard>
-        )
+        <CommanderCardBody
+          commanderName={commander?.name ?? null}
+          commanderArtCrop={art}
+          commanderImage={img}
+          commanderBackNormal={cmdPreferredPrint?.backImage ?? cmdBackFace?.normal}
+          commanderBackArtCrop={cmdPreferredPrint?.backArtCrop ?? cmdBackFace?.art_crop}
+          commanderCanFlip={cmdIsFlip}
+          onCommanderGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("commander")}
+          partnerName={partner?.name ?? null}
+          partnerLabel={partnerLabel ?? undefined}
+          partnerArtCrop={partnerArt}
+          partnerImage={partnerImg}
+          partnerBackNormal={ptnPreferredPrint?.backImage ?? ptnBackFace?.normal}
+          partnerBackArtCrop={ptnPreferredPrint?.backArtCrop ?? ptnBackFace?.art_crop}
+          partnerCanFlip={ptnIsFlip}
+          onPartnerGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("partner")}
+          companionName={companion?.name ?? null}
+          companionArtCrop={companionArt}
+          companionImage={companionImg}
+          companionBackNormal={companionPreferredPrint?.backImage ?? cmpBackFace?.normal}
+          companionBackArtCrop={companionPreferredPrint?.backArtCrop ?? cmpBackFace?.art_crop}
+          companionCanFlip={cmpIsFlip}
+          onCompanionGlimmerClick={readOnly ? undefined : () => setPrintPickerFor("companion")}
+          bracketLabel={bracketLabel}
+          displayTag={displayTag}
+          archetype={archetype}
+          visual={visual}
+          isLoading={isLoading || pendingHydration}
+          tooltipSide={tooltipSide}
+          emptyText={t('mtg.selector.noCommander')}
+        />
       )}
 
       {/* ── Expanded selectors ── */}
@@ -1156,6 +1091,31 @@ export function CommanderSlot({
                     }}
                     styles={{ body: { justifyContent: 'space-between', width: '100%' } }}
                   />
+                  <Divider />
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    color="teal"
+                    leftSection={<IconLayersIntersect size={12} />}
+                    fullWidth
+                    justify="flex-start"
+                    disabled={!commander}
+                    loading={importingToDeckList}
+                    onClick={() => void handleImportToDeckList()}
+                  >
+                    Add to deck list
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    color="indigo"
+                    leftSection={<IconDownload size={12} />}
+                    fullWidth
+                    justify="flex-start"
+                    onClick={() => setImportDeckModalOpen(true)}
+                  >
+                    Import from Decks
+                  </Button>
                   <Divider />
                   <Button
                     size="xs"
@@ -1263,6 +1223,71 @@ export function CommanderSlot({
           </Group>
         </Stack>
       </Collapse>}
+
+      {!readOnly && (
+        <Modal
+          opened={importDeckModalOpen}
+          onClose={() => setImportDeckModalOpen(false)}
+          title={`Import from Decks — ${name}`}
+          size="md"
+          centered
+        >
+          {matchingDecks.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              No decks found matching this color. Add some on the Decks page first.
+            </Text>
+          ) : (
+            <SimpleGrid cols={2} spacing="xs">
+              {matchingDecks.map((deck) => {
+                const artCrop = deck.commanderArtCrop;
+                const partnerArt = deck.partnerArtCrop;
+                return (
+                  <Card
+                    key={deck.id}
+                    withBorder
+                    padding="xs"
+                    onClick={() => handleImportFromDeck(deck)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <Text size="xs" fw={700} lineClamp={1} mb={4}>
+                      {deck.name ?? deck.commanderName ?? "Unnamed"}
+                    </Text>
+                    {deck.partnerName && (
+                      <Text size="xs" c="dimmed" lineClamp={1} mb={4}>
+                        + {deck.partnerName}
+                      </Text>
+                    )}
+                    {artCrop ? (
+                      <Group gap={4} wrap="nowrap" align="flex-start">
+                        <div style={{ flex: partnerArt ? "0 0 calc(50% - 2px)" : "1 1 100%", overflow: "hidden", minWidth: 0 }}>
+                          {partnerArt ? (
+                            <Image src={artCrop} alt={deck.commanderName ?? ""} radius={0} loading="lazy"
+                              style={{ width: "200%", maxWidth: "none", marginLeft: "-50%", display: "block", aspectRatio: "626/457", objectFit: "cover", borderRadius: "var(--mantine-radius-sm) 0 0 var(--mantine-radius-sm)" }}
+                            />
+                          ) : (
+                            <Image src={artCrop} alt={deck.commanderName ?? ""} radius="sm" loading="lazy"
+                              style={{ display: "block", aspectRatio: "626/457", objectFit: "cover", width: "100%" }}
+                            />
+                          )}
+                        </div>
+                        {partnerArt && (
+                          <div style={{ flex: "0 0 calc(50% - 2px)", overflow: "hidden", minWidth: 0 }}>
+                            <Image src={partnerArt} alt={deck.partnerName ?? ""} radius={0} loading="lazy"
+                              style={{ width: "200%", maxWidth: "none", marginLeft: "-50%", display: "block", aspectRatio: "626/457", objectFit: "cover", borderRadius: "0 var(--mantine-radius-sm) var(--mantine-radius-sm) 0" }}
+                            />
+                          </div>
+                        )}
+                      </Group>
+                    ) : (
+                      <div style={{ aspectRatio: "626/457", background: "var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-sm)" }} />
+                    )}
+                  </Card>
+                );
+              })}
+            </SimpleGrid>
+          )}
+        </Modal>
+      )}
 
       {!readOnly && <PrintPickerModal
         opened={printPickerFor !== null}

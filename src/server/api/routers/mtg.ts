@@ -13,7 +13,7 @@ const VALID_COLOR_IDS = [
   "wubrg", "c",
 ] as const;
 
-const VALID_TAGS = [
+export const VALID_TAGS = [
   "-1/-1 Counters", "+1/+1 Counters",
   "Activated Abilities", "Ad Nauseam", "Adventures", "Advisors", "Affinity", "Aggro",
   "Aikido", "Airbending", "All Spells", "Allies", "Amass", "Angels", "Annihilator",
@@ -80,7 +80,7 @@ const VALID_TAGS = [
   "Zoo", "Zirda Companion",
 ] as const;
 
-const VALID_ARCHETYPES = [
+export const VALID_ARCHETYPES = [
   "Aggro", "Combo", "Control", "Midrange", "Stax", "Tempo", "Vorthos",
 ] as const;
 
