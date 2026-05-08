@@ -239,13 +239,14 @@ export const DiceAppWrapper = () => {
   const [ready, setReady] = useState(false);
   const [canvasKey, setCanvasKey] = useState(0);
   const colorScheme = useComputedColorScheme('light');
+  const canvasResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Flip state
   const [isFlipped, setIsFlipped] = useState(false);
   const [diceBoxMounted, setDiceBoxMounted] = useState(false);
   const [configMounted, setConfigMounted] = useState(false);
   // Which side accepts pointer events (switches only after animation completes)
-  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+  const [activeSide, setActiveSide] = useState<'front' | 'back' | 'none'>('front');
 
   const flipCardRef = useRef<HTMLDivElement>(null);
 
@@ -266,16 +267,22 @@ export const DiceAppWrapper = () => {
 
   useEffect(() => { setReady(true); }, []);
 
+  useEffect(() => {
+    return () => {
+      if (canvasResetTimerRef.current) clearTimeout(canvasResetTimerRef.current);
+    };
+  }, []);
+
   const toggle = useCallback(() => {
     setIsFlipped((prev) => {
       const next = !prev;
       if (next) {
         // Going to config — mount it if first visit, disable front interactions immediately
         setConfigMounted(true);
-        setActiveSide('none' as 'front');
+        setActiveSide('none');
       } else {
         // Going to dice — disable back interactions immediately
-        setActiveSide('none' as 'front');
+        setActiveSide('none');
       }
       return next;
     });
@@ -289,10 +296,10 @@ export const DiceAppWrapper = () => {
     gl.setClearColor('#1a1b1e');
     gl.domElement.addEventListener('webglcontextlost', (e) => {
       e.preventDefault();
-      setReady(false);
-      setTimeout(() => {
+      if (canvasResetTimerRef.current) clearTimeout(canvasResetTimerRef.current);
+      canvasResetTimerRef.current = setTimeout(() => {
         setCanvasKey((k) => k + 1);
-        setReady(true);
+        canvasResetTimerRef.current = null;
       }, 500);
     });
   };
@@ -316,26 +323,22 @@ export const DiceAppWrapper = () => {
 
   return (
     <div style={darkBg}>
-      {/* Three.js canvas: background scene only */}
-      <Canvas key={canvasKey} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: '#1a1b1e' }} onCreated={handleCreated}>
-        <DiceApp
-          configuration={configuration}
-          lighting={lighting}
-          isFlipped={isFlipped}
-          flipCardRef={flipCardRef}
-          onFlipRest={handleFlipRest}
-        />
-      </Canvas>
-
+      {/* DiceBox owns the only active WebGL canvas; the flip itself is pure CSS. */}
       {/* DOM overlay: CSS 3D flip card — rendered outside the canvas so text is native and sharp */}
       <div style={{ position: 'absolute', inset: 0, perspective: '1200px', pointerEvents: 'none' }}>
         <div
           ref={flipCardRef}
+          onTransitionEnd={(event) => {
+            if (event.target === event.currentTarget) {
+              handleFlipRest(isFlipped);
+            }
+          }}
           style={{
             width: '100%',
             height: '100%',
             transformStyle: 'preserve-3d',
-            transform: 'rotateY(0deg)',
+            transform: `rotateY(${isFlipped ? -180 : 0}deg)`,
+            transition: 'transform 600ms cubic-bezier(0.22, 1, 0.36, 1)',
           }}
         >
           {/* Front face: DiceBox */}
