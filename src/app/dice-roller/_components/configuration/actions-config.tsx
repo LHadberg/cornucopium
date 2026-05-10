@@ -1,6 +1,6 @@
 'use client';
 
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Button, Group, Stack, TextInput, Switch, Select, ActionIcon, Paper, Text, Collapse, Divider, Popover } from '@mantine/core';
 import { IconPlus, IconTrash, IconChevronDown, IconChevronUp, IconFolderPlus } from '@tabler/icons-react';
 import type { Action, ActionSet, ConfigPanelHandle, DiceSelections, StatSet, Stats } from '../../_types/types';
@@ -220,7 +220,7 @@ const ActionsConfig = forwardRef<ConfigPanelHandle, ActionsConfigProps>(({ actio
                     <ActionIcon
                       color="red"
                       variant="subtle"
-                      size={{ base: 'md', md: 'sm' }}
+                      size="sm"
                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(set.id); }}
                     >
                       <IconTrash size={16} />
@@ -293,7 +293,7 @@ const ActionsConfig = forwardRef<ConfigPanelHandle, ActionsConfigProps>(({ actio
                               <ActionIcon
                                 color="red"
                                 variant="subtle"
-                                size={{ base: 'md', md: 'sm' }}
+                                size="sm"
                                 onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(action.id); }}
                               >
                                 <IconTrash size={16} />

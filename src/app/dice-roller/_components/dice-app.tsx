@@ -323,22 +323,27 @@ export const DiceAppWrapper = () => {
 
   return (
     <div style={darkBg}>
-      {/* DiceBox owns the only active WebGL canvas; the flip itself is pure CSS. */}
+      <Canvas
+        key={canvasKey}
+        style={{ position: 'absolute', inset: 0 }}
+        onCreated={handleCreated}
+      >
+        <DiceApp
+          configuration={configuration}
+          lighting={lighting}
+          isFlipped={isFlipped}
+          flipCardRef={flipCardRef}
+          onFlipRest={handleFlipRest}
+        />
+      </Canvas>
       {/* DOM overlay: CSS 3D flip card — rendered outside the canvas so text is native and sharp */}
       <div style={{ position: 'absolute', inset: 0, perspective: '1200px', pointerEvents: 'none' }}>
         <div
           ref={flipCardRef}
-          onTransitionEnd={(event) => {
-            if (event.target === event.currentTarget) {
-              handleFlipRest(isFlipped);
-            }
-          }}
           style={{
             width: '100%',
             height: '100%',
             transformStyle: 'preserve-3d',
-            transform: `rotateY(${isFlipped ? -180 : 0}deg)`,
-            transition: 'transform 600ms cubic-bezier(0.22, 1, 0.36, 1)',
           }}
         >
           {/* Front face: DiceBox */}

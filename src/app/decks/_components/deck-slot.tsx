@@ -450,7 +450,7 @@ export function DeckSlot({ deck, onDelete }: { deck: Deck; onDelete: () => void 
     let parsedTags: string[] = [];
     try { parsedTags = JSON.parse(deck.tags) as string[]; } catch { parsedTags = []; }
     upsertSelection.mutate({
-      colorId: deck.colorId,
+      colorId: deck.colorId as Parameters<typeof upsertSelection.mutate>[0]["colorId"],
       commanderScryfallId: deck.commanderScryfallId,
       commanderName: deck.commanderName,
       commanderTypeLine: deck.commanderTypeLine,
