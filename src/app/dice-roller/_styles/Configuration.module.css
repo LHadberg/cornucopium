@@ -1,3 +1,8 @@
+/* Disable all interactions when the config panel is not the active face */
+.inactive * {
+  pointer-events: none !important;
+}
+
 /* ── Light-mode contrast improvements for config panel ────────────── */
 
 /* Boost dimmed text (c="dimmed") — covers stat value lines, descriptions, etc. */

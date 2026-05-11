@@ -356,7 +356,7 @@ export const DiceAppWrapper = () => {
           }}>
             <MantineProvider forceColorScheme={colorScheme}>
               {diceBoxMounted && (
-                <DiceBoxComponent configuration={configuration} toggleShowDiceBox={toggle} />
+                <DiceBoxComponent configuration={configuration} toggleShowDiceBox={toggle} isActive={activeSide === 'front'} />
               )}
             </MantineProvider>
           </div>
@@ -374,7 +374,7 @@ export const DiceAppWrapper = () => {
           }}>
             <MantineProvider forceColorScheme={colorScheme}>
               {configMounted && (
-                <Configuration toggleShowDiceBox={toggle} configuration={configuration} />
+                <Configuration toggleShowDiceBox={toggle} configuration={configuration} isActive={activeSide === 'back'} />
               )}
             </MantineProvider>
           </div>
