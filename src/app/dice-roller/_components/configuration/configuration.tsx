@@ -17,9 +17,10 @@ const LAST_TAB_KEY = 'dice-roller-last-config-tab';
 export interface ConfigurationProps {
   toggleShowDiceBox: (value?: React.SetStateAction<boolean> | undefined) => void;
   configuration: LocalStorageConfigurationReturn;
+  isActive?: boolean;
 }
 
-export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox, configuration }) => {
+export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox, configuration, isActive = true }) => {
   const isDark = useComputedColorScheme('light') === 'dark';
   const { t } = useTranslation();
 
@@ -110,7 +111,7 @@ export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox,
 
   return (
     <div
-      className={styles.configWrapper}
+      className={`${styles.configWrapper}${!isActive ? ` ${styles.inactive}` : ''}`}
       onClick={(e) => { e.stopPropagation(); }}
       style={{
         height: '100%',
@@ -153,11 +154,12 @@ export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox,
           },
           panel: {
             maxWidth: '100%',
-            overflowY: 'auto',
+            overflowY: 'scroll',
             overflowX: 'hidden',
             flex: 1,
             minHeight: 0,
             padding: '0 1rem',
+            touchAction: 'pan-y',
           },
         }}
         value={activeTab}
