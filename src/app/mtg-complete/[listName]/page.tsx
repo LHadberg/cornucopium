@@ -16,7 +16,7 @@ export default async function PublicMtgPage({
       name: true,
       mtgPagePublic: true,
       mtgPageName: true,
-      commanderSelections: true,
+      decks: { where: { isActiveSelection: true } },
     },
   });
 
@@ -35,7 +35,7 @@ export default async function PublicMtgPage({
       <Title order={2}>{user.mtgPageName}</Title>
       <MtgCompleteGrid
         readOnly
-        preloadedSelections={user.commanderSelections as SelectionRow[]}
+        preloadedSelections={user.decks as SelectionRow[]}
       />
     </Stack>
   );

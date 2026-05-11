@@ -27,7 +27,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 import { DeckCard } from "./deck-card";
-import type { CommanderSelection } from "../../../../generated/prisma";
+import type { Deck as DeckRow } from "../../../../generated/prisma";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -354,7 +354,7 @@ function ImportDeckCard({
   selected,
   onClick,
 }: {
-  deck: CommanderSelection;
+  deck: DeckRow;
   selected: boolean;
   onClick: () => void;
 }) {
@@ -415,7 +415,7 @@ function ImportDialog({
 }: {
   opened: boolean;
   onClose: () => void;
-  mtgDecks: CommanderSelection[];
+  mtgDecks: DeckRow[];
 }) {
   const utils = api.useUtils();
   const markSeen = api.decks.markImportPromptSeen.useMutation();
@@ -423,7 +423,7 @@ function ImportDialog({
     onSuccess: () => void utils.decks.getAll.invalidate(),
   });
 
-  const [selected, setSelected] = useState<string[]>(mtgDecks.map((d) => d.colorId));
+  const [selected, setSelected] = useState<string[]>(mtgDecks.map((d) => d.colorId!));
   const allSelected = selected.length === mtgDecks.length;
 
   const toggle = (colorId: string) =>
@@ -444,7 +444,7 @@ function ImportDialog({
           You have {mtgDecks.length} commander{mtgDecks.length !== 1 ? "s" : ""} in MTG Complete. Would you like to import them into your deck list?
         </Text>
         <Group gap="xs">
-          <Button size="xs" variant="subtle" disabled={allSelected} onClick={() => setSelected(mtgDecks.map((d) => d.colorId))}>Select all</Button>
+          <Button size="xs" variant="subtle" disabled={allSelected} onClick={() => setSelected(mtgDecks.map((d) => d.colorId!))}>Select all</Button>
           <Button size="xs" variant="subtle" disabled={selected.length === 0} onClick={() => setSelected([])}>Deselect all</Button>
         </Group>
       </Stack>
@@ -452,7 +452,7 @@ function ImportDialog({
       <div style={{ overflowY: "auto", maxHeight: "clamp(200px, 55vh, 480px)" }}>
         <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="xs">
           {mtgDecks.map((deck) => (
-            <ImportDeckCard key={deck.colorId} deck={deck} selected={selected.includes(deck.colorId)} onClick={() => toggle(deck.colorId)} />
+            <ImportDeckCard key={deck.colorId!} deck={deck} selected={selected.includes(deck.colorId!)} onClick={() => toggle(deck.colorId!)} />
           ))}
         </SimpleGrid>
       </div>
@@ -475,7 +475,7 @@ export function DecksClient({
   mtgDecks,
 }: {
   importPromptSeen: boolean;
-  mtgDecks: CommanderSelection[];
+  mtgDecks: DeckRow[];
 }) {
   const [addFormOpen, { toggle: toggleAddForm, close: closeAddForm }] = useDisclosure(false);
 

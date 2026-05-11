@@ -300,7 +300,7 @@ export function DeckSlot({ deck, onDelete }: { deck: Deck; onDelete: () => void 
   const updateDeck = api.decks.update.useMutation({
     onSuccess: () => void utils.decks.getAll.invalidate(),
   });
-  const upsertSelection = api.mtg.upsertSelection.useMutation();
+  const setAsActiveSelection = api.decks.setAsActiveSelection.useMutation({ onSuccess: () => void utils.mtg.getSelections.invalidate() });
 
   const [expanded, { open, close }] = useDisclosure(false);
   const [collapseVisible, setCollapseVisible] = useState(false);
@@ -447,47 +447,7 @@ export function DeckSlot({ deck, onDelete }: { deck: Deck; onDelete: () => void 
 
   const handleSetAsMtgSlot = () => {
     if (!deck.colorId) return;
-    let parsedTags: string[] = [];
-    try { parsedTags = JSON.parse(deck.tags) as string[]; } catch { parsedTags = []; }
-    upsertSelection.mutate({
-      colorId: deck.colorId as Parameters<typeof upsertSelection.mutate>[0]["colorId"],
-      commanderScryfallId: deck.commanderScryfallId,
-      commanderName: deck.commanderName,
-      commanderTypeLine: deck.commanderTypeLine,
-      commanderImage: deck.commanderImage,
-      commanderArtCrop: deck.commanderArtCrop,
-      partnerScryfallId: deck.partnerScryfallId,
-      partnerName: deck.partnerName,
-      partnerTypeLine: deck.partnerTypeLine,
-      partnerImage: deck.partnerImage,
-      partnerArtCrop: deck.partnerArtCrop,
-      partnerType: deck.partnerType as "partner" | "partner-with" | "background" | null,
-      companionScryfallId: deck.companionScryfallId,
-      companionName: deck.companionName,
-      companionTypeLine: deck.companionTypeLine,
-      companionImage: deck.companionImage,
-      companionArtCrop: deck.companionArtCrop,
-      bracket: deck.bracket as "1" | "2" | "3" | "4" | "5" | null,
-      tags: parsedTags as Parameters<typeof upsertSelection.mutate>[0]["tags"],
-      favoriteTag: deck.favoriteTag as Parameters<typeof upsertSelection.mutate>[0]["favoriteTag"],
-      archetype: deck.archetype as Parameters<typeof upsertSelection.mutate>[0]["archetype"],
-      deckListUrl: deck.deckListUrl,
-      commanderPreferredPrintId: null,
-      commanderPreferredPrintImage: null,
-      commanderPreferredPrintArt: null,
-      commanderPreferredPrintBackImage: null,
-      commanderPreferredPrintBackArt: null,
-      partnerPreferredPrintId: null,
-      partnerPreferredPrintImage: null,
-      partnerPreferredPrintArt: null,
-      partnerPreferredPrintBackImage: null,
-      partnerPreferredPrintBackArt: null,
-      companionPreferredPrintId: null,
-      companionPreferredPrintImage: null,
-      companionPreferredPrintArt: null,
-      companionPreferredPrintBackImage: null,
-      companionPreferredPrintBackArt: null,
-    });
+    setAsActiveSelection.mutate({ id: deck.id });
   };
 
   return (
@@ -556,7 +516,7 @@ export function DeckSlot({ deck, onDelete }: { deck: Deck; onDelete: () => void 
                       size="xs" variant="subtle" color="teal"
                       leftSection={<IconLayersIntersect size={12} />}
                       fullWidth justify="flex-start"
-                      loading={upsertSelection.isPending}
+                      loading={setAsActiveSelection.isPending}
                       disabled={!deck.commanderName}
                       onClick={handleSetAsMtgSlot}
                     >

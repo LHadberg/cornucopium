@@ -58,54 +58,8 @@ model User {
     diceRollerVisuals            String?
     accounts             Account[]
     sessions             Session[]
-    commanderSelections  CommanderSelection[]
     decks                    Deck[]
     deckListImportPromptSeen Boolean @default(false)
-}
-
-model CommanderSelection {
-    id                  String  @id @default(cuid())
-    userId              String
-    colorId             String
-    commanderScryfallId String?
-    commanderName       String?
-    commanderTypeLine   String?
-    commanderImage      String?
-    commanderArtCrop    String?
-    partnerScryfallId   String?
-    partnerName         String?
-    partnerTypeLine     String?
-    partnerImage        String?
-    partnerArtCrop      String?
-    partnerType         String?
-    bracket             String?
-    tags                String  @default("[]")
-    favoriteTag         String?
-    archetype           String?
-    deckListUrl                  String?
-    commanderPreferredPrintId       String?
-    commanderPreferredPrintImage    String?
-    commanderPreferredPrintArt      String?
-    commanderPreferredPrintBackImage String?
-    commanderPreferredPrintBackArt   String?
-    partnerPreferredPrintId         String?
-    partnerPreferredPrintImage      String?
-    partnerPreferredPrintArt        String?
-    partnerPreferredPrintBackImage  String?
-    partnerPreferredPrintBackArt    String?
-    companionScryfallId             String?
-    companionName                   String?
-    companionTypeLine               String?
-    companionImage                  String?
-    companionArtCrop                String?
-    companionPreferredPrintId       String?
-    companionPreferredPrintImage    String?
-    companionPreferredPrintArt      String?
-    companionPreferredPrintBackImage String?
-    companionPreferredPrintBackArt   String?
-    user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    @@unique([userId, colorId])
 }
 
 model Deck {
@@ -115,28 +69,49 @@ model Deck {
   updatedAt DateTime @updatedAt
 
   name                String?
+  colorId             String?
+  // true when this deck is the active mtg-complete selection for its colorId
+  isActiveSelection   Boolean @default(false)
+
   commanderScryfallId String?
   commanderName       String?
   commanderTypeLine   String?
   commanderImage      String?
   commanderArtCrop    String?
+  commanderPreferredPrintId        String?
+  commanderPreferredPrintImage     String?
+  commanderPreferredPrintArt       String?
+  commanderPreferredPrintBackImage String?
+  commanderPreferredPrintBackArt   String?
+
   partnerScryfallId   String?
   partnerName         String?
   partnerTypeLine     String?
   partnerImage        String?
   partnerArtCrop      String?
   partnerType         String?
+  partnerPreferredPrintId          String?
+  partnerPreferredPrintImage       String?
+  partnerPreferredPrintArt         String?
+  partnerPreferredPrintBackImage   String?
+  partnerPreferredPrintBackArt     String?
+
   companionScryfallId String?
   companionName       String?
   companionTypeLine   String?
   companionImage      String?
   companionArtCrop    String?
+  companionPreferredPrintId        String?
+  companionPreferredPrintImage     String?
+  companionPreferredPrintArt       String?
+  companionPreferredPrintBackImage String?
+  companionPreferredPrintBackArt   String?
+
   bracket             String?
   tags                String  @default("[]")
   favoriteTag         String?
   archetype           String?
   deckListUrl         String?
-  colorId             String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

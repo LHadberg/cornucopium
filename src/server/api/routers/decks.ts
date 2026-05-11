@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { VALID_TAGS, VALID_ARCHETYPES } from "./mtg";
 
@@ -85,6 +86,26 @@ export const decksRouter = createTRPCRouter({
       });
     }),
 
+  setAsActiveSelection: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const deck = await ctx.db.deck.findFirst({
+        where: { id: input.id, userId: ctx.session.user.id },
+        select: { id: true, colorId: true },
+      });
+      if (!deck) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!deck.colorId) throw new TRPCError({ code: "BAD_REQUEST", message: "Deck must have a colorId to be set as active selection" });
+
+      await ctx.db.deck.updateMany({
+        where: { userId: ctx.session.user.id, colorId: deck.colorId, isActiveSelection: true },
+        data: { isActiveSelection: false },
+      });
+      return ctx.db.deck.update({
+        where: { id: input.id },
+        data: { isActiveSelection: true },
+      });
+    }),
+
   getImportPromptStatus: protectedProcedure.query(async ({ ctx }) => {
     const user = await ctx.db.user.findUnique({
       where: { id: ctx.session.user.id },
@@ -103,8 +124,8 @@ export const decksRouter = createTRPCRouter({
   importFromMtgComplete: protectedProcedure
     .input(z.object({ colorIds: z.array(z.string()) }))
     .mutation(async ({ ctx, input }) => {
-      const selections = await ctx.db.commanderSelection.findMany({
-        where: { userId: ctx.session.user.id, colorId: { in: input.colorIds } },
+      const selections = await ctx.db.deck.findMany({
+        where: { userId: ctx.session.user.id, isActiveSelection: true, colorId: { in: input.colorIds } },
       });
 
       const created = await Promise.all(
@@ -113,6 +134,8 @@ export const decksRouter = createTRPCRouter({
             data: {
               userId: ctx.session.user.id,
               name: s.commanderName,
+              colorId: s.colorId,
+              isActiveSelection: false,
               commanderScryfallId: s.commanderScryfallId,
               commanderName: s.commanderName,
               commanderTypeLine: s.commanderTypeLine,
@@ -134,7 +157,6 @@ export const decksRouter = createTRPCRouter({
               favoriteTag: s.favoriteTag,
               archetype: s.archetype,
               deckListUrl: s.deckListUrl,
-              colorId: s.colorId,
             },
           }),
         ),

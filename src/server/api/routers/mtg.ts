@@ -209,8 +209,8 @@ const selectionInput = z.object({
 
 export const mtgRouter = createTRPCRouter({
   getSelections: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.commanderSelection.findMany({
-      where: { userId: ctx.session.user.id },
+    return ctx.db.deck.findMany({
+      where: { userId: ctx.session.user.id, isActiveSelection: true },
     });
   }),
 
@@ -218,12 +218,15 @@ export const mtgRouter = createTRPCRouter({
     .input(selectionInput)
     .mutation(async ({ ctx, input }) => {
       const { tags, ...rest } = input;
-      const data = { ...rest, tags: JSON.stringify(tags), userId: ctx.session.user.id };
-      return ctx.db.commanderSelection.upsert({
-        where: { userId_colorId: { userId: ctx.session.user.id, colorId: input.colorId } },
-        create: data,
-        update: data,
+      const data = { ...rest, tags: JSON.stringify(tags), userId: ctx.session.user.id, isActiveSelection: true };
+      const existing = await ctx.db.deck.findFirst({
+        where: { userId: ctx.session.user.id, colorId: input.colorId, isActiveSelection: true },
+        select: { id: true },
       });
+      if (existing) {
+        return ctx.db.deck.update({ where: { id: existing.id }, data });
+      }
+      return ctx.db.deck.create({ data });
     }),
 
   /** Returns the current user's public-page settings. */
