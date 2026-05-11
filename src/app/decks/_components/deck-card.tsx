@@ -433,7 +433,7 @@ export function DeckCard({ deck, onDelete }: { deck: DeckRow; onDelete: () => vo
   // ── Auto-save ──────────────────────────────────────────────────────────────
   const utils = api.useUtils();
   const updateDeck = api.decks.update.useMutation({ onSuccess: () => void utils.decks.getAll.invalidate() });
-  const upsertSelection = api.mtg.upsertSelection.useMutation({ onSuccess: () => void utils.mtg.getSelections.invalidate() });
+  const setAsActiveSelection = api.decks.setAsActiveSelection.useMutation({ onSuccess: () => void utils.mtg.getSelections.invalidate() });
 
   const saveJson = JSON.stringify({
     deckName, bracket, tags, favoriteTag, archetype, deckListUrl, hasCompanion,
@@ -488,36 +488,7 @@ export function DeckCard({ deck, onDelete }: { deck: DeckRow; onDelete: () => vo
 
   const handleSetInMtgComplete = () => {
     if (!deck.colorId) return;
-    upsertSelection.mutate({
-      colorId: deck.colorId as Parameters<typeof upsertSelection.mutate>[0]["colorId"],
-      commanderScryfallId: deck.commanderScryfallId,
-      commanderName: deck.commanderName,
-      commanderTypeLine: deck.commanderTypeLine,
-      commanderImage: deck.commanderImage,
-      commanderArtCrop: deck.commanderArtCrop,
-      partnerScryfallId: deck.partnerScryfallId,
-      partnerName: deck.partnerName,
-      partnerTypeLine: deck.partnerTypeLine,
-      partnerImage: deck.partnerImage,
-      partnerArtCrop: deck.partnerArtCrop,
-      partnerType: deck.partnerType as "partner" | "partner-with" | "background" | null,
-      bracket: deck.bracket as "1" | "2" | "3" | "4" | "5" | null,
-      tags: initTags as Parameters<typeof upsertSelection.mutate>[0]["tags"],
-      favoriteTag: deck.favoriteTag as Parameters<typeof upsertSelection.mutate>[0]["favoriteTag"],
-      archetype: deck.archetype as Parameters<typeof upsertSelection.mutate>[0]["archetype"],
-      deckListUrl: deck.deckListUrl,
-      commanderPreferredPrintId: null, commanderPreferredPrintImage: null, commanderPreferredPrintArt: null,
-      commanderPreferredPrintBackImage: null, commanderPreferredPrintBackArt: null,
-      partnerPreferredPrintId: null, partnerPreferredPrintImage: null, partnerPreferredPrintArt: null,
-      partnerPreferredPrintBackImage: null, partnerPreferredPrintBackArt: null,
-      companionScryfallId: deck.companionScryfallId,
-      companionName: deck.companionName,
-      companionTypeLine: deck.companionTypeLine,
-      companionImage: deck.companionImage,
-      companionArtCrop: deck.companionArtCrop,
-      companionPreferredPrintId: null, companionPreferredPrintImage: null, companionPreferredPrintArt: null,
-      companionPreferredPrintBackImage: null, companionPreferredPrintBackArt: null,
-    });
+    setAsActiveSelection.mutate({ id: deck.id });
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -568,7 +539,7 @@ export function DeckCard({ deck, onDelete }: { deck: DeckRow; onDelete: () => vo
                   size="xs" variant="subtle" color="indigo"
                   leftSection={<IconLayersIntersect size={12} />}
                   fullWidth justify="flex-start"
-                  disabled={!deck.colorId} loading={upsertSelection.isPending}
+                  disabled={!deck.colorId} loading={setAsActiveSelection.isPending}
                   onClick={handleSetInMtgComplete}
                 >
                   Set deck in mtg-complete

@@ -11,6 +11,7 @@
 # database
 /prisma/migrations/
 prisma/dev.db
+prisma/prisma/
 
 # next.js
 /.next/

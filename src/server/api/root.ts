@@ -22,6 +22,6 @@ export type AppRouter = typeof appRouter;
  * @example
  * const trpc = createCaller(createContext);
  * const res = await trpc.mtg.getSelections();
- *       ^? CommanderSelection[]
+ *       ^? Deck[]
  */
 export const createCaller = createCallerFactory(appRouter);

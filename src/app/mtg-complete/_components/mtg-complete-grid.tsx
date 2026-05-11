@@ -70,7 +70,7 @@ const COLOR_COMBINATIONS = [
 // ── Shared data shape ─────────────────────────────────────────────────────────
 
 export type SelectionRow = {
-  colorId: string;
+  colorId: string | null;
   commanderScryfallId: string | null;
   commanderName: string | null;
   commanderTypeLine: string | null;
