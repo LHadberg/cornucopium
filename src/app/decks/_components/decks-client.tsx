@@ -23,6 +23,7 @@ import {
 import { useDebouncedValue, useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "~/trpc/react";
+import type { Deck as DeckRow } from "../../../../generated/prisma";
 import { DeckCard } from "./deck-card";
 import { SelectionCharts } from "../../mtg-complete/_components/selection-charts";
 import "../../mtg-complete/_i18n/i18n";
