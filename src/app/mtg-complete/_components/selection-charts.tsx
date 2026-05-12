@@ -11,73 +11,6 @@ import type { SelectionRow } from "./mtg-complete-grid";
 
 const ARCHETYPES = ["Aggro", "Combo", "Control", "Midrange", "Stax", "Tempo", "Vorthos"];
 
-const TAGS = [
-  "-1/-1 Counters", "+1/+1 Counters",
-  "Activated Abilities", "Ad Nauseam", "Adventures", "Advisors", "Affinity", "Aggro",
-  "Aikido", "Airbending", "All Spells", "Allies", "Amass", "Angels", "Annihilator",
-  "Anthems", "Apes", "Arcane", "Archers", "Aristocrats", "Artificers", "Artifacts",
-  "Assassins", "Astartes", "Atogs", "Attack Triggers", "Attractions", "Auras", "Avatars",
-  "Banding", "Barbarians", "Battles", "Bats", "Bears", "Beasts", "Berserkers",
-  "Big Mana", "Birds", "Birthing Pod", "Blink", "Blood", "Bloodthirst", "Blue Moon",
-  "Bobbleheads", "Bounce", "Burn",
-  "Cantrips", "Card Draw", "Cascade", "Cats", "Caves", "cEDH", "Cephalids",
-  "Charge Counters", "Chaos", "Cheerios", "Clerics", "Clones", "Clues", "Coin Flip",
-  "Color Hack", "Combo", "Commander Matters", "Connive", "Constructs", "Control",
-  "Convoke", "Counterspells", "Counters Matter", "Crabs", "Craft", "Creatureless",
-  "Crime", "Curses", "Cybermen", "Cycling",
-  "Daleks", "Dandan", "Day / Night", "Deathtouch", "Defenders", "Delirium", "Delver",
-  "Demons", "Descend", "Deserts", "Detectives", "Devoid", "Devotion", "Die Roll",
-  "Dinosaurs", "Discard", "Discover", "Dogs", "Donate", "Dragon's Approach", "Dragons",
-  "Drakes", "Dredge", "Druids", "Dungeon", "Dwarves",
-  "Earthbending", "Eggs", "Elders", "Eldrazi", "Elementals", "Elephants", "Elves",
-  "Enchantress", "Energy", "Enrage", "Equipment", "ETB", "European Highlander", "Evoke", "Exalted",
-  "Exile", "Experience Counters", "Exploit", "Explore", "Extra Combats", "Extra Turns",
-  "Extra Upkeeps",
-  "Faeries", "Fight", "Firebending", "Flash", "Flashback", "Fling", "Flying", "Food",
-  "Forced Combat", "Foretell", "Foxes", "Freerunning", "Frogs", "Fungi",
-  "Giants", "Glass Cannon", "Gnomes", "Goblins", "Gods", "Goats", "Golems",
-  "Good Stuff", "Gorgons", "Graveyard", "Griffins", "Group Hug", "Group Slug",
-  "Guildgates", "Gyruda Companion",
-  "Halflings", "Hand Size", "Hare Apparent", "Haste", "Hatebears", "Hellbent", "Heroic",
-  "Heroes", "Hippos", "Historic", "Horses", "Horrors", "Humans", "Hydras",
-  "Illusions", "Impulse Draw", "Improvise", "Indestructible", "Infect", "Insects",
-  "Jegantha Companion",
-  "Kaheera Companion", "Keruga Companion", "Keywords", "Kicker", "Kithkin", "Knights", "Kor",
-  "Land Animation", "Land Destruction", "Landfall", "Landwalk", "Lands Matter", "Legends",
-  "Lessons", "Lhurgoyfs", "Life Exchange", "Lifedrain", "Lifegain", "Lizards", "Looting",
-  "LTB Effects", "Lure", "Lurrus Companion",
-  "Madness", "Mayhem", "Mercenaries", "Merfolk", "Mice", "Midrange", "Mill", "Minotaurs",
-  "Modified Creatures", "Modular", "Monarch", "Monks", "Monkeys", "Moonfolk", "Morph",
-  "Mounts", "Multicolor Matters", "Mutants", "Mutate", "Myr", "Myriad",
-  "Necrons", "Nightmares", "Ninjas", "Ninjutsu",
-  "Obosh Companion", "Offspring", "Oil Counters", "Old School", "Oozes", "Orcs", "Otters",
-  "Outlaws",
-  "Paradox", "Party", "Pegasi", "Persistent Petitioners", "Phasing", "Phoenixes",
-  "Phyrexians", "Pillow Fort", "Pingers", "Pirates", "Plants", "Planeswalkers", "Plot",
-  "Politics", "Polymorph", "Populate", "Power", "Praetors", "Primal Surge", "Prison",
-  "Proliferate", "Prowess",
-  "Rabbits", "Raccoons", "Rad Counters", "Ramp", "Rat Colony", "Rats", "Reach", "Rebels",
-  "Reanimator", "Relentless Rats", "Robots", "Rock", "Rogues", "Rooms",
-  "Saboteurs", "Sacrifice", "Sagas", "Samurai", "Saprolings", "Satyrs", "Scarecrows",
-  "Scry", "Sea Creatures", "Self-Damage", "Self-Destruct", "Self-Discard", "Self-Mill",
-  "Servos", "Shadowborn Apostles", "Shades", "Shamans", "Shapeshifters", "Sharks",
-  "Shrines", "Skeletons", "Skulk", "Slime Against Humanity", "Slivers", "Snakes", "Sneak",
-  "Sneak Attack", "Snow", "Soldiers", "Spacecraft", "Specters", "Speed", "Spell Copy",
-  "Spellslinger", "Spiders", "Spirits", "Spore Counters", "Squad", "Squirrels", "Stax",
-  "Stickers", "Stompy", "Stoneblade", "Storm", "Sunburst", "Sunforger", "Surveil",
-  "Suspend", "Symbiotes",
-  "Tap / Untap", "Tempest Hawk", "Tempo", "Theft", "The Ring", "Thopters", "Time Counters",
-  "Time Lords", "Tokens", "Toolbox", "Topdeck", "Toughness Matters", "Towns", "Transform",
-  "Treasure", "Treefolk", "Triggered Abilities", "Tron", "Turbo Fog", "Turtles", "Tyranids",
-  "Type Hack",
-  "Umori Companion", "Unblockable", "Unicorns", "Unnatural",
-  "Vampires", "Vanilla", "Vehicles", "Villainous Choice", "Villains", "Voltron", "Voting",
-  "Warriors", "Waterbending", "Web-slinging", "Weenies", "Werewolves", "Whales", "Wheels",
-  "Wizards", "Wolves", "Wraiths", "Wurms",
-  "X Spells",
-  "Zoo", "Zirda Companion",
-];
-
 // ── Data aggregation ──────────────────────────────────────────────────────────
 
 function countBrackets(selections: SelectionRow[], bracketLabel: (n: string) => string) {
@@ -87,19 +20,6 @@ function countBrackets(selections: SelectionRow[], bracketLabel: (n: string) => 
       name: bracketLabel(v),
       value: filled.filter((s) => s.bracket === v).length,
     }))
-    .filter((d) => d.value > 0);
-}
-
-function countTags(selections: SelectionRow[]) {
-  const filled = selections.filter((s) => !!s.commanderScryfallId);
-  const tagCounts: Record<string, number> = {};
-  for (const s of filled) {
-    let tags: string[] = [];
-    try { tags = JSON.parse(s.tags) as string[]; } catch { tags = []; }
-    for (const t of tags) tagCounts[t] = (tagCounts[t] ?? 0) + 1;
-  }
-  return TAGS
-    .map((t) => ({ name: t, value: tagCounts[t] ?? 0 }))
     .filter((d) => d.value > 0);
 }
 
@@ -118,11 +38,6 @@ function countArchetypes(selections: SelectionRow[]) {
 // Power-level gradient: casual green → teal → amber → orange → competitive red
 const BRACKET_COLORS = ["#2f9e44", "#0c8599", "#f59f00", "#e8590c", "#c92a2a"];
 const ARCHETYPE_COLORS = ["#f03e3e", "#ae3ec9", "#1971c2", "#2f9e44", "#e8590c", "#0c8599"];
-const TAG_COLORS = [
-  "#6741d9", "#ae3ec9", "#1971c2", "#2f9e44", "#e8590c", "#0c8599",
-  "#f03e3e", "#74c0fc", "#a5d8ff", "#339af0", "#4dabf7", "#f59f00",
-  "#087f5b", "#c92a2a", "#5c7cfa", "#94d82d", "#ffa94d", "#63e6be",
-];
 
 // ── Custom tooltip ────────────────────────────────────────────────────────────
 
@@ -218,7 +133,6 @@ function MiniChart({ title, data, colors }: MiniChartProps) {
 const CHART_DEFS = [
   { key: "bracket",   titleKey: "mtg.charts.bracket",    colors: BRACKET_COLORS },
   { key: "archetype", titleKey: "mtg.charts.archetypes", colors: ARCHETYPE_COLORS },
-  { key: "tags",      titleKey: "mtg.charts.tags",       colors: TAG_COLORS },
 ] as const;
 
 // ── Public component ──────────────────────────────────────────────────────────
@@ -240,7 +154,6 @@ export function SelectionCharts({ selections }: SelectionChartsProps) {
   const dataByKey = {
     bracket:   countBrackets(selections, (n) => t('mtg.charts.bracketLabel', { number: n })),
     archetype: countArchetypes(selections),
-    tags:      countTags(selections),
   };
 
   const visibleCharts = CHART_DEFS.filter((c) => dataByKey[c.key].length > 0);

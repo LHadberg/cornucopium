@@ -189,9 +189,10 @@ interface CardSearchComboboxProps {
   onSelect: (card: ScryfallCard) => void;
   onClear: () => void;
   searchQuery?: string;
+  tooltipSide?: "left" | "right" | "bottom";
 }
 
-function CardSearchCombobox({ placeholder, value, onSelect, onClear }: CardSearchComboboxProps) {
+function CardSearchCombobox({ placeholder, value, onSelect, onClear, tooltipSide = "right" }: CardSearchComboboxProps) {
   const store = useCombobox({ onDropdownClose: () => store.resetSelectedOption() });
   const [query, setQuery] = useState(value);
   const [debounced] = useDebouncedValue(query, 300);
@@ -230,7 +231,7 @@ function CardSearchCombobox({ placeholder, value, onSelect, onClear }: CardSearc
         <Combobox.Options>
           {results.length > 0 ? results.map((card) => (
             <Combobox.Option value={card.id} key={card.id}>
-              <HoverCard width={268} position="right" openDelay={200} closeDelay={0} withinPortal middlewares={{ flip: true, shift: true }}>
+              <HoverCard width="auto" position={tooltipSide} openDelay={200} closeDelay={0} withinPortal middlewares={{ flip: true, shift: true }}>
                 <HoverCard.Target>
                   <div>
                     <Text size="xs" fw={500}>{card.name}</Text>
@@ -240,7 +241,7 @@ function CardSearchCombobox({ placeholder, value, onSelect, onClear }: CardSearc
                 {cardImage(card) && (
                   <HoverCard.Dropdown p={4}>
                     <Image src={cardImage(card)!} alt={card.name} radius={20} loading="lazy"
-                      style={{ width: "min(260px, calc(100vw - 16px))" }}
+                      style={{ maxWidth: "min(260px, calc(100vw - 16px))", width: "100%" }}
                     />
                   </HoverCard.Dropdown>
                 )}
@@ -295,7 +296,7 @@ function TagSelector({ tags, setTags, favoriteTag, setFavoriteTag }: {
 
 // ── DeckSlot ──────────────────────────────────────────────────────────────────
 
-export function DeckSlot({ deck, onDelete }: { deck: Deck; onDelete: () => void }) {
+export function DeckSlot({ deck, onDelete, tooltipSide = "right" }: { deck: Deck; onDelete: () => void; tooltipSide?: "left" | "right" | "bottom" }) {
   const utils = api.useUtils();
   const updateDeck = api.decks.update.useMutation({
     onSuccess: () => void utils.decks.getAll.invalidate(),
@@ -493,7 +494,7 @@ export function DeckSlot({ deck, onDelete }: { deck: Deck; onDelete: () => void 
           displayTag={displayTag}
           archetype={archetype}
           visual={true}
-          tooltipSide="right"
+          tooltipSide={tooltipSide}
           emptyText="No commander"
         />
       )}
