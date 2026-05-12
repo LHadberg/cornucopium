@@ -228,9 +228,10 @@ interface CardSearchProps {
   store: ReturnType<typeof useCombobox>;
   onQueryChange: (q: string) => void;
   onSelect: (card: ScryfallCard | null) => void;
+  tooltipSide?: "left" | "right" | "bottom";
 }
 
-function CardSearch({ placeholder, query, results, loading, store, onQueryChange, onSelect }: CardSearchProps) {
+function CardSearch({ placeholder, query, results, loading, store, onQueryChange, onSelect, tooltipSide = "right" }: CardSearchProps) {
   return (
     <Combobox store={store} onOptionSubmit={(id) => {
       onSelect(results.find((c) => c.id === id) ?? null);
@@ -250,7 +251,7 @@ function CardSearch({ placeholder, query, results, loading, store, onQueryChange
         <Combobox.Options>
           {results.length > 0 ? results.map((card) => (
             <Combobox.Option value={card.id} key={card.id}>
-              <HoverCard width={268} position="right" openDelay={200} closeDelay={0} withinPortal middlewares={{ flip: true, shift: true }}>
+              <HoverCard width="auto" position={tooltipSide} openDelay={200} closeDelay={0} withinPortal middlewares={{ flip: true, shift: true }}>
                 <HoverCard.Target>
                   <div>
                     <Text size="xs" fw={500}>{card.name}</Text>
@@ -259,7 +260,7 @@ function CardSearch({ placeholder, query, results, loading, store, onQueryChange
                 </HoverCard.Target>
                 {cardImage(card) && (
                   <HoverCard.Dropdown p={4}>
-                    <Image src={cardImage(card)!} alt={card.name} radius={20} loading="lazy" style={{ width: "min(260px, calc(100vw - 16px))" }} />
+                    <Image src={cardImage(card)!} alt={card.name} radius={20} loading="lazy" style={{ maxWidth: "min(260px, calc(100vw - 16px))", width: "100%" }} />
                   </HoverCard.Dropdown>
                 )}
               </HoverCard>
@@ -307,7 +308,7 @@ function TagSelector({ tags, setTags, favoriteTag, setFavoriteTag }: TagSelector
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function DeckCard({ deck, onDelete }: { deck: DeckRow; onDelete: () => void }) {
+export function DeckCard({ deck, onDelete, tooltipSide = "right" }: { deck: DeckRow; onDelete: () => void; tooltipSide?: "left" | "right" | "bottom" }) {
   // ── Expand / collapse ──────────────────────────────────────────────────────
   const [expanded, { open, close }] = useDisclosure(false);
   const [collapseVisible, setCollapseVisible] = useState(false);
@@ -578,6 +579,7 @@ export function DeckCard({ deck, onDelete }: { deck: DeckRow; onDelete: () => vo
           visual={true}
           emptyText="No commander"
           hideCommanderName={nameMatchesCommander}
+          tooltipSide={tooltipSide}
         />
       )}
 
@@ -596,6 +598,7 @@ export function DeckCard({ deck, onDelete }: { deck: DeckRow; onDelete: () => vo
             query={commanderQuery} results={commanderResults} loading={commanderLoading} store={cmdStore}
             onQueryChange={(q) => { mark(); setCommanderQuery(q); setCommander(null); setSavedPartnerType(null); }}
             onSelect={(card) => { mark(); setCommander(card); setCommanderQuery(card?.name ?? ""); }}
+            tooltipSide={tooltipSide}
           />
 
           {partnerType && (
@@ -609,6 +612,7 @@ export function DeckCard({ deck, onDelete }: { deck: DeckRow; onDelete: () => vo
                   query={partnerQuery} results={partnerResults} loading={partnerLoading} store={ptnStore}
                   onQueryChange={(q) => { mark(); setPartnerQuery(q); setPartner(null); }}
                   onSelect={(card) => { mark(); setPartner(card); setPartnerQuery(card?.name ?? ""); }}
+                  tooltipSide={tooltipSide}
                 />
               )}
             </>
@@ -622,6 +626,7 @@ export function DeckCard({ deck, onDelete }: { deck: DeckRow; onDelete: () => vo
                 query={companionQuery} results={companionResults} loading={companionLoading} store={cmpStore}
                 onQueryChange={(q) => { mark(); setCompanionQuery(q); setCompanion(null); }}
                 onSelect={(card) => { mark(); setCompanion(card); setCompanionQuery(card?.name ?? ""); }}
+                tooltipSide={tooltipSide}
               />
             </>
           )}

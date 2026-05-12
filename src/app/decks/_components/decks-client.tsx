@@ -2,7 +2,6 @@
 
 import {
   Button,
-  Card,
   Collapse,
   Combobox,
   Divider,
@@ -11,7 +10,6 @@ import {
   Image,
   InputBase,
   Loader,
-  Modal,
   MultiSelect,
   Select,
   SimpleGrid,
@@ -22,12 +20,12 @@ import {
   Title,
   useCombobox,
 } from "@mantine/core";
-import { useDebouncedValue, useDisclosure } from "@mantine/hooks";
-import { IconCheck } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useDebouncedValue, useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 import { DeckCard } from "./deck-card";
-import type { Deck as DeckRow } from "../../../../generated/prisma";
+import { SelectionCharts } from "../../mtg-complete/_components/selection-charts";
+import "../../mtg-complete/_i18n/i18n";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -129,6 +127,15 @@ const BRACKETS = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function getTooltipSide(slotIndex: number, numCols: number): "left" | "right" | "bottom" {
+  if (numCols <= 1) return "bottom";
+  const colIndex = slotIndex % numCols;
+  const third = numCols / 3;
+  if (colIndex < third) return "right";
+  if (colIndex >= numCols - third) return "left";
+  return "bottom";
+}
+
 function cardImage(card: ScryfallCard): string | null {
   return card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal ?? null;
 }
@@ -161,9 +168,10 @@ interface CardSearchComboboxProps {
   value: string;
   onSelect: (card: ScryfallCard) => void;
   onClear: () => void;
+  tooltipSide?: "left" | "right" | "bottom";
 }
 
-function CardSearchCombobox({ placeholder, value, onSelect, onClear }: CardSearchComboboxProps) {
+function CardSearchCombobox({ placeholder, value, onSelect, onClear, tooltipSide = "right" }: CardSearchComboboxProps) {
   const store = useCombobox({ onDropdownClose: () => store.resetSelectedOption() });
   const [query, setQuery] = useState(value);
   const [debounced] = useDebouncedValue(query, 300);
@@ -203,7 +211,7 @@ function CardSearchCombobox({ placeholder, value, onSelect, onClear }: CardSearc
         <Combobox.Options>
           {results.length > 0 ? results.map((card) => (
             <Combobox.Option value={card.id} key={card.id}>
-              <HoverCard width={268} position="right" openDelay={200} closeDelay={0} withinPortal middlewares={{ flip: true, shift: true }}>
+              <HoverCard width="auto" position={tooltipSide} openDelay={200} closeDelay={0} withinPortal middlewares={{ flip: true, shift: true }}>
                 <HoverCard.Target>
                   <div>
                     <Text size="xs" fw={500}>{card.name}</Text>
@@ -212,7 +220,7 @@ function CardSearchCombobox({ placeholder, value, onSelect, onClear }: CardSearc
                 </HoverCard.Target>
                 {cardImage(card) && (
                   <HoverCard.Dropdown p={4}>
-                    <Image src={cardImage(card)!} alt={card.name} radius={20} loading="lazy" style={{ width: "min(260px, calc(100vw - 16px))" }} />
+                    <Image src={cardImage(card)!} alt={card.name} radius={20} loading="lazy" style={{ maxWidth: "min(260px, calc(100vw - 16px))", width: "100%" }} />
                   </HoverCard.Dropdown>
                 )}
               </HoverCard>
@@ -230,7 +238,7 @@ function CardSearchCombobox({ placeholder, value, onSelect, onClear }: CardSearc
 
 // ── DeckForm (add + edit) ─────────────────────────────────────────────────────
 
-function AddDeckForm({ onSuccess }: { onSuccess: () => void }) {
+function AddDeckForm({ onSuccess, tooltipSide = "right" }: { onSuccess: () => void; tooltipSide?: "left" | "right" | "bottom" }) {
   const utils = api.useUtils();
   const createDeck = api.decks.create.useMutation({
     onSuccess: () => { void utils.decks.getAll.invalidate(); onSuccess(); },
@@ -304,7 +312,7 @@ function AddDeckForm({ onSuccess }: { onSuccess: () => void }) {
       </Group>
 
       <Text size="xs" c="dimmed" fw={500}>Commander</Text>
-      <CardSearchCombobox placeholder="Search commander..." value={commanderQuery}
+      <CardSearchCombobox placeholder="Search commander..." value={commanderQuery} tooltipSide={tooltipSide}
         onSelect={(card) => { setCommander(card); setCommanderQuery(card.name); }}
         onClear={() => { setCommander(null); setCommanderQuery(""); }}
       />
@@ -312,7 +320,7 @@ function AddDeckForm({ onSuccess }: { onSuccess: () => void }) {
       {hasPartner && (
         <>
           <Text size="xs" c="dimmed" fw={500}>Partner</Text>
-          <CardSearchCombobox placeholder="Search partner..." value={partnerQuery}
+          <CardSearchCombobox placeholder="Search partner..." value={partnerQuery} tooltipSide={tooltipSide}
             onSelect={(card) => { setPartner(card); setPartnerQuery(card.name); }}
             onClear={() => { setPartner(null); setPartnerQuery(""); }}
           />
@@ -322,7 +330,7 @@ function AddDeckForm({ onSuccess }: { onSuccess: () => void }) {
       {hasCompanion && (
         <>
           <Text size="xs" c="dimmed" fw={500}>Companion</Text>
-          <CardSearchCombobox placeholder="Search companion..." value={companionQuery}
+          <CardSearchCombobox placeholder="Search companion..." value={companionQuery} tooltipSide={tooltipSide}
             onSelect={(card) => { setCompanion(card); setCompanionQuery(card.name); }}
             onClear={() => { setCompanion(null); setCompanionQuery(""); }}
           />
@@ -347,140 +355,66 @@ function AddDeckForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-// ── ImportDeckCard ────────────────────────────────────────────────────────────
+// ── Deck sorting ─────────────────────────────────────────────────────────────
 
-function ImportDeckCard({
-  deck,
-  selected,
-  onClick,
-}: {
-  deck: DeckRow;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  const artCrop = deck.commanderPreferredPrintArt ?? deck.commanderArtCrop;
-  const normal = deck.commanderPreferredPrintImage ?? deck.commanderImage;
-  const partnerArt = deck.partnerPreferredPrintArt ?? deck.partnerArtCrop;
+type SortKey = "createdAt-desc" | "createdAt-asc" | "name-asc" | "name-desc" | "color" | "bracket" | "archetype";
 
-  return (
-    <Card
-      withBorder padding="xs" onClick={onClick}
-      style={{
-        cursor: "pointer",
-        outline: selected ? "2px solid var(--mantine-color-blue-6)" : "2px solid transparent",
-        outlineOffset: -1, userSelect: "none", position: "relative",
-      }}
-    >
-      {selected && (
-        <div style={{ position: "absolute", top: 4, right: 4, zIndex: 1, background: "var(--mantine-color-blue-6)", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <IconCheck size={10} color="white" />
-        </div>
-      )}
-      <Text size="xs" fw={700} lineClamp={1} mb={4}>{deck.commanderName ?? "Unknown"}</Text>
-      {deck.partnerName && <Text size="xs" c="dimmed" lineClamp={1} mb={4}>+ {deck.partnerName}</Text>}
-      {artCrop && normal ? (
-        <Group gap={4} wrap="nowrap" align="flex-start">
-          <div style={{ flex: partnerArt ? "0 0 calc(50% - 2px)" : "1 1 100%", overflow: "hidden", minWidth: 0 }}>
-            {partnerArt ? (
-              <Image src={artCrop} alt={deck.commanderName ?? ""} radius={0} loading="lazy"
-                style={{ width: "200%", maxWidth: "none", marginLeft: "-50%", display: "block", aspectRatio: "626/457", objectFit: "cover", borderRadius: "var(--mantine-radius-sm) 0 0 var(--mantine-radius-sm)" }}
-              />
-            ) : (
-              <Image src={artCrop} alt={deck.commanderName ?? ""} radius="sm" loading="lazy"
-                style={{ display: "block", aspectRatio: "626/457", objectFit: "cover", width: "100%" }}
-              />
-            )}
-          </div>
-          {partnerArt && (
-            <div style={{ flex: "0 0 calc(50% - 2px)", overflow: "hidden", minWidth: 0 }}>
-              <Image src={partnerArt} alt={deck.partnerName ?? ""} radius={0} loading="lazy"
-                style={{ width: "200%", maxWidth: "none", marginLeft: "-50%", display: "block", aspectRatio: "626/457", objectFit: "cover", borderRadius: "0 var(--mantine-radius-sm) var(--mantine-radius-sm) 0" }}
-              />
-            </div>
-          )}
-        </Group>
-      ) : (
-        <div style={{ aspectRatio: "626/457", background: "var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-sm)" }} />
-      )}
-    </Card>
-  );
-}
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "createdAt-desc", label: "Newest first" },
+  { value: "createdAt-asc",  label: "Oldest first" },
+  { value: "name-asc",       label: "Name (A → Z)" },
+  { value: "name-desc",      label: "Name (Z → A)" },
+  { value: "color",          label: "Color" },
+  { value: "bracket",        label: "Bracket" },
+  { value: "archetype",      label: "Archetype" },
+];
 
-// ── ImportDialog ──────────────────────────────────────────────────────────────
+const COLOR_ORDER = [
+  "w","u","b","r","g",
+  "wu","wb","wr","wg","ub","ur","ug","br","bg","rg",
+  "wub","wur","wug","wbr","wbg","wrg","ubr","ubg","urg","brg",
+  "wubr","wubg","wurg","wbrg","ubrg","wubrg","c",
+];
 
-function ImportDialog({
-  opened,
-  onClose,
-  mtgDecks,
-}: {
-  opened: boolean;
-  onClose: () => void;
-  mtgDecks: DeckRow[];
-}) {
-  const utils = api.useUtils();
-  const markSeen = api.decks.markImportPromptSeen.useMutation();
-  const importMutation = api.decks.importFromMtgComplete.useMutation({
-    onSuccess: () => void utils.decks.getAll.invalidate(),
+function sortDecks(decks: DeckRow[], key: SortKey): DeckRow[] {
+  return [...decks].sort((a, b) => {
+    switch (key) {
+      case "createdAt-desc":
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case "createdAt-asc":
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case "name-asc":
+        return (a.name ?? a.commanderName ?? "").localeCompare(b.name ?? b.commanderName ?? "");
+      case "name-desc":
+        return (b.name ?? b.commanderName ?? "").localeCompare(a.name ?? a.commanderName ?? "");
+      case "color": {
+        const ai = COLOR_ORDER.indexOf(a.colorId ?? "");
+        const bi = COLOR_ORDER.indexOf(b.colorId ?? "");
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+      }
+      case "bracket":
+        return (a.bracket ?? "").localeCompare(b.bracket ?? "");
+      case "archetype":
+        return (a.archetype ?? "").localeCompare(b.archetype ?? "");
+    }
   });
-
-  const [selected, setSelected] = useState<string[]>(mtgDecks.map((d) => d.colorId!));
-  const allSelected = selected.length === mtgDecks.length;
-
-  const toggle = (colorId: string) =>
-    setSelected((prev) => prev.includes(colorId) ? prev.filter((id) => id !== colorId) : [...prev, colorId]);
-
-  const handleClose = () => { markSeen.mutate(); onClose(); };
-
-  const handleImport = () => {
-    importMutation.mutate({ colorIds: selected }, {
-      onSuccess: () => { markSeen.mutate(); onClose(); },
-    });
-  };
-
-  return (
-    <Modal opened={opened} onClose={handleClose} title="Import decks from MTG Complete" size="lg" centered>
-      <Stack gap="sm" mb="sm">
-        <Text size="sm">
-          You have {mtgDecks.length} commander{mtgDecks.length !== 1 ? "s" : ""} in MTG Complete. Would you like to import them into your deck list?
-        </Text>
-        <Group gap="xs">
-          <Button size="xs" variant="subtle" disabled={allSelected} onClick={() => setSelected(mtgDecks.map((d) => d.colorId!))}>Select all</Button>
-          <Button size="xs" variant="subtle" disabled={selected.length === 0} onClick={() => setSelected([])}>Deselect all</Button>
-        </Group>
-      </Stack>
-
-      <div style={{ overflowY: "auto", maxHeight: "clamp(200px, 55vh, 480px)" }}>
-        <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="xs">
-          {mtgDecks.map((deck) => (
-            <ImportDeckCard key={deck.colorId!} deck={deck} selected={selected.includes(deck.colorId!)} onClick={() => toggle(deck.colorId!)} />
-          ))}
-        </SimpleGrid>
-      </div>
-
-      <Divider mt="sm" mb="sm" />
-      <Group justify="flex-end" gap="xs">
-        <Button size="xs" variant="subtle" color="gray" onClick={handleClose}>Skip</Button>
-        <Button size="xs" disabled={selected.length === 0} loading={importMutation.isPending} onClick={handleImport}>
-          Import selected ({selected.length})
-        </Button>
-      </Group>
-    </Modal>
-  );
 }
 
 // ── DecksClient ───────────────────────────────────────────────────────────────
 
-export function DecksClient({
-  importPromptSeen,
-  mtgDecks,
-}: {
-  importPromptSeen: boolean;
-  mtgDecks: DeckRow[];
-}) {
+export function DecksClient() {
   const [addFormOpen, { toggle: toggleAddForm, close: closeAddForm }] = useDisclosure(false);
 
-  const showImportModal = !importPromptSeen && mtgDecks.length > 0;
-  const [importModalOpen, setImportModalOpen] = useState(showImportModal);
+  const isXs = useMediaQuery("(min-width: 576px)") ?? false;
+  const isSm = useMediaQuery("(min-width: 768px)") ?? false;
+  const isMd = useMediaQuery("(min-width: 992px)") ?? false;
+  const isLg = useMediaQuery("(min-width: 1200px)") ?? false;
+  const numCols = isLg ? 5 : isMd ? 4 : isSm ? 3 : isXs ? 2 : 1;
+
+  const [sortKey, setSortKey] = useLocalStorage<SortKey>({
+    key: "decks-sort-key",
+    defaultValue: "createdAt-desc",
+  });
 
   const { data: decks = [], isLoading } = api.decks.getAll.useQuery();
   const utils = api.useUtils();
@@ -488,10 +422,23 @@ export function DecksClient({
     onSuccess: () => void utils.decks.getAll.invalidate(),
   });
 
+  const sortedDecks = useMemo(() => sortDecks(decks, sortKey), [decks, sortKey]);
+
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Title order={3}>All Decks</Title>
+      <Title order={3}>All Decks</Title>
+
+      <SelectionCharts selections={decks} />
+
+      <Group gap="xs" align="center">
+        <Select
+          size="xs"
+          w={150}
+          value={sortKey}
+          onChange={(v) => v && setSortKey(v as SortKey)}
+          data={SORT_OPTIONS}
+          allowDeselect={false}
+        />
         <Button size="xs" variant="light" onClick={toggleAddForm}>
           {addFormOpen ? "Cancel" : "Add new deck"}
         </Button>
@@ -501,7 +448,7 @@ export function DecksClient({
         <Stack gap="xs" p="sm" style={{ border: "1px solid var(--mantine-color-default-border)", borderRadius: "var(--mantine-radius-sm)" }}>
           <Text size="sm" fw={600}>New Deck</Text>
           <Divider />
-          <AddDeckForm onSuccess={closeAddForm} />
+          <AddDeckForm onSuccess={closeAddForm} tooltipSide={getTooltipSide(0, numCols)} />
         </Stack>
       </Collapse>
 
@@ -511,17 +458,17 @@ export function DecksClient({
         <Text size="sm" c="dimmed">No decks yet. Add your first deck above!</Text>
       ) : (
         <SimpleGrid cols={{ base: 1, xs: 2, sm: 3, md: 4, lg: 5 }} spacing="sm">
-          {decks.map((deck) => (
+          {sortedDecks.map((deck, index) => (
             <DeckCard
               key={deck.id}
               deck={deck}
               onDelete={() => deleteDeck.mutate({ id: deck.id })}
+              tooltipSide={getTooltipSide(index, numCols)}
             />
           ))}
         </SimpleGrid>
       )}
 
-      <ImportDialog opened={importModalOpen} onClose={() => setImportModalOpen(false)} mtgDecks={mtgDecks} />
     </Stack>
   );
 }
