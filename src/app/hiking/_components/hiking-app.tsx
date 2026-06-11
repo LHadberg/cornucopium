@@ -64,13 +64,17 @@ function routeStats(route: Pick<SavedRoute, "waypoints" | "distanceKm">) {
 }
 
 function buildGpx(routeName: string, waypoints: Waypoint[], routeCoords: LatLng[]) {
-  const routePoints = waypoints
+  // A navigation GPX must contain a single line representation. Emitting the
+  // waypoints as a <rte> alongside the <trk> makes devices (e.g. Coros) draw
+  // straight waypoint-to-waypoint chords over the actual track, so waypoints
+  // are exported as standalone <wpt> markers instead.
+  const waypointMarkers = waypoints
     .map(
       (waypoint) =>
-        `    <rtept lat="${waypoint.lat}" lon="${waypoint.lng}">\n` +
-        `      <name>${escapeXml(waypoint.name)}</name>\n` +
-        (waypoint.elevationM === null ? "" : `      <ele>${waypoint.elevationM.toFixed(1)}</ele>\n`) +
-        "    </rtept>",
+        `  <wpt lat="${waypoint.lat}" lon="${waypoint.lng}">\n` +
+        (waypoint.elevationM === null ? "" : `    <ele>${waypoint.elevationM.toFixed(1)}</ele>\n`) +
+        `    <name>${escapeXml(waypoint.name)}</name>\n` +
+        "  </wpt>",
     )
     .join("\n");
 
@@ -83,10 +87,7 @@ function buildGpx(routeName: string, waypoints: Waypoint[], routeCoords: LatLng[
   <metadata>
     <name>${escapeXml(routeName)}</name>
   </metadata>
-  <rte>
-    <name>${escapeXml(routeName)}</name>
-${routePoints}
-  </rte>
+${waypointMarkers}
   <trk>
     <name>${escapeXml(routeName)}</name>
     <trkseg>
