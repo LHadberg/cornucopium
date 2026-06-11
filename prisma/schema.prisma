@@ -59,7 +59,26 @@ model User {
     accounts             Account[]
     sessions             Session[]
     decks                    Deck[]
+    hikingMapData           HikingMapData[]
     deckListImportPromptSeen Boolean @default(false)
+}
+
+model HikingMapData {
+  id        String   @id @default(cuid())
+  userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name                     String
+  waypoints                String
+  routeCoords              String
+  routeSegments            String
+  routeWaypointDistancesKm String
+  distanceKm               Float
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
 }
 
 model Deck {
