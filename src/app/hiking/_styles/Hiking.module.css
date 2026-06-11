@@ -633,15 +633,13 @@
 
 @media (max-width: 720px) {
   .appLayout {
-    display: block;
-    padding-top: 54px;
+    position: relative;
+    flex-direction: column;
   }
 
   .mobileHeader {
-    position: fixed;
-    inset: 0 0 auto 0;
-    z-index: 1200;
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     gap: 10px;
     height: 54px;
@@ -651,7 +649,7 @@
   }
 
   .sidebar {
-    position: fixed;
+    position: absolute;
     top: 54px;
     bottom: 0;
     left: 0;
@@ -671,7 +669,7 @@
   }
 
   .mapContainer {
-    height: calc(100svh - 54px);
+    min-height: 0;
   }
 
   .locateControl {
