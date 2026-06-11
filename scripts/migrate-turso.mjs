@@ -1,7 +1,5 @@
-// One-shot Turso migration: adds missing columns to CommanderSelection,
-// creates the Deck table, and adds deckListImportPromptSeen to User.
+// One-shot Turso migration: safely adds missing app tables/columns.
 import { createClient } from "@libsql/client";
-import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { config } from "dotenv";
@@ -9,8 +7,8 @@ import { config } from "dotenv";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: join(__dirname, "../.env") });
 
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL not set");
+const url = process.env.TURSO_DATABASE_URL ?? process.env.DATABASE_URL;
+if (!url) throw new Error("TURSO_DATABASE_URL or DATABASE_URL not set");
 
 // Parse libsql URL with embedded auth_token query param
 const parsed = new URL(url);
@@ -44,32 +42,36 @@ async function addColumnIfMissing(table, column, type) {
 async function main() {
   console.log("Connected to:", cleanUrl);
 
-  // ── CommanderSelection: add missing columns ────────────────────────────────
+  // ── CommanderSelection: add missing columns (table may not exist in all envs) ─
   console.log("\nCommanderSelection missing columns:");
-  const csColumns = [
-    ["commanderPreferredPrintId",        "TEXT"],
-    ["commanderPreferredPrintImage",      "TEXT"],
-    ["commanderPreferredPrintArt",        "TEXT"],
-    ["commanderPreferredPrintBackImage",  "TEXT"],
-    ["commanderPreferredPrintBackArt",    "TEXT"],
-    ["partnerPreferredPrintId",           "TEXT"],
-    ["partnerPreferredPrintImage",        "TEXT"],
-    ["partnerPreferredPrintArt",          "TEXT"],
-    ["partnerPreferredPrintBackImage",    "TEXT"],
-    ["partnerPreferredPrintBackArt",      "TEXT"],
-    ["companionScryfallId",               "TEXT"],
-    ["companionName",                     "TEXT"],
-    ["companionTypeLine",                 "TEXT"],
-    ["companionImage",                    "TEXT"],
-    ["companionArtCrop",                  "TEXT"],
-    ["companionPreferredPrintId",         "TEXT"],
-    ["companionPreferredPrintImage",      "TEXT"],
-    ["companionPreferredPrintArt",        "TEXT"],
-    ["companionPreferredPrintBackImage",  "TEXT"],
-    ["companionPreferredPrintBackArt",    "TEXT"],
-  ];
-  for (const [col, type] of csColumns) {
-    await addColumnIfMissing("CommanderSelection", col, type);
+  if (!(await tableExists("CommanderSelection"))) {
+    console.log("  skip  CommanderSelection (table does not exist)");
+  } else {
+    const csColumns = [
+      ["commanderPreferredPrintId",        "TEXT"],
+      ["commanderPreferredPrintImage",      "TEXT"],
+      ["commanderPreferredPrintArt",        "TEXT"],
+      ["commanderPreferredPrintBackImage",  "TEXT"],
+      ["commanderPreferredPrintBackArt",    "TEXT"],
+      ["partnerPreferredPrintId",           "TEXT"],
+      ["partnerPreferredPrintImage",        "TEXT"],
+      ["partnerPreferredPrintArt",          "TEXT"],
+      ["partnerPreferredPrintBackImage",    "TEXT"],
+      ["partnerPreferredPrintBackArt",      "TEXT"],
+      ["companionScryfallId",               "TEXT"],
+      ["companionName",                     "TEXT"],
+      ["companionTypeLine",                 "TEXT"],
+      ["companionImage",                    "TEXT"],
+      ["companionArtCrop",                  "TEXT"],
+      ["companionPreferredPrintId",         "TEXT"],
+      ["companionPreferredPrintImage",      "TEXT"],
+      ["companionPreferredPrintArt",        "TEXT"],
+      ["companionPreferredPrintBackImage",  "TEXT"],
+      ["companionPreferredPrintBackArt",    "TEXT"],
+    ];
+    for (const [col, type] of csColumns) {
+      await addColumnIfMissing("CommanderSelection", col, type);
+    }
   }
 
   // ── User: add deckListImportPromptSeen ─────────────────────────────────────
@@ -115,6 +117,35 @@ async function main() {
     `);
     console.log("  created Deck table");
   }
+
+  console.log("\nHikingMapData table:");
+  if (await tableExists("HikingMapData")) {
+    console.log("  HikingMapData table already exists");
+  } else {
+    await db.execute(`
+      CREATE TABLE HikingMapData (
+        id                        TEXT     PRIMARY KEY NOT NULL,
+        userId                    TEXT,
+        createdAt                 DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt                 DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        name                      TEXT     NOT NULL,
+        waypoints                 TEXT     NOT NULL,
+        routeCoords               TEXT     NOT NULL,
+        routeSegments             TEXT     NOT NULL,
+        routeWaypointDistancesKm  TEXT     NOT NULL,
+        distanceKm                REAL     NOT NULL,
+        FOREIGN KEY (userId) REFERENCES User(id) ON DELETE SET NULL
+      )
+    `);
+    console.log("  created HikingMapData table");
+  }
+
+  console.log("\nHikingMapData indexes:");
+  await db.execute(`
+    CREATE INDEX IF NOT EXISTS HikingMapData_userId_createdAt_idx
+    ON HikingMapData(userId, createdAt)
+  `);
+  console.log("  ensured HikingMapData_userId_createdAt_idx");
 
   console.log("\nDone.");
   db.close();

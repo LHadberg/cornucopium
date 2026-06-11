@@ -28,6 +28,7 @@ import {
   IconDice,
   IconHome,
   IconLayoutGrid,
+  IconMapRoute,
   IconMoon,
   IconSun,
 } from "@tabler/icons-react";
@@ -127,6 +128,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     { label: t('nav.mtgComplete'), href: "/mtg-complete", icon: IconCards },
     { label: t('nav.allDecks'), href: "/decks", icon: IconLayoutGrid },
     { label: t('nav.diceRoller'), href: "/dice-roller", icon: IconDice },
+    { label: t('nav.hiking'), href: "/hiking", icon: IconMapRoute },
   ];
 
   useEffect(() => {
