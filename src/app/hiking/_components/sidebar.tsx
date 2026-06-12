@@ -10,6 +10,8 @@ import {
   IconTrash,
   IconX,
 } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
+import i18n from "../../dice-roller/_i18n/i18n";
 import styles from "../_styles/Hiking.module.css";
 import type { LatLng, SavedRoute, Waypoint } from "../_types/types";
 
@@ -46,9 +48,9 @@ interface Props {
 }
 
 function waypointLabel(index: number, total: number) {
-  if (index === 0) return "Start";
-  if (index === total - 1) return "End";
-  return `Stop ${index}`;
+  if (index === 0) return i18n.t("hiking.start");
+  if (index === total - 1) return i18n.t("hiking.end");
+  return i18n.t("hiking.stop", { n: index });
 }
 
 function dotClass(index: number, total: number) {
@@ -63,12 +65,12 @@ function computeInsertIndex(from: number, targetIndex: number, before: boolean):
 }
 
 function formatStopDistance(distanceKm: number | undefined) {
-  if (distanceKm === undefined) return "Pending";
+  if (distanceKm === undefined) return i18n.t("hiking.pending");
   return `${distanceKm.toFixed(2)} km`;
 }
 
 function formatElevation(elevationM: number | null) {
-  if (elevationM === null) return "Elevation unavailable";
+  if (elevationM === null) return i18n.t("hiking.elevationUnavailable");
   return `${Math.round(elevationM)} m`;
 }
 
@@ -103,6 +105,7 @@ export function Sidebar({
   onMoveWaypoint,
   onRenameWaypoint,
 }: Props) {
+  const { t } = useTranslation();
   const [routeName, setRouteName] = useState("");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropTarget, setDropTarget] = useState<{ index: number; before: boolean } | null>(null);
@@ -138,7 +141,7 @@ export function Sidebar({
 
   function fallbackRouteName() {
     if (editingRouteId) return editingRouteName;
-    return `Route ${savedRoutes.length + 1}`;
+    return t("hiking.routeFallback", { n: savedRoutes.length + 1 });
   }
 
   function handleSave() {
@@ -162,22 +165,23 @@ export function Sidebar({
     setEditingName("");
   }
 
-  const placingHint =
+  const placingHint = t(
     waypoints.length === 0
-      ? "Click to place start point"
+      ? "hiking.placeStartHint"
       : waypoints.length === 1
-        ? "Click to place end point"
-        : "Click to add more stops";
+        ? "hiking.placeEndHint"
+        : "hiking.addStopsHint",
+  );
 
   return (
     <aside className={`${styles.sidebar} ${isMobileOpen ? styles.sidebarOpen : ""}`}>
       <header className={styles.sidebarHeader}>
         <IconRoute size={22} />
-        <h1>Hiking Routes</h1>
+        <h1>{t("hiking.title")}</h1>
       </header>
 
       <section className={styles.panel}>
-        <h2>Plan a Route</h2>
+        <h2>{t("hiking.planRoute")}</h2>
 
         <div className={styles.btnRow}>
           <button
@@ -185,7 +189,7 @@ export function Sidebar({
             onClick={onTogglePlacing}
           >
             <IconMapPinPlus size={16} />
-            {placingMode ? "Done adding" : "Add waypoints"}
+            {t(placingMode ? "hiking.doneAdding" : "hiking.addWaypoints")}
           </button>
           <button
             className={`${styles.btn} ${styles.btnGhost}`}
@@ -193,7 +197,7 @@ export function Sidebar({
             disabled={waypoints.length === 0 && !placingMode}
           >
             <IconX size={16} />
-            Clear
+            {t("hiking.clear")}
           </button>
         </div>
 
@@ -202,7 +206,7 @@ export function Sidebar({
         {editingRouteId && (
           <p className={`${styles.hint} ${styles.editingHint}`}>
             <IconPencil size={13} />
-            Editing &quot;{editingRouteName}&quot; - Update saves your changes, Clear cancels.
+            {t("hiking.editingHint", { name: editingRouteName })}
           </p>
         )}
 
@@ -254,7 +258,7 @@ export function Sidebar({
                       <button
                         className={styles.waypointNameBtn}
                         onClick={() => startEditingWaypoint(index)}
-                        title="Rename stop"
+                        title={t("hiking.renameStop")}
                       >
                         {waypoint.name}
                       </button>
@@ -266,7 +270,7 @@ export function Sidebar({
                   <button
                     className={`${styles.iconBtn} ${styles.dangerBtn}`}
                     onClick={() => onDeleteWaypoint(index)}
-                    title="Remove waypoint"
+                    title={t("hiking.removeWaypoint")}
                   >
                     <IconTrash size={14} />
                   </button>
@@ -277,37 +281,39 @@ export function Sidebar({
               <div className={styles.waypoint}>
                 <span className={`${styles.dot} ${waypoints.length === 0 ? styles.dotGreen : styles.dotBlue}`} />
                 <span>
-                  {waypoints.length === 0
-                    ? "Start - click to place"
-                    : waypoints.length === 1
-                      ? "End - click to place"
-                      : "Next stop - click to add"}
+                  {t(
+                    waypoints.length === 0
+                      ? "hiking.startPlaceholder"
+                      : waypoints.length === 1
+                        ? "hiking.endPlaceholder"
+                        : "hiking.nextStopPlaceholder",
+                  )}
                 </span>
               </div>
             )}
           </div>
         )}
 
-        {routeLoading && <p className={`${styles.hint} ${styles.loading}`}>Finding a highway-free hiking route...</p>}
+        {routeLoading && <p className={`${styles.hint} ${styles.loading}`}>{t("hiking.findingRoute")}</p>}
         {routeError && <p className={`${styles.hint} ${styles.error}`}>{routeError}</p>}
 
         {routeCoords && distanceKm !== null && (
           <div className={styles.routeInfo}>
             <div className={styles.routeStats}>
-              <span>Distance <strong>{distanceKm.toFixed(2)} km</strong></span>
-              <span>Ascent <strong>{Math.round(elevationGainM)} m</strong></span>
-              <span>Est. time <strong>{estimatedTime}</strong></span>
+              <span>{t("hiking.distance")} <strong>{distanceKm.toFixed(2)} km</strong></span>
+              <span>{t("hiking.ascent")} <strong>{Math.round(elevationGainM)} m</strong></span>
+              <span>{t("hiking.estTime")} <strong>{estimatedTime}</strong></span>
             </div>
             <div className={styles.saveRow}>
               <input
                 className={styles.input}
-                placeholder="Route name (optional)"
+                placeholder={t("hiking.routeNamePlaceholder")}
                 value={routeName}
                 onChange={(event) => setRouteName(event.target.value)}
                 onKeyDown={(event) => event.key === "Enter" && handleSave()}
               />
               <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSave}>
-                {editingRouteId ? "Update" : "Save"}
+                {t(editingRouteId ? "hiking.update" : "hiking.save")}
               </button>
             </div>
             <button
@@ -315,7 +321,7 @@ export function Sidebar({
               onClick={() => onExportGpx(routeDisplayName())}
             >
               <IconDownload size={16} />
-              Export GPX
+              {t("hiking.exportGpx")}
             </button>
           </div>
         )}
@@ -323,15 +329,15 @@ export function Sidebar({
 
       <section className={styles.panel}>
         <h2>
-          Saved Routes {savedRoutes.length > 0 && <span className={styles.badge}>{savedRoutes.length}</span>}
+          {t("hiking.savedRoutes")} {savedRoutes.length > 0 && <span className={styles.badge}>{savedRoutes.length}</span>}
         </h2>
         <p className={styles.hint}>
-          {persistence === "database" ? "Saved to your account." : "Saved in this browser until you sign in."}
+          {t(persistence === "database" ? "hiking.savedToAccount" : "hiking.savedToBrowser")}
         </p>
         {savedRoutesLoading ? (
-          <p className={styles.hint}>Loading saved routes...</p>
+          <p className={styles.hint}>{t("hiking.loadingRoutes")}</p>
         ) : savedRoutes.length === 0 ? (
-          <p className={styles.hint}>No saved routes yet.</p>
+          <p className={styles.hint}>{t("hiking.noRoutes")}</p>
         ) : (
           <>
             {activeRoute && (
@@ -343,13 +349,13 @@ export function Sidebar({
                     onClick={() => onExportGpx(activeRoute.name, activeRoute.waypoints, activeRoute.routeCoords)}
                   >
                     <IconDownload size={14} />
-                    Export
+                    {t("hiking.export")}
                   </button>
                 </div>
                 <div className={styles.routeStats}>
-                  <span>Distance <strong>{activeRoute.distanceKm.toFixed(2)} km</strong></span>
-                  <span>Ascent <strong>{Math.round(activeRouteElevationGainM)} m</strong></span>
-                  <span>Est. time <strong>{activeRouteEstimatedTime}</strong></span>
+                  <span>{t("hiking.distance")} <strong>{activeRoute.distanceKm.toFixed(2)} km</strong></span>
+                  <span>{t("hiking.ascent")} <strong>{Math.round(activeRouteElevationGainM)} m</strong></span>
+                  <span>{t("hiking.estTime")} <strong>{activeRouteEstimatedTime}</strong></span>
                 </div>
               </div>
             )}
@@ -372,7 +378,7 @@ export function Sidebar({
                         event.stopPropagation();
                         onEditRoute(route.id);
                       }}
-                      title="Edit route"
+                      title={t("hiking.editRoute")}
                     >
                       <IconPencil size={14} />
                     </button>
@@ -382,7 +388,7 @@ export function Sidebar({
                         event.stopPropagation();
                         onDeleteRoute(route.id);
                       }}
-                      title="Delete route"
+                      title={t("hiking.deleteRoute")}
                     >
                       <IconTrash size={14} />
                     </button>

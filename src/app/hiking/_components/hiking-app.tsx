@@ -1,16 +1,18 @@
 import { useCallback, useMemo, useState } from "react";
 import type { LatLngTuple } from "leaflet";
 import { IconMenu2, IconRoute } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 import { HikeMap } from "./hike-map";
 import { Sidebar } from "./sidebar";
 import { useOsrmRoute } from "../_hooks/use-osrm-route";
 import { useRoutes } from "../_hooks/use-routes";
+import i18n from "../../dice-roller/_i18n/i18n";
 import styles from "../_styles/Hiking.module.css";
 import type { LatLng, RouteSegment, SavedRoute, Waypoint } from "../_types/types";
 
 function defaultWaypointName(index: number) {
-  if (index === 0) return "Start";
-  return `Stop ${index}`;
+  if (index === 0) return i18n.t("hiking.start");
+  return i18n.t("hiking.stop", { n: index });
 }
 
 function escapeXml(value: string) {
@@ -47,12 +49,12 @@ function estimateHikingMinutes(distanceKm: number | null, elevationGainM: number
 }
 
 function formatDuration(minutes: number | null) {
-  if (minutes === null) return "Pending";
+  if (minutes === null) return i18n.t("hiking.pending");
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  if (hours === 0) return `${mins} min`;
-  if (mins === 0) return `${hours} hr`;
-  return `${hours} hr ${mins} min`;
+  if (hours === 0) return i18n.t("hiking.durationMin", { m: mins });
+  if (mins === 0) return i18n.t("hiking.durationHr", { h: hours });
+  return i18n.t("hiking.durationHrMin", { h: hours, m: mins });
 }
 
 function routeStats(route: Pick<SavedRoute, "waypoints" | "distanceKm">) {
@@ -132,6 +134,8 @@ async function fetchElevationM(latlng: LatLng): Promise<number | null> {
 }
 
 export function HikingApp() {
+  const { t, i18n: i18nInstance } = useTranslation();
+  const language = i18nInstance.language;
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [routeCoords, setRouteCoords] = useState<LatLng[] | null>(null);
   const [routeSegments, setRouteSegments] = useState<RouteSegment[] | null>(null);
@@ -162,7 +166,8 @@ export function HikingApp() {
   );
   const activeRouteStats = useMemo(
     () => (activeRoute ? routeStats(activeRoute) : null),
-    [activeRoute],
+    // The stats include a formatted duration string, so recompute on language change
+    [activeRoute, language],
   );
   const editingRouteName = useMemo(
     () => routes.find((route: SavedRoute) => route.id === editingRouteId)?.name ?? "",
@@ -332,13 +337,13 @@ export function HikingApp() {
         <button
           className={styles.burgerBtn}
           onClick={() => setMobileMenuOpen((open) => !open)}
-          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-label={t(mobileMenuOpen ? "hiking.closeMenu" : "hiking.openMenu")}
           aria-expanded={mobileMenuOpen}
         >
           <IconMenu2 size={20} />
         </button>
         <IconRoute size={22} />
-        <h1>Hiking Routes</h1>
+        <h1>{t("hiking.title")}</h1>
       </header>
       <Sidebar
         isMobileOpen={mobileMenuOpen}
@@ -355,7 +360,7 @@ export function HikingApp() {
         activeRouteId={activeRouteId}
         activeRoute={activeRoute}
         activeRouteElevationGainM={activeRouteStats?.elevationGainM ?? 0}
-        activeRouteEstimatedTime={activeRouteStats?.estimatedTime ?? "Pending"}
+        activeRouteEstimatedTime={activeRouteStats?.estimatedTime ?? t("hiking.pending")}
         persistence={persistence}
         savedRoutesLoading={savedRoutesLoading}
         editingRouteId={editingRouteId}
@@ -383,7 +388,7 @@ export function HikingApp() {
           flyTarget={flyTarget}
         />
         {routeLoading && (
-          <div className={styles.mapOverlay}>Finding highway-free hiking route...</div>
+          <div className={styles.mapOverlay}>{t("hiking.findingRoute")}</div>
         )}
       </main>
     </div>
