@@ -1,0 +1,410 @@
+.boardViewport {
+  position: relative;
+  height: calc(100dvh - var(--app-shell-header-offset, 60px));
+  overflow: hidden;
+  container-type: size;
+}
+
+/* Fullscreen mode: the board covers everything, including the app header */
+.boardFullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  height: 100dvh;
+  background: var(--mantine-color-body);
+}
+
+.board {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: clamp(8px, 1.5vmin, 16px);
+  padding: clamp(8px, 1.5vmin, 16px);
+}
+
+/* Landscape counter-rotation: the board keeps its portrait composition and is
+   turned to fit the viewport, so rotating the device never changes the layout. */
+.boardRotateCw,
+.boardRotateCcw {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: 100cqh;
+  height: 100cqw;
+}
+
+.boardRotateCw {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.boardRotateCcw {
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+.layout2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.layout3,
+.layout4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.layout3 > .area:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.area {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  border-radius: var(--mantine-radius-lg);
+  color: #fff;
+  overflow: hidden;
+  container-type: size;
+}
+
+/* Orientation wrapper: rotated variants swap width/height via container
+   query units so the rotated box exactly fills the quadrant. */
+.areaInner {
+  position: absolute;
+  inset: 0;
+}
+
+.faceLeft,
+.faceRight {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: 100cqh;
+  height: 100cqw;
+}
+
+.faceLeft {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.faceRight {
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+/* Separate from .areaInner so the shake transform doesn't fight the rotation */
+.areaFill {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.areaPhoto {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.45;
+}
+
+/* Sizes below use cqmin (relative to the quadrant, not the viewport) so
+   rotating the device rescales the content but never changes the layout. */
+.areaContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(4px, 2cqmin, 12px);
+  width: 100%;
+  padding: clamp(8px, 2cqmin, 16px);
+  /* Keep clear of the side control columns */
+  padding-inline: clamp(48px, 16cqmin, 110px);
+}
+
+.nameLabel {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.lifeValue {
+  font-size: clamp(32px, 22cqmin, 104px);
+  font-weight: 800;
+  line-height: 1;
+  min-width: 2ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+
+.lifeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(32px, 13cqmin, 64px);
+  height: clamp(32px, 13cqmin, 64px);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.lifeButton:active {
+  transform: scale(0.94);
+}
+
+.sideControls {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 2;
+}
+
+.sideLeft {
+  left: clamp(6px, 2cqmin, 16px);
+}
+
+.sideRight {
+  right: clamp(6px, 2cqmin, 16px);
+}
+
+.controlColumn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.columnGear {
+  position: absolute;
+  top: calc(100% + 8px);
+}
+
+.chipBtn {
+  color: #fff;
+}
+
+.chipValue {
+  min-width: 2ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.calloutWrap {
+  position: relative;
+}
+
+.counterButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: clamp(28px, 10cqmin, 46px);
+  height: clamp(28px, 10cqmin, 46px);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.counterButton:active {
+  transform: scale(0.94);
+}
+
+.cmdButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(28px, 10cqmin, 46px);
+  height: clamp(28px, 10cqmin, 46px);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.cmdButton:active {
+  transform: scale(0.94);
+}
+
+.callout {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.78);
+  border-radius: 999px;
+  padding: 4px 6px;
+  z-index: 4;
+}
+
+.callout::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+}
+
+.calloutLeft {
+  right: calc(100% + 8px);
+}
+
+.calloutLeft::after {
+  left: 100%;
+  border-left-color: rgba(0, 0, 0, 0.78);
+}
+
+.calloutRight {
+  left: calc(100% + 8px);
+}
+
+.calloutRight::after {
+  right: 100%;
+  border-right-color: rgba(0, 0, 0, 0.78);
+}
+
+/* Wrapper owns the centering transform so the button's :active transform
+   can't shift it off-center. */
+.centerWrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.centerButton {
+  box-shadow: var(--mantine-shadow-md);
+}
+
+.spotlight {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: var(--mantine-radius-lg);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 4px var(--mantine-color-yellow-4) inset, 0 0 24px var(--mantine-color-yellow-5) inset;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+}
+
+.spotlightWon {
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 0 0 5px var(--mantine-color-yellow-3) inset, 0 0 36px var(--mantine-color-yellow-4) inset;
+}
+
+.spotlightFade {
+  opacity: 0;
+}
+
+.flashOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  /* Match the area's corner radius so the glow frame follows the corners
+     (inherit resolved to 0 — the parent fill has no radius of its own) */
+  border-radius: var(--mantine-radius-lg);
+}
+
+.hurt {
+  animation: shake 0.4s ease-in-out;
+  box-shadow: 0 0 0 3px var(--mantine-color-red-6) inset, 0 0 18px var(--mantine-color-red-6) inset;
+}
+
+.gained {
+  box-shadow: 0 0 0 3px var(--mantine-color-green-6) inset, 0 0 18px var(--mantine-color-green-6) inset;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px) rotate(-1deg); }
+  40% { transform: translateX(6px) rotate(1deg); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* The local top edge always faces the view center, so top + the side
+   opposite the controls column is the corner nearest the middle. */
+.flashBadge {
+  position: absolute;
+  top: 10px;
+  z-index: 2;
+  color: #fff;
+}
+
+.badgeLeft {
+  left: 14px;
+}
+
+.badgeRight {
+  right: 14px;
+}
+
+.hurtBadge {
+  text-shadow: 0 0 10px var(--mantine-color-red-6), 0 0 18px var(--mantine-color-red-6);
+}
+
+.gainBadge {
+  text-shadow: 0 0 10px var(--mantine-color-green-6), 0 0 18px var(--mantine-color-green-6);
+}
+
+.focusPicker {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+  background: var(--mantine-color-default-hover);
+}
+
+.focusImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.focusMarker {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+/* The part of the image the play area will actually show; the oversized
+   shadow dims everything outside it (clipped by the picker's overflow). */
+.focusRegion {
+  position: absolute;
+  border: 2px solid #fff;
+  border-radius: 4px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.cameraPreview {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--mantine-radius-md);
+  background: #000;
+  transform: scaleX(-1);
+}

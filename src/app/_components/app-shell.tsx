@@ -26,6 +26,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconDice,
+  IconHeart,
   IconHome,
   IconLayoutGrid,
   IconMapRoute,
@@ -122,6 +123,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isMobile = useMediaQuery("(max-width: 768px)") ?? false;
   const pathname = usePathname();
   const { t } = useTranslation();
+  // Full-bleed routes hide the navbar (the burger brings it back) and drop main padding
+  const immersive = pathname === "/life-tracker";
+  // On phones lying sideways the header is dead space — give it to the board
+  const isLandscapeTouch =
+    useMediaQuery("(pointer: coarse) and (orientation: landscape)") ?? false;
+  const hideHeader = immersive && isLandscapeTouch;
 
   const navLinks = [
     { label: t('nav.home'), href: "/", icon: IconHome },
@@ -129,6 +136,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     { label: t('nav.allDecks'), href: "/decks", icon: IconLayoutGrid },
     { label: t('nav.diceRoller'), href: "/dice-roller", icon: IconDice },
     { label: t('nav.hiking'), href: "/hiking", icon: IconMapRoute },
+    { label: t('nav.lifeTracker'), href: "/life-tracker", icon: IconHeart },
   ];
 
   useEffect(() => {
@@ -145,18 +153,23 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <AppShell
-      header={{ height: 60 }}
+      header={{ height: 60, collapsed: hideHeader }}
       navbar={{
         width: desktopCollapsed ? NAVBAR_COLLAPSED_WIDTH : NAVBAR_WIDTH,
         breakpoint: "sm",
-        collapsed: { mobile: !mobileOpened },
+        collapsed: { mobile: !mobileOpened, desktop: immersive && !mobileOpened },
       }}
-      padding="md"
+      padding={immersive ? 0 : "md"}
     >
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group>
-            <Burger opened={mobileOpened} onClick={toggleMobile} hiddenFrom="sm" size="sm" />
+            <Burger
+              opened={mobileOpened}
+              onClick={toggleMobile}
+              hiddenFrom={immersive ? undefined : "sm"}
+              size="sm"
+            />
             <Group gap={6} align="center">
               <img src="/favicon.svg" alt="Cornucopia" style={{ width: 28, height: 28 }} />
               <Text fw={700} size="lg">Cornucopium</Text>
