@@ -14,7 +14,6 @@ import {
 } from "@mantine/core";
 import {
   IconCards,
-  IconLayoutGrid,
   IconHeart,
   IconDice,
   IconMapRoute,
@@ -24,18 +23,21 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 
+type ToolLink = {
+  href: string;
+  /** Call-to-action label shown on the button. */
+  label: string;
+};
+
 type Tool = {
   icon: Icon;
   color: string;
   title: string;
-  href: string;
   description: string;
   /** Requires a signed-in account to use. */
   requiresAuth?: boolean;
-  /** Optional public example/demo to show when signed out. */
-  exampleHref?: string;
-  /** Call-to-action label shown on the primary button. */
-  cta: string;
+  /** One or more shortcut links into the tool. */
+  links: ToolLink[];
 };
 
 type Section = {
@@ -53,31 +55,21 @@ const sections: Section[] = [
         icon: IconHeart,
         color: "pink",
         title: "Life Tracker",
-        href: "/life-tracker",
         description:
           "A full-screen, multiplayer life counter for the table. Track life totals and damage for the whole pod on one screen.",
-        cta: "Open tracker",
+        links: [{ href: "/life-tracker", label: "Open tracker" }],
       },
       {
         icon: IconCards,
         color: "blue",
         title: "MTG Complete",
-        href: "/mtg-complete",
         description:
-          "Build and showcase your Commander collection across all 32 color combinations. Scryfall search, full partner support, alternate prints, and shareable lists.",
+          "Build and showcase your Commander collection across all 32 color combinations — Scryfall search, partner support, alternate prints, and shareable lists. Browse everything you've built in a single deck grid.",
         requiresAuth: true,
-        exampleHref: "/mtg-complete/example",
-        cta: "Your collection",
-      },
-      {
-        icon: IconLayoutGrid,
-        color: "indigo",
-        title: "All Decks",
-        href: "/decks",
-        description:
-          "Browse every deck in your collection in a single grid — a quick overview of what you've built so far.",
-        requiresAuth: true,
-        cta: "Browse decks",
+        links: [
+          { href: "/mtg-complete", label: "Your collection" },
+          { href: "/decks", label: "All decks" },
+        ],
       },
     ],
   },
@@ -89,10 +81,9 @@ const sections: Section[] = [
         icon: IconDice,
         color: "violet",
         title: "Dice Roller",
-        href: "/dice-roller",
         description:
           "A 3D physics-based dice roller with configurable dice sets, custom actions, and stat modifiers. No sign-in required.",
-        cta: "Roll some dice",
+        links: [{ href: "/dice-roller", label: "Roll some dice" }],
       },
     ],
   },
@@ -104,10 +95,9 @@ const sections: Section[] = [
         icon: IconMapRoute,
         color: "teal",
         title: "Hiking",
-        href: "/hiking",
         description:
           "Plan routes on an interactive map with waypoints, then see distance and elevation gain and export the whole thing to GPX for your watch.",
-        cta: "Plan a hike",
+        links: [{ href: "/hiking", label: "Plan a hike" }],
       },
     ],
   },
@@ -145,34 +135,28 @@ function ToolCard({ tool, signedIn }: { tool: Tool; signedIn: boolean }) {
 
         <Group gap="xs" mt="xs">
           {locked ? (
-            <>
-              <Link href="/api/auth/signin">
-                <Button
-                  size="sm"
-                  color={tool.color}
-                  rightSection={<IconArrowRight size={14} />}
-                >
-                  Sign in to start
-                </Button>
-              </Link>
-              {tool.exampleHref && (
-                <Link href={tool.exampleHref}>
-                  <Button size="sm" variant="default">
-                    See an example
-                  </Button>
-                </Link>
-              )}
-            </>
-          ) : (
-            <Link href={tool.href}>
+            <Link href="/api/auth/signin">
               <Button
                 size="sm"
                 color={tool.color}
                 rightSection={<IconArrowRight size={14} />}
               >
-                {tool.cta}
+                Sign in to start
               </Button>
             </Link>
+          ) : (
+            tool.links.map((link, index) => (
+              <Link key={link.href} href={link.href}>
+                <Button
+                  size="sm"
+                  color={tool.color}
+                  variant={index === 0 ? "filled" : "default"}
+                  rightSection={index === 0 ? <IconArrowRight size={14} /> : undefined}
+                >
+                  {link.label}
+                </Button>
+              </Link>
+            ))
           )}
         </Group>
       </Stack>
@@ -206,9 +190,9 @@ export default async function Home() {
               {section.blurb}
             </Text>
           </Stack>
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <SimpleGrid cols={{ base: 1, sm: Math.min(section.tools.length, 2) }} spacing="md">
             {section.tools.map((tool) => (
-              <ToolCard key={tool.href} tool={tool} signedIn={signedIn} />
+              <ToolCard key={tool.title} tool={tool} signedIn={signedIn} />
             ))}
           </SimpleGrid>
         </Stack>
