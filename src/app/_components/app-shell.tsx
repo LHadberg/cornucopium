@@ -130,13 +130,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
     useMediaQuery("(pointer: coarse) and (orientation: landscape)") ?? false;
   const hideHeader = immersive && isLandscapeTouch;
 
-  const navLinks = [
-    { label: t('nav.home'), href: "/", icon: IconHome },
-    { label: t('nav.mtgComplete'), href: "/mtg-complete", icon: IconCards },
-    { label: t('nav.allDecks'), href: "/decks", icon: IconLayoutGrid },
-    { label: t('nav.diceRoller'), href: "/dice-roller", icon: IconDice },
-    { label: t('nav.hiking'), href: "/hiking", icon: IconMapRoute },
-    { label: t('nav.lifeTracker'), href: "/life-tracker", icon: IconHeart },
+  // Top-level Home link sits above the grouped sections.
+  const homeLink = { label: t('nav.home'), href: "/", icon: IconHome };
+  const navSections = [
+    {
+      label: t('nav.sectionMtg'),
+      links: [
+        { label: t('nav.lifeTracker'), href: "/life-tracker", icon: IconHeart },
+        { label: t('nav.mtgComplete'), href: "/mtg-complete", icon: IconCards },
+        { label: t('nav.allDecks'), href: "/decks", icon: IconLayoutGrid },
+      ],
+    },
+    {
+      label: t('nav.sectionTtrpg'),
+      links: [{ label: t('nav.diceRoller'), href: "/dice-roller", icon: IconDice }],
+    },
+    {
+      label: t('nav.sectionLife'),
+      links: [{ label: t('nav.hiking'), href: "/hiking", icon: IconMapRoute }],
+    },
   ];
 
   useEffect(() => {
@@ -150,6 +162,43 @@ export function Shell({ children }: { children: React.ReactNode }) {
       return !prev;
     });
   };
+
+  // Desktop collapsed view shows icon-only buttons; mobile always shows full labels.
+  const iconsOnly = desktopCollapsed && !isMobile;
+
+  const renderLink = (link: { label: string; href: string; icon: typeof IconHome }) =>
+    iconsOnly ? (
+      <Tooltip key={link.href} label={link.label} position="right" withArrow openDelay={400}>
+        <UnstyledButton
+          component={Link}
+          href={link.href}
+          aria-label={link.label}
+          onClick={closeMobile}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: 36,
+            borderRadius: "var(--mantine-radius-sm)",
+            background: pathname === link.href ? "var(--mantine-color-blue-light)" : undefined,
+            color: pathname === link.href ? "var(--mantine-color-blue-text)" : "var(--mantine-color-dimmed)",
+          }}
+        >
+          <link.icon size={18} />
+        </UnstyledButton>
+      </Tooltip>
+    ) : (
+      <NavLink
+        key={link.href}
+        component={Link}
+        href={link.href}
+        label={link.label}
+        leftSection={<link.icon size={18} />}
+        active={pathname === link.href}
+        onClick={closeMobile}
+      />
+    );
 
   return (
     <AppShell
@@ -214,40 +263,21 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
         <Divider my="xs" />
 
-        {navLinks.map((link) =>
-          desktopCollapsed && !isMobile ? (
-            <Tooltip key={link.href} label={link.label} position="right" withArrow openDelay={400}>
-              <UnstyledButton
-                component={Link}
-                href={link.href}
-                aria-label={link.label}
-                onClick={closeMobile}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "100%",
-                  height: 36,
-                  borderRadius: "var(--mantine-radius-sm)",
-                  background: pathname === link.href ? "var(--mantine-color-blue-light)" : undefined,
-                  color: pathname === link.href ? "var(--mantine-color-blue-text)" : "var(--mantine-color-dimmed)",
-                }}
-              >
-                <link.icon size={18} />
-              </UnstyledButton>
-            </Tooltip>
-          ) : (
-            <NavLink
-              key={link.href}
-              component={Link}
-              href={link.href}
-              label={link.label}
-              leftSection={<link.icon size={18} />}
-              active={pathname === link.href}
-              onClick={closeMobile}
-            />
-          )
-        )}
+        {renderLink(homeLink)}
+
+        {navSections.map((section) => (
+          <Box key={section.label} mt="xs">
+            {iconsOnly ? (
+              <Divider mb="xs" />
+            ) : (
+              <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="xs" mb={4}>
+                {section.label}
+              </Text>
+            )}
+            {section.links.map(renderLink)}
+          </Box>
+        ))}
+
         <Box hiddenFrom="sm" mt="auto" pt="xs">
           <Divider mb="xs" />
           <LanguagePicker />

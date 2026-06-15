@@ -13,72 +13,176 @@ import {
   Button,
 } from "@mantine/core";
 import {
-  IconPhoto,
-  IconShare,
-  IconStar,
-  IconSearch,
-  IconUsers,
-  IconTag,
-  IconPalette,
   IconCards,
+  IconLayoutGrid,
+  IconHeart,
   IconDice,
+  IconMapRoute,
   IconArrowRight,
+  IconLock,
+  type Icon,
 } from "@tabler/icons-react";
 import Link from "next/link";
 
-const mtgFeatures = [
+type Tool = {
+  icon: Icon;
+  color: string;
+  title: string;
+  href: string;
+  description: string;
+  /** Requires a signed-in account to use. */
+  requiresAuth?: boolean;
+  /** Optional public example/demo to show when signed out. */
+  exampleHref?: string;
+  /** Call-to-action label shown on the primary button. */
+  cta: string;
+};
+
+type Section = {
+  category: string;
+  blurb: string;
+  tools: Tool[];
+};
+
+const sections: Section[] = [
   {
-    icon: IconCards,
-    title: "All 32 Color Combinations",
-    description:
-      "Track your Commander decks across every possible color combination — from mono-color to five-color and colorless.",
+    category: "MTG",
+    blurb: "Tools for building, showcasing, and playing your Commander collection.",
+    tools: [
+      {
+        icon: IconHeart,
+        color: "pink",
+        title: "Life Tracker",
+        href: "/life-tracker",
+        description:
+          "A full-screen, multiplayer life counter for the table. Track life totals and damage for the whole pod on one screen.",
+        cta: "Open tracker",
+      },
+      {
+        icon: IconCards,
+        color: "blue",
+        title: "MTG Complete",
+        href: "/mtg-complete",
+        description:
+          "Build and showcase your Commander collection across all 32 color combinations. Scryfall search, full partner support, alternate prints, and shareable lists.",
+        requiresAuth: true,
+        exampleHref: "/mtg-complete/example",
+        cta: "Your collection",
+      },
+      {
+        icon: IconLayoutGrid,
+        color: "indigo",
+        title: "All Decks",
+        href: "/decks",
+        description:
+          "Browse every deck in your collection in a single grid — a quick overview of what you've built so far.",
+        requiresAuth: true,
+        cta: "Browse decks",
+      },
+    ],
   },
   {
-    icon: IconUsers,
-    title: "Full Partner Support",
-    description:
-      "Supports all partner types: Partner, Partner With, and Background commanders. Auto-fetches the linked partner card.",
+    category: "TTRPG",
+    blurb: "Tools for the tabletop RPG table.",
+    tools: [
+      {
+        icon: IconDice,
+        color: "violet",
+        title: "Dice Roller",
+        href: "/dice-roller",
+        description:
+          "A 3D physics-based dice roller with configurable dice sets, custom actions, and stat modifiers. No sign-in required.",
+        cta: "Roll some dice",
+      },
+    ],
   },
   {
-    icon: IconSearch,
-    title: "Scryfall Card Search",
-    description:
-      "Search for any commander directly from Scryfall with auto-complete, card art previews, and type line info.",
-  },
-  {
-    icon: IconPhoto,
-    title: "Alternate Print Picker",
-    description:
-      "Choose which printing of a card to display. Browse all available editions and pick your favorite art.",
-  },
-  {
-    icon: IconPalette,
-    title: "Visual & Condensed Views",
-    description:
-      "Switch between a card-art-heavy visual mode and a compact condensed view depending on your preference.",
-  },
-  {
-    icon: IconTag,
-    title: "Deck Properties",
-    description:
-      "Tag each deck with archetypes, power bracket (1–5), strategy tags like Combo or Tokens, and a link to your deck list.",
-  },
-  {
-    icon: IconStar,
-    title: "Favorite Tags",
-    description:
-      "Mark one tag as your favorite per deck — shown as a badge in visual mode for a quick overview of your collection.",
-  },
-  {
-    icon: IconShare,
-    title: "Public Sharing",
-    description:
-      "Generate a shareable link with a custom MTG-flavored page name so others can browse your collection.",
+    category: "Life",
+    blurb: "Tools for everything away from the table.",
+    tools: [
+      {
+        icon: IconMapRoute,
+        color: "teal",
+        title: "Hiking",
+        href: "/hiking",
+        description:
+          "Plan routes on an interactive map with waypoints, then see distance and elevation gain and export the whole thing to GPX for your watch.",
+        cta: "Plan a hike",
+      },
+    ],
   },
 ];
 
+function ToolCard({ tool, signedIn }: { tool: Tool; signedIn: boolean }) {
+  const locked = tool.requiresAuth && !signedIn;
+
+  return (
+    <Card withBorder radius="md" p="lg">
+      <Stack gap="sm" h="100%">
+        <Group gap="sm">
+          <ThemeIcon size="lg" radius="md" variant="light" color={tool.color}>
+            <tool.icon size={20} />
+          </ThemeIcon>
+          <Title order={3} size="h4">
+            {tool.title}
+          </Title>
+          {tool.requiresAuth && (
+            <Badge
+              variant="light"
+              color="gray"
+              size="xs"
+              leftSection={<IconLock size={10} />}
+              ml="auto"
+            >
+              Account
+            </Badge>
+          )}
+        </Group>
+
+        <Text size="sm" c="dimmed" lh={1.6} style={{ flex: 1 }}>
+          {tool.description}
+        </Text>
+
+        <Group gap="xs" mt="xs">
+          {locked ? (
+            <>
+              <Link href="/api/auth/signin">
+                <Button
+                  size="sm"
+                  color={tool.color}
+                  rightSection={<IconArrowRight size={14} />}
+                >
+                  Sign in to start
+                </Button>
+              </Link>
+              {tool.exampleHref && (
+                <Link href={tool.exampleHref}>
+                  <Button size="sm" variant="default">
+                    See an example
+                  </Button>
+                </Link>
+              )}
+            </>
+          ) : (
+            <Link href={tool.href}>
+              <Button
+                size="sm"
+                color={tool.color}
+                rightSection={<IconArrowRight size={14} />}
+              >
+                {tool.cta}
+              </Button>
+            </Link>
+          )}
+        </Group>
+      </Stack>
+    </Card>
+  );
+}
+
 export default async function Home() {
   const session = await auth();
+  const signedIn = Boolean(session?.user);
 
   return (
     <Stack gap="xl" py="xl" px={{ base: "md", sm: "xl" }} maw={960} mx="auto">
@@ -86,126 +190,40 @@ export default async function Home() {
         <Title order={1} size="h1">
           Cornucopium
         </Title>
-        <Text size="lg" c="dimmed" maw={520} mx="auto">
-          A collection of tools for tabletop gaming and beyond.
+        <Text size="lg" c="dimmed" maw={560} mx="auto">
+          A collection of tools for tabletop gaming and beyond — pick one below to get started.
         </Text>
       </Stack>
 
-      <Divider />
-
-      <Stack gap="sm">
-        <Title order={2} size="h3" ta="center">
-          Tools
-        </Title>
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-          <Card withBorder radius="md" p="lg">
-            <Stack gap="sm">
-              <Group gap="sm">
-                <ThemeIcon size="lg" radius="md" variant="light" color="blue">
-                  <IconCards size={20} />
-                </ThemeIcon>
-                <Title order={3} size="h4">MTG Complete</Title>
-              </Group>
-              <Text size="sm" c="dimmed" lh={1.6}>
-                Build and showcase your Commander collection across every color
-                combination. Track decks, pick card art, and share your list.
-              </Text>
-              <Group gap="xs" mt="xs">
-                {session?.user ? (
-                  <Link href="/mtg-complete">
-                    <Button size="sm" rightSection={<IconArrowRight size={14} />}>
-                      Your collection
-                    </Button>
-                  </Link>
-                ) : (
-                  <>
-                    <Link href="/api/auth/signin">
-                      <Button size="sm" rightSection={<IconArrowRight size={14} />}>
-                        Sign in to start
-                      </Button>
-                    </Link>
-                    <Link href="/mtg-complete/example">
-                      <Button size="sm" variant="default">
-                        See an example
-                      </Button>
-                    </Link>
-                  </>
-                )}
-              </Group>
-            </Stack>
-          </Card>
-
-          <Card withBorder radius="md" p="lg">
-            <Stack gap="sm">
-              <Group gap="sm">
-                <ThemeIcon size="lg" radius="md" variant="light" color="violet">
-                  <IconDice size={20} />
-                </ThemeIcon>
-                <Title order={3} size="h4">Dice Roller</Title>
-              </Group>
-              <Text size="sm" c="dimmed" lh={1.6}>
-                A 3D physics-based dice roller with configurable dice sets,
-                custom actions, and stat modifiers. No sign-in required.
-              </Text>
-              <Group gap="xs" mt="xs">
-                <Link href="/dice-roller">
-                  <Button size="sm" color="violet" rightSection={<IconArrowRight size={14} />}>
-                    Roll some dice
-                  </Button>
-                </Link>
-              </Group>
-            </Stack>
-          </Card>
-        </SimpleGrid>
-      </Stack>
-
-      <Divider />
-
-      <Stack gap="sm">
-        <Title order={2} size="h3" ta="center">
-          MTG Complete — Features
-        </Title>
-        <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
-          {mtgFeatures.map((feature) => (
-            <Card key={feature.title} withBorder radius="md" p="md">
-              <ThemeIcon size="lg" radius="md" mb="sm" variant="light">
-                <feature.icon size={20} />
-              </ThemeIcon>
-              <Text fw={600} size="sm" mb={4}>
-                {feature.title}
-              </Text>
-              <Text size="xs" c="dimmed" lh={1.5}>
-                {feature.description}
-              </Text>
-            </Card>
-          ))}
-        </SimpleGrid>
-      </Stack>
+      {sections.map((section) => (
+        <Stack key={section.category} gap="sm">
+          <Divider />
+          <Stack gap={2}>
+            <Title order={2} size="h3">
+              {section.category}
+            </Title>
+            <Text size="sm" c="dimmed">
+              {section.blurb}
+            </Text>
+          </Stack>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+            {section.tools.map((tool) => (
+              <ToolCard key={tool.href} tool={tool} signedIn={signedIn} />
+            ))}
+          </SimpleGrid>
+        </Stack>
+      ))}
 
       <Divider />
 
       <Stack gap="xs" ta="center">
         <Text size="sm" c="dimmed">
-          Card data and images provided by{" "}
+          MTG card data and images provided by{" "}
           <Anchor href="https://scryfall.com" target="_blank" rel="noreferrer">
             Scryfall
           </Anchor>
           . Not affiliated with Wizards of the Coast.
         </Text>
-        <Group justify="center" gap="xs">
-          <Badge variant="outline" size="sm">
-            32 color combinations
-          </Badge>
-          <Badge variant="outline" size="sm">
-            Partner support
-          </Badge>
-          <Badge variant="outline" size="sm">
-            Auto-save
-          </Badge>
-          <Badge variant="outline" size="sm">
-            Public sharing
-          </Badge>
-        </Group>
       </Stack>
     </Stack>
   );
