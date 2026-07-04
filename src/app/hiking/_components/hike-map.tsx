@@ -279,17 +279,19 @@ function FlyToLocation({ target }: { target: FlyTarget }) {
   return null;
 }
 
-function FlyToRoute({ coords }: { coords: LatLng[] | null }) {
+// Fits the map to the route only when fitSeq is bumped, so silent updates
+// (e.g. re-routes while dragging a pin) don't yank the camera around.
+function FlyToRoute({ coords, fitSeq }: { coords: LatLng[] | null; fitSeq: number }) {
   const map = useMap();
-  const prev = useRef<LatLng[] | null>(null);
+  const prevSeq = useRef(fitSeq);
 
   useEffect(() => {
-    if (coords && coords !== prev.current && coords.length > 1) {
+    if (fitSeq !== prevSeq.current && coords && coords.length > 1) {
+      prevSeq.current = fitSeq;
       const bounds = L.latLngBounds(coords.map((coord) => [coord.lat, coord.lng]));
       map.fitBounds(bounds, { padding: [40, 40] });
-      prev.current = coords;
     }
-  }, [coords, map]);
+  }, [coords, fitSeq, map]);
 
   return null;
 }
@@ -328,6 +330,7 @@ interface Props {
   onMapClick: (latlng: LatLng) => void;
   activeRouteId: string | null;
   flyTarget: FlyTarget;
+  routeFitSeq: number;
   searchPin: SearchPin | null;
   onAddSearchWaypoint: () => void;
   onWaypointDrag: (index: number, latlng: LatLng) => void;
@@ -343,6 +346,7 @@ export function HikeMap({
   onMapClick,
   activeRouteId,
   flyTarget,
+  routeFitSeq,
   searchPin,
   onAddSearchWaypoint,
   onWaypointDrag,
@@ -361,7 +365,7 @@ export function HikeMap({
       />
 
       <MapClickHandler onMapClick={onMapClick} active={placingMode} />
-      <FlyToRoute coords={routeCoords} />
+      <FlyToRoute coords={routeCoords} fitSeq={routeFitSeq} />
       <FlyToLocation target={flyTarget} />
       <LegendControl />
       <LocateControl />

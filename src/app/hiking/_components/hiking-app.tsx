@@ -156,6 +156,7 @@ export function HikingApp() {
     seq: number;
   } | null>(null);
   const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
+  const [routeFitSeq, setRouteFitSeq] = useState(0);
 
   const { fetchRoute, loading: routeLoading, error: routeError } = useOsrmRoute();
   const { routes, saveRoute, deleteRoute, persistence, loading: savedRoutesLoading } = useRoutes();
@@ -182,16 +183,17 @@ export function HikingApp() {
   const lastDragRouteAtRef = useRef(0);
 
   const updateRoute = useCallback(
-    async (newWaypoints: Waypoint[], opts?: { silent?: boolean }) => {
+    async (newWaypoints: Waypoint[], opts?: { silent?: boolean; fit?: boolean }) => {
       if (newWaypoints.length >= 2) {
         // Drag previews fire overlapping requests; only the newest may win.
         const seq = ++routeRequestSeqRef.current;
-        const result = await fetchRoute(newWaypoints, opts);
+        const result = await fetchRoute(newWaypoints, { silent: opts?.silent });
         if (result && seq === routeRequestSeqRef.current) {
           setRouteCoords(result.coords);
           setRouteSegments(result.segments);
           setRouteWaypointDistancesKm(result.waypointDistancesKm);
           setDistanceKm(result.distanceKm);
+          if (opts?.fit !== false) setRouteFitSeq((prev) => prev + 1);
         }
       } else {
         setRouteCoords(null);
@@ -261,7 +263,7 @@ export function HikingApp() {
       const newWaypoints = waypoints.map((waypoint, waypointIndex) =>
         waypointIndex === index ? { ...waypoint, ...latlng } : waypoint,
       );
-      void updateRoute(newWaypoints, { silent: true });
+      void updateRoute(newWaypoints, { silent: true, fit: false });
     },
     [updateRoute, waypoints],
   );
@@ -273,7 +275,7 @@ export function HikingApp() {
         waypointIndex === index ? { ...waypoint, ...latlng, elevationM } : waypoint,
       );
       setWaypoints(newWaypoints);
-      await updateRoute(newWaypoints);
+      await updateRoute(newWaypoints, { fit: false });
     },
     [updateRoute, waypoints],
   );
@@ -297,6 +299,7 @@ export function HikingApp() {
       setRouteSegments(route.routeSegments);
       setRouteWaypointDistancesKm(route.routeWaypointDistancesKm);
       setDistanceKm(route.distanceKm);
+      setRouteFitSeq((prev) => prev + 1);
       setPlacingMode(false);
       setActiveRouteId(null);
       setEditingRouteId(id);
@@ -441,6 +444,7 @@ export function HikingApp() {
           onMapClick={handleMapClick}
           activeRouteId={activeRouteId}
           flyTarget={flyTarget}
+          routeFitSeq={routeFitSeq}
           searchPin={searchPin}
           onAddSearchWaypoint={handleAddSearchWaypoint}
           onWaypointDrag={handleWaypointDrag}
