@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { LatLngTuple } from "leaflet";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
@@ -105,8 +105,9 @@ function LegendControl() {
 function LocateControl() {
   const map = useMap();
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
-  const [locating, setLocating] = useState(false);
   const [position, setPosition] = useState<LatLng | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const flyOnFixRef = useRef(false);
 
   useEffect(() => {
     const ctrl = new L.Control({ position: "topright" });
@@ -124,19 +125,55 @@ function LocateControl() {
     };
   }, [map]);
 
-  function handleLocate() {
-    if (locating || !navigator.geolocation) return;
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
+  const startWatch = useCallback(() => {
+    if (watchIdRef.current !== null || !navigator.geolocation) return;
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setPosition(next);
-        setLocating(false);
-        map.flyTo([next.lat, next.lng], 15, { duration: 1.0 });
+        if (flyOnFixRef.current) {
+          flyOnFixRef.current = false;
+          map.flyTo([next.lat, next.lng], 15, { duration: 1.0 });
+        }
       },
-      () => setLocating(false),
-      { enableHighAccuracy: true, timeout: 10000 },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED && watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+          flyOnFixRef.current = false;
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 },
     );
+  }, [map]);
+
+  // Track continuously from page load when permission is already granted,
+  // without triggering a permission prompt. The map never follows on its
+  // own; the button below re-centers on demand.
+  useEffect(() => {
+    let cancelled = false;
+    navigator.permissions
+      ?.query({ name: "geolocation" })
+      .then((status) => {
+        if (!cancelled && status.state === "granted") startWatch();
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [startWatch]);
+
+  function handleLocate() {
+    if (position) {
+      map.flyTo([position.lat, position.lng], 15, { duration: 1.0 });
+      return;
+    }
+    flyOnFixRef.current = true;
+    startWatch();
   }
 
   return (
@@ -146,7 +183,6 @@ function LocateControl() {
           <button
             className={styles.locateBtn}
             onClick={handleLocate}
-            disabled={locating}
             aria-label="Focus on my location"
             title="Focus on my location"
           >
