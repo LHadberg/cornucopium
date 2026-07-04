@@ -132,6 +132,10 @@ interface WorkingSnapshot {
 
 const HISTORY_LIMIT = 50;
 
+// The public Valhalla server allows ~1 request/second per IP; throttled
+// responses lack CORS headers and surface as fetch failures in the console.
+const DRAG_ROUTE_INTERVAL_MS = 1100;
+
 async function fetchElevationM(latlng: LatLng): Promise<number | null> {
   const params = new URLSearchParams({
     latitude: String(latlng.lat),
@@ -351,10 +355,11 @@ export function HikingApp() {
         dragHistoryPushedRef.current = true;
         pushHistory();
       }
-      // Live preview while dragging, throttled to spare the public routing
-      // server; the drop handler below issues the authoritative re-route.
+      // Live preview while dragging, throttled to the public routing
+      // server's rate limit; the drop handler below issues the
+      // authoritative re-route.
       const now = Date.now();
-      if (now - lastDragRouteAtRef.current < 500) return;
+      if (now - lastDragRouteAtRef.current < DRAG_ROUTE_INTERVAL_MS) return;
       lastDragRouteAtRef.current = now;
       const newWaypoints = waypoints.map((waypoint, waypointIndex) =>
         waypointIndex === index ? { ...waypoint, ...latlng } : waypoint,
@@ -372,6 +377,11 @@ export function HikingApp() {
         waypointIndex === index ? { ...waypoint, ...latlng, elevationM } : waypoint,
       );
       setWaypoints(newWaypoints);
+      // Space the authoritative re-route out from the last preview so the
+      // drop request itself doesn't get rate-limited.
+      const wait = DRAG_ROUTE_INTERVAL_MS - (Date.now() - lastDragRouteAtRef.current);
+      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+      lastDragRouteAtRef.current = Date.now();
       await updateRoute(newWaypoints, { fit: false });
     },
     [updateRoute, waypoints],
