@@ -236,6 +236,10 @@
     "elevationUnavailable": "Elevation unavailable",
     "durationMin": "{{m}} min",
     "durationHr": "{{h}} hr",
-    "durationHrMin": "{{h}} hr {{m}} min"
+    "durationHrMin": "{{h}} hr {{m}} min",
+    "searchPlaceholder": "Search for an address...",
+    "searchNoResults": "No results found",
+    "clearSearch": "Clear search",
+    "addAsWaypoint": "Add as waypoint"
   }
 }

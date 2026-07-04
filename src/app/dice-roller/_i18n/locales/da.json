@@ -236,6 +236,10 @@
     "elevationUnavailable": "Højde utilgængelig",
     "durationMin": "{{m}} min",
     "durationHr": "{{h}} t",
-    "durationHrMin": "{{h}} t {{m}} min"
+    "durationHrMin": "{{h}} t {{m}} min",
+    "searchPlaceholder": "Søg efter en adresse...",
+    "searchNoResults": "Ingen resultater fundet",
+    "clearSearch": "Ryd søgning",
+    "addAsWaypoint": "Tilføj som punkt"
   }
 }

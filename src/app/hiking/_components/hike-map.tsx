@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { IconCurrentLocation } from "@tabler/icons-react";
 import L from "leaflet";
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
+import { useTranslation } from "react-i18next";
 import { MapClickHandler } from "./map-click-handler";
 import styles from "../_styles/Hiking.module.css";
 import type { LatLng, RouteSegment, SavedRoute, Waypoint } from "../_types/types";
@@ -30,6 +31,7 @@ function makeIcon(color: string) {
 const startIcon = makeIcon("green");
 const endIcon = makeIcon("red");
 const midIcon = makeIcon("blue");
+const searchIcon = makeIcon("gold");
 
 function LegendControl() {
   const map = useMap();
@@ -165,6 +167,36 @@ function LocateControl() {
   );
 }
 
+export interface SearchPin {
+  lat: number;
+  lng: number;
+  name: string;
+  label: string;
+}
+
+function SearchPinMarker({ pin, onAdd }: { pin: SearchPin; onAdd: () => void }) {
+  const { t } = useTranslation();
+  const markerRef = useRef<L.Marker>(null);
+
+  useEffect(() => {
+    markerRef.current?.openPopup();
+  }, [pin]);
+
+  return (
+    <Marker ref={markerRef} position={[pin.lat, pin.lng]} icon={searchIcon}>
+      <Popup autoPan={false}>
+        <strong>{pin.name}</strong>
+        <br />
+        {pin.label}
+        <br />
+        <button className={styles.popupAddBtn} onClick={onAdd}>
+          {t("hiking.addAsWaypoint")}
+        </button>
+      </Popup>
+    </Marker>
+  );
+}
+
 type FlyTarget = {
   bounds: [LatLngTuple, LatLngTuple] | null;
   lat: number;
@@ -235,6 +267,8 @@ interface Props {
   onMapClick: (latlng: LatLng) => void;
   activeRouteId: string | null;
   flyTarget: FlyTarget;
+  searchPin: SearchPin | null;
+  onAddSearchWaypoint: () => void;
 }
 
 export function HikeMap({
@@ -246,6 +280,8 @@ export function HikeMap({
   onMapClick,
   activeRouteId,
   flyTarget,
+  searchPin,
+  onAddSearchWaypoint,
 }: Props) {
   return (
     <MapContainer
@@ -264,6 +300,8 @@ export function HikeMap({
       <FlyToLocation target={flyTarget} />
       <LegendControl />
       <LocateControl />
+
+      {searchPin && <SearchPinMarker pin={searchPin} onAdd={onAddSearchWaypoint} />}
 
       {waypoints.map((waypoint, index) => (
         <Marker

@@ -3,6 +3,9 @@ import type { LatLngTuple } from "leaflet";
 import { IconMenu2, IconRoute } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { HikeMap } from "./hike-map";
+import type { SearchPin } from "./hike-map";
+import { SearchControl } from "./search-control";
+import type { SearchResult } from "./search-control";
 import { Sidebar } from "./sidebar";
 import { useOsrmRoute } from "../_hooks/use-osrm-route";
 import { useRoutes } from "../_hooks/use-routes";
@@ -152,6 +155,7 @@ export function HikingApp() {
     lng: number;
     seq: number;
   } | null>(null);
+  const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
 
   const { fetchRoute, loading: routeLoading, error: routeError } = useOsrmRoute();
   const { routes, saveRoute, deleteRoute, persistence, loading: savedRoutesLoading } = useRoutes();
@@ -278,6 +282,25 @@ export function HikingApp() {
     setFlyTarget((prev) => ({ bounds, lat, lng, seq: (prev?.seq ?? 0) + 1 }));
   }
 
+  function handleSearchSelect(result: SearchResult) {
+    setSearchPin({ lat: result.lat, lng: result.lng, name: result.name, label: result.label });
+    handleFlyTo(result.bounds, result.lat, result.lng);
+  }
+
+  async function handleAddSearchWaypoint() {
+    if (!searchPin) return;
+    const waypoint: Waypoint = {
+      lat: searchPin.lat,
+      lng: searchPin.lng,
+      name: searchPin.name || defaultWaypointName(waypoints.length),
+      elevationM: await fetchElevationM(searchPin),
+    };
+    const newWaypoints = [...waypoints, waypoint];
+    setWaypoints(newWaypoints);
+    setSearchPin(null);
+    await updateRoute(newWaypoints);
+  }
+
   function handleClear() {
     setWaypoints([]);
     setRouteCoords(null);
@@ -386,7 +409,10 @@ export function HikingApp() {
           onMapClick={handleMapClick}
           activeRouteId={activeRouteId}
           flyTarget={flyTarget}
+          searchPin={searchPin}
+          onAddSearchWaypoint={handleAddSearchWaypoint}
         />
+        <SearchControl onSelect={handleSearchSelect} onClear={() => setSearchPin(null)} />
         {routeLoading && (
           <div className={styles.mapOverlay}>{t("hiking.findingRoute")}</div>
         )}
