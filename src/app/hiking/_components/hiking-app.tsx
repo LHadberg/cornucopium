@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LatLngTuple } from "leaflet";
 import { IconMenu2, IconRoute } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -120,6 +120,18 @@ function routeBounds(coords: LatLng[]): [LatLngTuple, LatLngTuple] {
   ];
 }
 
+interface WorkingSnapshot {
+  waypoints: Waypoint[];
+  routeCoords: LatLng[] | null;
+  routeSegments: RouteSegment[] | null;
+  routeWaypointDistancesKm: number[];
+  distanceKm: number | null;
+  editingRouteId: string | null;
+  editingRouteCreatedAt: string | null;
+}
+
+const HISTORY_LIMIT = 50;
+
 async function fetchElevationM(latlng: LatLng): Promise<number | null> {
   const params = new URLSearchParams({
     latitude: String(latlng.lat),
@@ -181,6 +193,78 @@ export function HikingApp() {
 
   const routeRequestSeqRef = useRef(0);
   const lastDragRouteAtRef = useRef(0);
+  const dragHistoryPushedRef = useRef(false);
+
+  // Mirror of the working-route state, refreshed every render, so history
+  // pushes can capture the current state synchronously from event handlers.
+  const currentSnapshot: WorkingSnapshot = {
+    waypoints,
+    routeCoords,
+    routeSegments,
+    routeWaypointDistancesKm,
+    distanceKm,
+    editingRouteId,
+    editingRouteCreatedAt,
+  };
+  const snapshotRef = useRef(currentSnapshot);
+  snapshotRef.current = currentSnapshot;
+  const pastRef = useRef<WorkingSnapshot[]>([]);
+  const futureRef = useRef<WorkingSnapshot[]>([]);
+
+  const pushHistory = useCallback(() => {
+    pastRef.current.push(snapshotRef.current);
+    if (pastRef.current.length > HISTORY_LIMIT) pastRef.current.shift();
+    futureRef.current = [];
+  }, []);
+
+  const applySnapshot = useCallback((snapshot: WorkingSnapshot) => {
+    // Invalidate in-flight re-routes so they can't clobber the restored state.
+    routeRequestSeqRef.current++;
+    setWaypoints(snapshot.waypoints);
+    setRouteCoords(snapshot.routeCoords);
+    setRouteSegments(snapshot.routeSegments);
+    setRouteWaypointDistancesKm(snapshot.routeWaypointDistancesKm);
+    setDistanceKm(snapshot.distanceKm);
+    setEditingRouteId(snapshot.editingRouteId);
+    setEditingRouteCreatedAt(snapshot.editingRouteCreatedAt);
+  }, []);
+
+  const undo = useCallback(() => {
+    const previous = pastRef.current.pop();
+    if (!previous) return;
+    futureRef.current.push(snapshotRef.current);
+    applySnapshot(previous);
+  }, [applySnapshot]);
+
+  const redo = useCallback(() => {
+    const next = futureRef.current.pop();
+    if (!next) return;
+    pastRef.current.push(snapshotRef.current);
+    applySnapshot(next);
+  }, [applySnapshot]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+      ) {
+        return;
+      }
+      if (!(event.ctrlKey || event.metaKey)) return;
+      const key = event.key.toLowerCase();
+      if (key === "z" && !event.shiftKey) {
+        event.preventDefault();
+        undo();
+      } else if (key === "y" || (key === "z" && event.shiftKey)) {
+        event.preventDefault();
+        redo();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [redo, undo]);
 
   const updateRoute = useCallback(
     async (newWaypoints: Waypoint[], opts?: { silent?: boolean; fit?: boolean }) => {
@@ -207,6 +291,7 @@ export function HikingApp() {
 
   const handleMapClick = useCallback(
     async (latlng: LatLng) => {
+      pushHistory();
       const waypoint: Waypoint = {
         ...latlng,
         name: defaultWaypointName(waypoints.length),
@@ -216,7 +301,7 @@ export function HikingApp() {
       setWaypoints(newWaypoints);
       await updateRoute(newWaypoints);
     },
-    [updateRoute, waypoints],
+    [pushHistory, updateRoute, waypoints],
   );
 
   function handleTogglePlacing() {
@@ -238,11 +323,12 @@ export function HikingApp() {
 
   const handleDeleteWaypoint = useCallback(
     async (index: number) => {
+      pushHistory();
       const newWaypoints = waypoints.filter((_, waypointIndex) => waypointIndex !== index);
       setWaypoints(newWaypoints);
       await updateRoute(newWaypoints);
     },
-    [updateRoute, waypoints],
+    [pushHistory, updateRoute, waypoints],
   );
 
   const handleMoveWaypoint = useCallback(
@@ -250,15 +336,21 @@ export function HikingApp() {
       const newWaypoints = [...waypoints];
       const [moved] = newWaypoints.splice(from, 1);
       if (!moved) return;
+      pushHistory();
       newWaypoints.splice(to, 0, moved);
       setWaypoints(newWaypoints);
       await updateRoute(newWaypoints);
     },
-    [updateRoute, waypoints],
+    [pushHistory, updateRoute, waypoints],
   );
 
   const handleWaypointDrag = useCallback(
     (index: number, latlng: LatLng) => {
+      // One history entry per drag gesture, captured before the first move.
+      if (!dragHistoryPushedRef.current) {
+        dragHistoryPushedRef.current = true;
+        pushHistory();
+      }
       // Live preview while dragging, throttled to spare the public routing
       // server; the drop handler below issues the authoritative re-route.
       const now = Date.now();
@@ -269,11 +361,12 @@ export function HikingApp() {
       );
       void updateRoute(newWaypoints, { silent: true, fit: false });
     },
-    [updateRoute, waypoints],
+    [pushHistory, updateRoute, waypoints],
   );
 
   const handleWaypointDragEnd = useCallback(
     async (index: number, latlng: LatLng) => {
+      dragHistoryPushedRef.current = false;
       const elevationM = await fetchElevationM(latlng);
       const newWaypoints = waypoints.map((waypoint, waypointIndex) =>
         waypointIndex === index ? { ...waypoint, ...latlng, elevationM } : waypoint,
@@ -284,20 +377,25 @@ export function HikingApp() {
     [updateRoute, waypoints],
   );
 
-  const handleRenameWaypoint = useCallback((index: number, name: string) => {
-    setWaypoints((prev) =>
-      prev.map((waypoint, waypointIndex) =>
-        waypointIndex === index
-          ? { ...waypoint, name: name.trim() || defaultWaypointName(waypointIndex) }
-          : waypoint,
-      ),
-    );
-  }, []);
+  const handleRenameWaypoint = useCallback(
+    (index: number, name: string) => {
+      pushHistory();
+      setWaypoints((prev) =>
+        prev.map((waypoint, waypointIndex) =>
+          waypointIndex === index
+            ? { ...waypoint, name: name.trim() || defaultWaypointName(waypointIndex) }
+            : waypoint,
+        ),
+      );
+    },
+    [pushHistory],
+  );
 
   const handleEditRoute = useCallback(
     (id: string) => {
       const route = routes.find((r: SavedRoute) => r.id === id);
       if (!route) return;
+      pushHistory();
       setWaypoints(route.waypoints);
       setRouteCoords(route.routeCoords);
       setRouteSegments(route.routeSegments);
@@ -310,7 +408,7 @@ export function HikingApp() {
       setEditingRouteCreatedAt(route.createdAt);
       setMobileMenuOpen(false);
     },
-    [routes],
+    [pushHistory, routes],
   );
 
   function handleFlyTo(
@@ -328,6 +426,7 @@ export function HikingApp() {
 
   async function handleAddSearchWaypoint() {
     if (!searchPin) return;
+    pushHistory();
     const waypoint: Waypoint = {
       lat: searchPin.lat,
       lng: searchPin.lng,
@@ -341,6 +440,7 @@ export function HikingApp() {
   }
 
   function handleClear() {
+    if (waypoints.length > 0 || routeCoords) pushHistory();
     setWaypoints([]);
     setRouteCoords(null);
     setRouteSegments(null);
