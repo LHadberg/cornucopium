@@ -71,20 +71,22 @@ function decodeLine(encoded: string, precision = 6): LatLng[] {
   return coords;
 }
 
-function isPathManeuver(maneuver: ValhallaManeuver): boolean {
+function classifyManeuver(maneuver: ValhallaManeuver): RouteSegment["type"] {
   const instruction = maneuver.instruction?.toLowerCase() ?? "";
   const hasStreetName = (maneuver.street_names?.length ?? 0) > 0;
 
-  return (
-    !hasStreetName ||
-    instruction.includes("trail") ||
-    instruction.includes("path") ||
-    instruction.includes("track") ||
+  if (instruction.includes("steps") || instruction.includes("stairs")) return "steps";
+  if (instruction.includes("track")) return "track";
+  if (
     instruction.includes("walkway") ||
     instruction.includes("footway") ||
-    instruction.includes("steps") ||
-    instruction.includes("crosswalk")
-  );
+    instruction.includes("crosswalk") ||
+    instruction.includes("sidewalk")
+  ) {
+    return "walkway";
+  }
+  if (instruction.includes("trail") || instruction.includes("path") || !hasStreetName) return "path";
+  return "road";
 }
 
 function buildSegments(legs: ValhallaLeg[]): RouteSegment[] {
@@ -93,9 +95,9 @@ function buildSegments(legs: ValhallaLeg[]): RouteSegment[] {
     return leg.maneuvers
       .map((maneuver) => ({
         coords: coords.slice(maneuver.begin_shape_index, maneuver.end_shape_index + 1),
-        type: isPathManeuver(maneuver) ? "path" : "road",
+        type: classifyManeuver(maneuver),
       }))
-      .filter((segment): segment is RouteSegment => segment.coords.length > 1);
+      .filter((segment) => segment.coords.length > 1);
   });
 }
 
@@ -131,8 +133,8 @@ export function useOsrmRoute() {
         costing_options: {
           pedestrian: {
             use_highways: 0,
-            use_tracks: 1,
-            use_living_streets: 0.2,
+            use_living_streets: 1,
+            use_tracks: 0.2,
             // Make footpaths/trails much cheaper than roads so the router
             // takes them even when a road alternative is shorter.
             walkway_factor: 0.3,

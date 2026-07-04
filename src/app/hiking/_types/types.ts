@@ -10,7 +10,7 @@ export interface Waypoint extends LatLng {
 
 export interface RouteSegment {
   coords: LatLng[];
-  type: "road" | "path";
+  type: "road" | "path" | "track" | "walkway" | "steps";
 }
 
 export interface SavedRoute {

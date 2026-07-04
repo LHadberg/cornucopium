@@ -87,6 +87,27 @@ function LegendControl() {
           />
           <span>Trail / footpath</span>
         </div>
+        <div className={styles.legendRow}>
+          <span
+            className={`${styles.legendLine} ${styles.legendLineDashed}`}
+            style={{ "--dash-color": "#b45309" } as CSSProperties}
+          />
+          <span>Track / gravel road</span>
+        </div>
+        <div className={styles.legendRow}>
+          <span
+            className={`${styles.legendLine} ${styles.legendLineDashed}`}
+            style={{ "--dash-color": "#0d9488" } as CSSProperties}
+          />
+          <span>Walkway / sidewalk</span>
+        </div>
+        <div className={styles.legendRow}>
+          <span
+            className={`${styles.legendLine} ${styles.legendLineDashed}`}
+            style={{ "--dash-color": "#db2777" } as CSSProperties}
+          />
+          <span>Steps / stairs</span>
+        </div>
         <p className={styles.legendSection}>Saved routes</p>
         <div className={styles.legendRow}>
           <span className={styles.legendLine} style={{ background: "#16a34a" }} />
@@ -276,6 +297,9 @@ function FlyToRoute({ coords }: { coords: LatLng[] | null }) {
 const SEGMENT_STYLES: Record<RouteSegment["type"], L.PolylineOptions> = {
   road: { color: "#2563eb", weight: 4, opacity: 0.9 },
   path: { color: "#7c3aed", weight: 3, opacity: 0.85, dashArray: "8 5" },
+  track: { color: "#b45309", weight: 3, opacity: 0.85, dashArray: "12 6" },
+  walkway: { color: "#0d9488", weight: 3, opacity: 0.85, dashArray: "4 5" },
+  steps: { color: "#db2777", weight: 3, opacity: 0.85, dashArray: "2 4" },
 };
 
 function savedRouteStyle(
@@ -285,12 +309,13 @@ function savedRouteStyle(
 ): L.PolylineOptions {
   const isActive = activeRouteId === route.id;
   const routeColor = isActive ? "#f59e0b" : "#16a34a";
+  const base = segmentType && segmentType !== "road" ? SEGMENT_STYLES[segmentType] : null;
 
   return {
-    color: segmentType === "path" ? "#7c3aed" : routeColor,
+    color: base?.color ?? routeColor,
     weight: isActive ? 5 : 3,
     opacity: isActive ? 0.85 : 0.72,
-    dashArray: segmentType === "path" ? "8 5" : undefined,
+    dashArray: base?.dashArray,
   };
 }
 

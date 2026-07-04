@@ -13,7 +13,7 @@ const waypointSchema = latLngSchema.extend({
 
 const routeSegmentSchema = z.object({
   coords: z.array(latLngSchema),
-  type: z.enum(["road", "path"]),
+  type: z.enum(["road", "path", "track", "walkway", "steps"]),
 });
 
 const savedRouteSchema = z.object({
