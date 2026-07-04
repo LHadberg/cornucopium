@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { LatLngTuple } from "leaflet";
 import { IconMenu2, IconRoute } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
@@ -178,11 +178,16 @@ export function HikingApp() {
     [editingRouteId, routes],
   );
 
+  const routeRequestSeqRef = useRef(0);
+  const lastDragRouteAtRef = useRef(0);
+
   const updateRoute = useCallback(
-    async (newWaypoints: Waypoint[]) => {
+    async (newWaypoints: Waypoint[], opts?: { silent?: boolean }) => {
       if (newWaypoints.length >= 2) {
-        const result = await fetchRoute(newWaypoints);
-        if (result) {
+        // Drag previews fire overlapping requests; only the newest may win.
+        const seq = ++routeRequestSeqRef.current;
+        const result = await fetchRoute(newWaypoints, opts);
+        if (result && seq === routeRequestSeqRef.current) {
           setRouteCoords(result.coords);
           setRouteSegments(result.segments);
           setRouteWaypointDistancesKm(result.waypointDistancesKm);
@@ -240,6 +245,33 @@ export function HikingApp() {
       const [moved] = newWaypoints.splice(from, 1);
       if (!moved) return;
       newWaypoints.splice(to, 0, moved);
+      setWaypoints(newWaypoints);
+      await updateRoute(newWaypoints);
+    },
+    [updateRoute, waypoints],
+  );
+
+  const handleWaypointDrag = useCallback(
+    (index: number, latlng: LatLng) => {
+      // Live preview while dragging, throttled to spare the public routing
+      // server; the drop handler below issues the authoritative re-route.
+      const now = Date.now();
+      if (now - lastDragRouteAtRef.current < 500) return;
+      lastDragRouteAtRef.current = now;
+      const newWaypoints = waypoints.map((waypoint, waypointIndex) =>
+        waypointIndex === index ? { ...waypoint, ...latlng } : waypoint,
+      );
+      void updateRoute(newWaypoints, { silent: true });
+    },
+    [updateRoute, waypoints],
+  );
+
+  const handleWaypointDragEnd = useCallback(
+    async (index: number, latlng: LatLng) => {
+      const elevationM = await fetchElevationM(latlng);
+      const newWaypoints = waypoints.map((waypoint, waypointIndex) =>
+        waypointIndex === index ? { ...waypoint, ...latlng, elevationM } : waypoint,
+      );
       setWaypoints(newWaypoints);
       await updateRoute(newWaypoints);
     },
@@ -411,6 +443,8 @@ export function HikingApp() {
           flyTarget={flyTarget}
           searchPin={searchPin}
           onAddSearchWaypoint={handleAddSearchWaypoint}
+          onWaypointDrag={handleWaypointDrag}
+          onWaypointDragEnd={handleWaypointDragEnd}
         />
         <SearchControl onSelect={handleSearchSelect} onClear={() => setSearchPin(null)} />
         {routeLoading && (

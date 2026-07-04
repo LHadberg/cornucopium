@@ -111,10 +111,18 @@ export function useOsrmRoute() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchRoute = useCallback(async (waypoints: LatLng[]): Promise<RouteResult | null> => {
+  const fetchRoute = useCallback(async (
+    waypoints: LatLng[],
+    opts?: { silent?: boolean },
+  ): Promise<RouteResult | null> => {
+    // Silent requests (live previews while dragging a pin) skip the loading
+    // overlay and swallow errors; the authoritative request on drop reports.
+    const silent = opts?.silent ?? false;
     if (waypoints.length < 2) return null;
-    setLoading(true);
-    setError(null);
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
       const routeRequest = {
@@ -163,10 +171,10 @@ export function useOsrmRoute() {
         waypointDistancesKm: buildWaypointDistances(legs),
       };
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Routing failed");
+      if (!silent) setError(error instanceof Error ? error.message : "Routing failed");
       return null;
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 

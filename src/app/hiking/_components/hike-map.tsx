@@ -305,6 +305,8 @@ interface Props {
   flyTarget: FlyTarget;
   searchPin: SearchPin | null;
   onAddSearchWaypoint: () => void;
+  onWaypointDrag: (index: number, latlng: LatLng) => void;
+  onWaypointDragEnd: (index: number, latlng: LatLng) => void;
 }
 
 export function HikeMap({
@@ -318,6 +320,8 @@ export function HikeMap({
   flyTarget,
   searchPin,
   onAddSearchWaypoint,
+  onWaypointDrag,
+  onWaypointDragEnd,
 }: Props) {
   return (
     <MapContainer
@@ -344,6 +348,17 @@ export function HikeMap({
           key={`${waypoint.lat}-${waypoint.lng}-${index}`}
           position={[waypoint.lat, waypoint.lng]}
           icon={index === 0 ? startIcon : index === waypoints.length - 1 ? endIcon : midIcon}
+          draggable
+          eventHandlers={{
+            drag: (event) => {
+              const pos = (event.target as L.Marker).getLatLng();
+              onWaypointDrag(index, { lat: pos.lat, lng: pos.lng });
+            },
+            dragend: (event) => {
+              const pos = (event.target as L.Marker).getLatLng();
+              onWaypointDragEnd(index, { lat: pos.lat, lng: pos.lng });
+            },
+          }}
         >
           <Popup>
             {waypoint.name}
