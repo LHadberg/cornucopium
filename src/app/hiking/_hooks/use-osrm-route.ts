@@ -138,6 +138,10 @@ export function useOsrmRoute() {
             // Make footpaths/trails much cheaper than roads so the router
             // takes them even when a road alternative is shorter.
             walkway_factor: 0.3,
+            // Valhalla penalizes transitions onto steps by default (~30s),
+            // steering routes around stairs; on hiking trails steps are
+            // usually the intended way through.
+            step_penalty: 0,
           },
         },
         directions_options: {
