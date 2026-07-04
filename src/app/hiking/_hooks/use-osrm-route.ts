@@ -125,6 +125,9 @@ export function useOsrmRoute() {
             use_highways: 0,
             use_tracks: 1,
             use_living_streets: 0.2,
+            // Make footpaths/trails much cheaper than roads so the router
+            // takes them even when a road alternative is shorter.
+            walkway_factor: 0.3,
           },
         },
         directions_options: {
