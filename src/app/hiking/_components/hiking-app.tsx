@@ -222,8 +222,12 @@ export function HikingApp() {
   function handleTogglePlacing() {
     if (placingMode) {
       setPlacingMode(false);
-    } else {
-      setPlacingMode(true);
+      return;
+    }
+    setPlacingMode(true);
+    // While editing a saved route, "Add waypoints" appends to the loaded
+    // route instead of starting a fresh one.
+    if (!editingRouteId) {
       setWaypoints([]);
       setRouteCoords(null);
       setRouteSegments(null);
