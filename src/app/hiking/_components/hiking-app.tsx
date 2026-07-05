@@ -7,7 +7,7 @@ import type { SearchPin } from "./hike-map";
 import { SearchControl } from "./search-control";
 import type { SearchResult } from "./search-control";
 import { Sidebar } from "./sidebar";
-import { useOsrmRoute } from "../_hooks/use-osrm-route";
+import { useBrouterRoute } from "../_hooks/use-brouter-route";
 import { useRoutes } from "../_hooks/use-routes";
 import i18n from "../../dice-roller/_i18n/i18n";
 import styles from "../_styles/Hiking.module.css";
@@ -174,7 +174,7 @@ export function HikingApp() {
   const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
   const [routeFitSeq, setRouteFitSeq] = useState(0);
 
-  const { fetchRoute, loading: routeLoading, error: routeError } = useOsrmRoute();
+  const { fetchRoute, loading: routeLoading, error: routeError } = useBrouterRoute();
   const { routes, saveRoute, deleteRoute, persistence, loading: savedRoutesLoading } = useRoutes();
   const elevationGainM = useMemo(() => computeElevationGainM(waypoints), [waypoints]);
   const estimatedTimeMinutes = useMemo(
