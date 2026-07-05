@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
-import type { LatLng, RouteSegment } from "../_types/types";
+import type { LatLng, RouteSegment, TrackPoint } from "../_types/types";
 
 interface RouteResult {
-  coords: LatLng[];
+  coords: TrackPoint[];
   segments: RouteSegment[];
   distanceKm: number;
   waypointDistancesKm: number[];
@@ -152,7 +152,7 @@ export function useBrouterRoute() {
       const feature = data.features?.[0];
       if (!feature) throw new Error("No hiking route found between these points");
 
-      const coords = feature.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+      const coords: TrackPoint[] = feature.geometry.coordinates.map(([lng, lat, ele]) => ({ lat, lng, eleM: ele }));
       const distanceKm = Number(feature.properties["track-length"]) / 1000;
       const messages = feature.properties.messages?.slice(1) ?? [];
 

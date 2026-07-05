@@ -218,6 +218,7 @@
     "nextStopPlaceholder": "Next stop - click to add",
     "distance": "Distance",
     "ascent": "Ascent",
+    "descent": "Descent",
     "estTime": "Est. time",
     "routeNamePlaceholder": "Route name (optional)",
     "update": "Update",

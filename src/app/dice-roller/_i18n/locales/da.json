@@ -218,6 +218,7 @@
     "nextStopPlaceholder": "Næste stop - klik for at tilføje",
     "distance": "Distance",
     "ascent": "Stigning",
+    "descent": "Fald",
     "estTime": "Anslået tid",
     "routeNamePlaceholder": "Rutenavn (valgfrit)",
     "update": "Opdater",

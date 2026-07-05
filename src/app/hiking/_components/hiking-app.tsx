@@ -11,7 +11,7 @@ import { useBrouterRoute } from "../_hooks/use-brouter-route";
 import { useRoutes } from "../_hooks/use-routes";
 import i18n from "../../dice-roller/_i18n/i18n";
 import styles from "../_styles/Hiking.module.css";
-import type { LatLng, RouteSegment, SavedRoute, Waypoint } from "../_types/types";
+import type { LatLng, RouteSegment, SavedRoute, TrackPoint, Waypoint } from "../_types/types";
 
 function defaultWaypointName(index: number) {
   if (index === 0) return i18n.t("hiking.start");
@@ -46,9 +46,53 @@ function computeElevationGainM(waypoints: Waypoint[]) {
   }, 0);
 }
 
-function estimateHikingMinutes(distanceKm: number | null, elevationGainM: number) {
+// Track elevations come from ~30 m SRTM tiles, so undulations below this
+// threshold are treated as sampling noise rather than real climb.
+const ELEVATION_NOISE_THRESHOLD_M = 10;
+
+interface Climb {
+  ascentM: number;
+  descentM: number;
+}
+
+// Sums total climb and drop along the track profile with a hysteresis
+// filter: the reference elevation only moves once the track has climbed or
+// dropped past the noise threshold. Returns null when the track carries no
+// elevation data (routes saved before track elevations were kept).
+function computeTrackClimb(coords: TrackPoint[] | null): Climb | null {
+  if (!coords) return null;
+  let reference: number | null = null;
+  let ascentM = 0;
+  let descentM = 0;
+  for (const coord of coords) {
+    if (coord.eleM === undefined) continue;
+    if (reference === null) {
+      reference = coord.eleM;
+      continue;
+    }
+    const diff = coord.eleM - reference;
+    if (diff >= ELEVATION_NOISE_THRESHOLD_M) {
+      ascentM += diff;
+      reference = coord.eleM;
+    } else if (diff <= -ELEVATION_NOISE_THRESHOLD_M) {
+      descentM -= diff;
+      reference = coord.eleM;
+    }
+  }
+  return reference === null ? null : { ascentM, descentM };
+}
+
+// Tracks without elevation data fall back to the spot elevations at the
+// waypoints, which can only see waypoint-to-waypoint ascent.
+function computeClimb(routeCoords: TrackPoint[] | null, waypoints: Waypoint[]): Climb {
+  return computeTrackClimb(routeCoords) ?? { ascentM: computeElevationGainM(waypoints), descentM: 0 };
+}
+
+// Naismith's rule with a descent correction: 5 km/h on the flat, an hour
+// extra per 600 m climbed, and an hour extra per 1500 m descended.
+function estimateHikingMinutes(distanceKm: number | null, climb: Climb) {
   if (distanceKm === null) return null;
-  return Math.round((distanceKm / 5 + elevationGainM / 600) * 60);
+  return Math.round((distanceKm / 5 + climb.ascentM / 600 + climb.descentM / 1500) * 60);
 }
 
 function formatDuration(minutes: number | null) {
@@ -60,15 +104,15 @@ function formatDuration(minutes: number | null) {
   return i18n.t("hiking.durationHrMin", { h: hours, m: mins });
 }
 
-function routeStats(route: Pick<SavedRoute, "waypoints" | "distanceKm">) {
-  const elevationGainM = computeElevationGainM(route.waypoints);
+function routeStats(route: Pick<SavedRoute, "waypoints" | "routeCoords" | "distanceKm">) {
+  const climb = computeClimb(route.routeCoords, route.waypoints);
   return {
-    elevationGainM,
-    estimatedTime: formatDuration(estimateHikingMinutes(route.distanceKm, elevationGainM)),
+    ...climb,
+    estimatedTime: formatDuration(estimateHikingMinutes(route.distanceKm, climb)),
   };
 }
 
-function buildGpx(routeName: string, waypoints: Waypoint[], routeCoords: LatLng[]) {
+function buildGpx(routeName: string, waypoints: Waypoint[], routeCoords: TrackPoint[]) {
   // A navigation GPX must contain a single line representation. Emitting the
   // waypoints as a <rte> alongside the <trk> makes devices (e.g. Coros) draw
   // straight waypoint-to-waypoint chords over the actual track, so waypoints
@@ -84,7 +128,11 @@ function buildGpx(routeName: string, waypoints: Waypoint[], routeCoords: LatLng[
     .join("\n");
 
   const trackPoints = routeCoords
-    .map((coord) => `      <trkpt lat="${coord.lat}" lon="${coord.lng}" />`)
+    .map((coord) =>
+      coord.eleM === undefined
+        ? `      <trkpt lat="${coord.lat}" lon="${coord.lng}" />`
+        : `      <trkpt lat="${coord.lat}" lon="${coord.lng}"><ele>${coord.eleM.toFixed(1)}</ele></trkpt>`,
+    )
     .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -122,7 +170,7 @@ function routeBounds(coords: LatLng[]): [LatLngTuple, LatLngTuple] {
 
 interface WorkingSnapshot {
   waypoints: Waypoint[];
-  routeCoords: LatLng[] | null;
+  routeCoords: TrackPoint[] | null;
   routeSegments: RouteSegment[] | null;
   routeWaypointDistancesKm: number[];
   distanceKm: number | null;
@@ -156,7 +204,7 @@ export function HikingApp() {
   const { t, i18n: i18nInstance } = useTranslation();
   const language = i18nInstance.language;
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
-  const [routeCoords, setRouteCoords] = useState<LatLng[] | null>(null);
+  const [routeCoords, setRouteCoords] = useState<TrackPoint[] | null>(null);
   const [routeSegments, setRouteSegments] = useState<RouteSegment[] | null>(null);
   const [routeWaypointDistancesKm, setRouteWaypointDistancesKm] = useState<number[]>([]);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
@@ -176,10 +224,10 @@ export function HikingApp() {
 
   const { fetchRoute, loading: routeLoading, error: routeError } = useBrouterRoute();
   const { routes, saveRoute, deleteRoute, persistence, loading: savedRoutesLoading } = useRoutes();
-  const elevationGainM = useMemo(() => computeElevationGainM(waypoints), [waypoints]);
+  const climb = useMemo(() => computeClimb(routeCoords, waypoints), [routeCoords, waypoints]);
   const estimatedTimeMinutes = useMemo(
-    () => estimateHikingMinutes(distanceKm, elevationGainM),
-    [distanceKm, elevationGainM],
+    () => estimateHikingMinutes(distanceKm, climb),
+    [distanceKm, climb],
   );
   const activeRoute = useMemo(
     () => routes.find((route: SavedRoute) => route.id === activeRouteId) ?? null,
@@ -523,7 +571,8 @@ export function HikingApp() {
         routeCoords={routeCoords}
         routeWaypointDistancesKm={routeWaypointDistancesKm}
         distanceKm={distanceKm}
-        elevationGainM={elevationGainM}
+        ascentM={climb.ascentM}
+        descentM={climb.descentM}
         estimatedTime={formatDuration(estimatedTimeMinutes)}
         routeLoading={routeLoading}
         routeError={routeError}
@@ -531,7 +580,8 @@ export function HikingApp() {
         savedRoutes={routes}
         activeRouteId={activeRouteId}
         activeRoute={activeRoute}
-        activeRouteElevationGainM={activeRouteStats?.elevationGainM ?? 0}
+        activeRouteAscentM={activeRouteStats?.ascentM ?? 0}
+        activeRouteDescentM={activeRouteStats?.descentM ?? 0}
         activeRouteEstimatedTime={activeRouteStats?.estimatedTime ?? t("hiking.pending")}
         persistence={persistence}
         savedRoutesLoading={savedRoutesLoading}
