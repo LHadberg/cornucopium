@@ -13,7 +13,7 @@ import {
 import { useTranslation } from "react-i18next";
 import i18n from "../../dice-roller/_i18n/i18n";
 import styles from "../_styles/Hiking.module.css";
-import type { LatLng, SavedRoute, Waypoint } from "../_types/types";
+import type { LatLng, SavedRoute, TrackPoint, Waypoint } from "../_types/types";
 
 interface Props {
   isMobileOpen: boolean;
@@ -21,7 +21,8 @@ interface Props {
   routeCoords: LatLng[] | null;
   routeWaypointDistancesKm: number[];
   distanceKm: number | null;
-  elevationGainM: number;
+  ascentM: number;
+  descentM: number;
   estimatedTime: string;
   routeLoading: boolean;
   routeError: string | null;
@@ -29,7 +30,8 @@ interface Props {
   savedRoutes: SavedRoute[];
   activeRouteId: string | null;
   activeRoute: SavedRoute | null;
-  activeRouteElevationGainM: number;
+  activeRouteAscentM: number;
+  activeRouteDescentM: number;
   activeRouteEstimatedTime: string;
   persistence: "database" | "browser";
   savedRoutesLoading: boolean;
@@ -38,7 +40,7 @@ interface Props {
   onTogglePlacing: () => void;
   onClear: () => void;
   onSaveRoute: (name: string) => void;
-  onExportGpx: (name: string, waypoints?: Waypoint[], routeCoords?: LatLng[] | null) => void;
+  onExportGpx: (name: string, waypoints?: Waypoint[], routeCoords?: TrackPoint[] | null) => void;
   onSelectRoute: (id: string) => void;
   onDeleteRoute: (id: string) => void;
   onEditRoute: (id: string) => void;
@@ -80,7 +82,8 @@ export function Sidebar({
   routeCoords,
   routeWaypointDistancesKm,
   distanceKm,
-  elevationGainM,
+  ascentM,
+  descentM,
   estimatedTime,
   routeLoading,
   routeError,
@@ -88,7 +91,8 @@ export function Sidebar({
   savedRoutes,
   activeRouteId,
   activeRoute,
-  activeRouteElevationGainM,
+  activeRouteAscentM,
+  activeRouteDescentM,
   activeRouteEstimatedTime,
   persistence,
   savedRoutesLoading,
@@ -301,7 +305,8 @@ export function Sidebar({
           <div className={styles.routeInfo}>
             <div className={styles.routeStats}>
               <span>{t("hiking.distance")} <strong>{distanceKm.toFixed(2)} km</strong></span>
-              <span>{t("hiking.ascent")} <strong>{Math.round(elevationGainM)} m</strong></span>
+              <span>{t("hiking.ascent")} <strong>{Math.round(ascentM)} m</strong></span>
+              <span>{t("hiking.descent")} <strong>{Math.round(descentM)} m</strong></span>
               <span>{t("hiking.estTime")} <strong>{estimatedTime}</strong></span>
             </div>
             <div className={styles.saveRow}>
@@ -354,7 +359,8 @@ export function Sidebar({
                 </div>
                 <div className={styles.routeStats}>
                   <span>{t("hiking.distance")} <strong>{activeRoute.distanceKm.toFixed(2)} km</strong></span>
-                  <span>{t("hiking.ascent")} <strong>{Math.round(activeRouteElevationGainM)} m</strong></span>
+                  <span>{t("hiking.ascent")} <strong>{Math.round(activeRouteAscentM)} m</strong></span>
+                  <span>{t("hiking.descent")} <strong>{Math.round(activeRouteDescentM)} m</strong></span>
                   <span>{t("hiking.estTime")} <strong>{activeRouteEstimatedTime}</strong></span>
                 </div>
               </div>

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { LatLngTuple } from "leaflet";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { IconCurrentLocation } from "@tabler/icons-react";
 import L from "leaflet";
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
+import { useTranslation } from "react-i18next";
 import { MapClickHandler } from "./map-click-handler";
 import styles from "../_styles/Hiking.module.css";
 import type { LatLng, RouteSegment, SavedRoute, Waypoint } from "../_types/types";
@@ -30,6 +31,7 @@ function makeIcon(color: string) {
 const startIcon = makeIcon("green");
 const endIcon = makeIcon("red");
 const midIcon = makeIcon("blue");
+const searchIcon = makeIcon("gold");
 
 function LegendControl() {
   const map = useMap();
@@ -85,6 +87,27 @@ function LegendControl() {
           />
           <span>Trail / footpath</span>
         </div>
+        <div className={styles.legendRow}>
+          <span
+            className={`${styles.legendLine} ${styles.legendLineDashed}`}
+            style={{ "--dash-color": "#b45309" } as CSSProperties}
+          />
+          <span>Track / gravel road</span>
+        </div>
+        <div className={styles.legendRow}>
+          <span
+            className={`${styles.legendLine} ${styles.legendLineDashed}`}
+            style={{ "--dash-color": "#0d9488" } as CSSProperties}
+          />
+          <span>Walkway / sidewalk</span>
+        </div>
+        <div className={styles.legendRow}>
+          <span
+            className={`${styles.legendLine} ${styles.legendLineDashed}`}
+            style={{ "--dash-color": "#db2777" } as CSSProperties}
+          />
+          <span>Steps / stairs</span>
+        </div>
         <p className={styles.legendSection}>Saved routes</p>
         <div className={styles.legendRow}>
           <span className={styles.legendLine} style={{ background: "#16a34a" }} />
@@ -103,8 +126,9 @@ function LegendControl() {
 function LocateControl() {
   const map = useMap();
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
-  const [locating, setLocating] = useState(false);
   const [position, setPosition] = useState<LatLng | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const flyOnFixRef = useRef(false);
 
   useEffect(() => {
     const ctrl = new L.Control({ position: "topright" });
@@ -122,19 +146,55 @@ function LocateControl() {
     };
   }, [map]);
 
-  function handleLocate() {
-    if (locating || !navigator.geolocation) return;
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
+  const startWatch = useCallback(() => {
+    if (watchIdRef.current !== null || !navigator.geolocation) return;
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setPosition(next);
-        setLocating(false);
-        map.flyTo([next.lat, next.lng], 15, { duration: 1.0 });
+        if (flyOnFixRef.current) {
+          flyOnFixRef.current = false;
+          map.flyTo([next.lat, next.lng], 15, { duration: 1.0 });
+        }
       },
-      () => setLocating(false),
-      { enableHighAccuracy: true, timeout: 10000 },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED && watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+          flyOnFixRef.current = false;
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 2000 },
     );
+  }, [map]);
+
+  // Track continuously from page load when permission is already granted,
+  // without triggering a permission prompt. The map never follows on its
+  // own; the button below re-centers on demand.
+  useEffect(() => {
+    let cancelled = false;
+    navigator.permissions
+      ?.query({ name: "geolocation" })
+      .then((status) => {
+        if (!cancelled && status.state === "granted") startWatch();
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, [startWatch]);
+
+  function handleLocate() {
+    if (position) {
+      map.flyTo([position.lat, position.lng], 15, { duration: 1.0 });
+      return;
+    }
+    flyOnFixRef.current = true;
+    startWatch();
   }
 
   return (
@@ -144,7 +204,6 @@ function LocateControl() {
           <button
             className={styles.locateBtn}
             onClick={handleLocate}
-            disabled={locating}
             aria-label="Focus on my location"
             title="Focus on my location"
           >
@@ -162,6 +221,36 @@ function LocateControl() {
         </CircleMarker>
       )}
     </>
+  );
+}
+
+export interface SearchPin {
+  lat: number;
+  lng: number;
+  name: string;
+  label: string;
+}
+
+function SearchPinMarker({ pin, onAdd }: { pin: SearchPin; onAdd: () => void }) {
+  const { t } = useTranslation();
+  const markerRef = useRef<L.Marker>(null);
+
+  useEffect(() => {
+    markerRef.current?.openPopup();
+  }, [pin]);
+
+  return (
+    <Marker ref={markerRef} position={[pin.lat, pin.lng]} icon={searchIcon}>
+      <Popup autoPan={false}>
+        <strong>{pin.name}</strong>
+        <br />
+        {pin.label}
+        <br />
+        <button className={styles.popupAddBtn} onClick={onAdd}>
+          {t("hiking.addAsWaypoint")}
+        </button>
+      </Popup>
+    </Marker>
   );
 }
 
@@ -190,17 +279,19 @@ function FlyToLocation({ target }: { target: FlyTarget }) {
   return null;
 }
 
-function FlyToRoute({ coords }: { coords: LatLng[] | null }) {
+// Fits the map to the route only when fitSeq is bumped, so silent updates
+// (e.g. re-routes while dragging a pin) don't yank the camera around.
+function FlyToRoute({ coords, fitSeq }: { coords: LatLng[] | null; fitSeq: number }) {
   const map = useMap();
-  const prev = useRef<LatLng[] | null>(null);
+  const prevSeq = useRef(fitSeq);
 
   useEffect(() => {
-    if (coords && coords !== prev.current && coords.length > 1) {
+    if (fitSeq !== prevSeq.current && coords && coords.length > 1) {
+      prevSeq.current = fitSeq;
       const bounds = L.latLngBounds(coords.map((coord) => [coord.lat, coord.lng]));
       map.fitBounds(bounds, { padding: [40, 40] });
-      prev.current = coords;
     }
-  }, [coords, map]);
+  }, [coords, fitSeq, map]);
 
   return null;
 }
@@ -208,6 +299,9 @@ function FlyToRoute({ coords }: { coords: LatLng[] | null }) {
 const SEGMENT_STYLES: Record<RouteSegment["type"], L.PolylineOptions> = {
   road: { color: "#2563eb", weight: 4, opacity: 0.9 },
   path: { color: "#7c3aed", weight: 3, opacity: 0.85, dashArray: "8 5" },
+  track: { color: "#b45309", weight: 3, opacity: 0.85, dashArray: "12 6" },
+  walkway: { color: "#0d9488", weight: 3, opacity: 0.85, dashArray: "4 5" },
+  steps: { color: "#db2777", weight: 3, opacity: 0.85, dashArray: "2 4" },
 };
 
 function savedRouteStyle(
@@ -217,12 +311,13 @@ function savedRouteStyle(
 ): L.PolylineOptions {
   const isActive = activeRouteId === route.id;
   const routeColor = isActive ? "#f59e0b" : "#16a34a";
+  const base = segmentType && segmentType !== "road" ? SEGMENT_STYLES[segmentType] : null;
 
   return {
-    color: segmentType === "path" ? "#7c3aed" : routeColor,
+    color: base?.color ?? routeColor,
     weight: isActive ? 5 : 3,
     opacity: isActive ? 0.85 : 0.72,
-    dashArray: segmentType === "path" ? "8 5" : undefined,
+    dashArray: base?.dashArray,
   };
 }
 
@@ -235,6 +330,11 @@ interface Props {
   onMapClick: (latlng: LatLng) => void;
   activeRouteId: string | null;
   flyTarget: FlyTarget;
+  routeFitSeq: number;
+  searchPin: SearchPin | null;
+  onAddSearchWaypoint: () => void;
+  onWaypointDrag: (index: number, latlng: LatLng) => void;
+  onWaypointDragEnd: (index: number, latlng: LatLng) => void;
 }
 
 export function HikeMap({
@@ -246,6 +346,11 @@ export function HikeMap({
   onMapClick,
   activeRouteId,
   flyTarget,
+  routeFitSeq,
+  searchPin,
+  onAddSearchWaypoint,
+  onWaypointDrag,
+  onWaypointDragEnd,
 }: Props) {
   return (
     <MapContainer
@@ -260,16 +365,29 @@ export function HikeMap({
       />
 
       <MapClickHandler onMapClick={onMapClick} active={placingMode} />
-      <FlyToRoute coords={routeCoords} />
+      <FlyToRoute coords={routeCoords} fitSeq={routeFitSeq} />
       <FlyToLocation target={flyTarget} />
       <LegendControl />
       <LocateControl />
+
+      {searchPin && <SearchPinMarker pin={searchPin} onAdd={onAddSearchWaypoint} />}
 
       {waypoints.map((waypoint, index) => (
         <Marker
           key={`${waypoint.lat}-${waypoint.lng}-${index}`}
           position={[waypoint.lat, waypoint.lng]}
           icon={index === 0 ? startIcon : index === waypoints.length - 1 ? endIcon : midIcon}
+          draggable
+          eventHandlers={{
+            drag: (event) => {
+              const pos = (event.target as L.Marker).getLatLng();
+              onWaypointDrag(index, { lat: pos.lat, lng: pos.lng });
+            },
+            dragend: (event) => {
+              const pos = (event.target as L.Marker).getLatLng();
+              onWaypointDragEnd(index, { lat: pos.lat, lng: pos.lng });
+            },
+          }}
         >
           <Popup>
             {waypoint.name}

@@ -11,16 +11,20 @@ const waypointSchema = latLngSchema.extend({
   elevationM: z.number().nullable(),
 });
 
+const trackPointSchema = latLngSchema.extend({
+  eleM: z.number().optional(),
+});
+
 const routeSegmentSchema = z.object({
   coords: z.array(latLngSchema),
-  type: z.enum(["road", "path"]),
+  type: z.enum(["road", "path", "track", "walkway", "steps"]),
 });
 
 const savedRouteSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
   waypoints: z.array(waypointSchema).min(2),
-  routeCoords: z.array(latLngSchema).min(2),
+  routeCoords: z.array(trackPointSchema).min(2),
   routeSegments: z.array(routeSegmentSchema),
   routeWaypointDistancesKm: z.array(z.number()),
   distanceKm: z.number().nonnegative(),

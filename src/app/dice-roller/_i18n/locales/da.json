@@ -218,6 +218,7 @@
     "nextStopPlaceholder": "Næste stop - klik for at tilføje",
     "distance": "Distance",
     "ascent": "Stigning",
+    "descent": "Fald",
     "estTime": "Anslået tid",
     "routeNamePlaceholder": "Rutenavn (valgfrit)",
     "update": "Opdater",
@@ -236,6 +237,10 @@
     "elevationUnavailable": "Højde utilgængelig",
     "durationMin": "{{m}} min",
     "durationHr": "{{h}} t",
-    "durationHrMin": "{{h}} t {{m}} min"
+    "durationHrMin": "{{h}} t {{m}} min",
+    "searchPlaceholder": "Søg efter en adresse...",
+    "searchNoResults": "Ingen resultater fundet",
+    "clearSearch": "Ryd søgning",
+    "addAsWaypoint": "Tilføj som punkt"
   }
 }
