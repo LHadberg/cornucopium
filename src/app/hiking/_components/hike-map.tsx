@@ -7,6 +7,7 @@ import L from "leaflet";
 import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { useTranslation } from "react-i18next";
 import { MapClickHandler } from "./map-click-handler";
+import { PoiLayer } from "./poi-layer";
 import styles from "../_styles/Hiking.module.css";
 import type { LatLng, RouteSegment, SavedRoute, Waypoint } from "../_types/types";
 
@@ -333,6 +334,8 @@ interface Props {
   routeFitSeq: number;
   searchPin: SearchPin | null;
   onAddSearchWaypoint: () => void;
+  onAddPoiWaypoint: (latlng: LatLng, name: string) => void;
+  onRouteClick: (latlng: LatLng) => void;
   onWaypointDrag: (index: number, latlng: LatLng) => void;
   onWaypointDragEnd: (index: number, latlng: LatLng) => void;
 }
@@ -349,9 +352,19 @@ export function HikeMap({
   routeFitSeq,
   searchPin,
   onAddSearchWaypoint,
+  onAddPoiWaypoint,
+  onRouteClick,
   onWaypointDrag,
   onWaypointDragEnd,
 }: Props) {
+  const { t } = useTranslation();
+  // Clicking the working route inserts a via point on that leg; the polyline
+  // must not bubble the click to the map, or placing mode would also append
+  // a duplicate waypoint at the end.
+  const workingRouteHandlers = {
+    click: (event: L.LeafletMouseEvent) =>
+      onRouteClick({ lat: event.latlng.lat, lng: event.latlng.lng }),
+  };
   return (
     <MapContainer
       center={[46.8, 8.2]}
@@ -369,6 +382,7 @@ export function HikeMap({
       <FlyToLocation target={flyTarget} />
       <LegendControl />
       <LocateControl />
+      <PoiLayer onAddWaypoint={onAddPoiWaypoint} />
 
       {searchPin && <SearchPinMarker pin={searchPin} onAdd={onAddSearchWaypoint} />}
 
@@ -393,6 +407,19 @@ export function HikeMap({
             {waypoint.name}
             <br />
             {waypoint.elevationM === null ? "Elevation unavailable" : `${Math.round(waypoint.elevationM)} m`}
+            {waypoint.fromPoi && (
+              <>
+                <br />
+                <a
+                  className={styles.popupMapsLink}
+                  href={`https://www.google.com/maps/search/?api=1&query=${waypoint.lat},${waypoint.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t("hiking.viewOnGoogleMaps")}
+                </a>
+              </>
+            )}
           </Popup>
         </Marker>
       ))}
@@ -402,14 +429,16 @@ export function HikeMap({
             <Polyline
               key={index}
               positions={segment.coords.map((coord) => [coord.lat, coord.lng])}
-              pathOptions={SEGMENT_STYLES[segment.type]}
+              pathOptions={{ ...SEGMENT_STYLES[segment.type], bubblingMouseEvents: false }}
+              eventHandlers={workingRouteHandlers}
             />
           ))
         : routeCoords &&
           routeCoords.length > 1 && (
             <Polyline
               positions={routeCoords.map((coord) => [coord.lat, coord.lng])}
-              pathOptions={SEGMENT_STYLES.road}
+              pathOptions={{ ...SEGMENT_STYLES.road, bubblingMouseEvents: false }}
+              eventHandlers={workingRouteHandlers}
             />
           )}
 

@@ -241,6 +241,32 @@
     "searchPlaceholder": "Search for an address...",
     "searchNoResults": "No results found",
     "clearSearch": "Clear search",
-    "addAsWaypoint": "Add as waypoint"
+    "addAsWaypoint": "Add as waypoint",
+    "places": "Places",
+    "poiZoomHint": "Zoom in to see places",
+    "poiWebsite": "Website",
+    "viewOnGoogleMaps": "View on Google Maps",
+    "poi": {
+      "drinkingWater": "Drinking water",
+      "shelter": "Shelter",
+      "hut": "Mountain hut",
+      "toilets": "Toilets",
+      "viewpoint": "Viewpoint",
+      "picnic": "Picnic site",
+      "campsite": "Campsite",
+      "cafe": "Café",
+      "restaurant": "Restaurant",
+      "pub": "Pub",
+      "grocery": "Grocery store",
+      "bakery": "Bakery",
+      "parking": "Parking",
+      "busStop": "Bus stop",
+      "trainStation": "Train station",
+      "attraction": "Attraction",
+      "castle": "Castle / ruins",
+      "monument": "Monument",
+      "cave": "Cave",
+      "waterfall": "Waterfall"
+    }
   }
 }

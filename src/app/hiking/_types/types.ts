@@ -6,6 +6,8 @@ export interface LatLng {
 export interface Waypoint extends LatLng {
   name: string;
   elevationM: number | null;
+  // Set when the waypoint was added from the places (POI) layer.
+  fromPoi?: boolean;
 }
 
 // A point along the routed track. Elevation is absent on routes saved
