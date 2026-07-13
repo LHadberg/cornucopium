@@ -17,10 +17,6 @@
   background: #101828;
 }
 
-.mobileHeader {
-  display: none;
-}
-
 .mapContainer {
   position: relative;
   flex: 1;
@@ -65,11 +61,17 @@
   border-bottom: 1px solid var(--border);
 }
 
-.sidebarHeader h1,
-.mobileHeader h1 {
+.sidebarHeader h1 {
   font-size: 1.05rem;
   font-weight: 700;
   line-height: 1;
+}
+
+/* Drawer close button; only shown on mobile where the sidebar overlays the
+   map. Scoped under the header to outrank .iconBtn's display. */
+.sidebarHeader .sidebarCloseBtn {
+  display: none;
+  margin-left: auto;
 }
 
 .panel {
@@ -861,38 +863,34 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
-.burgerBtn {
-  display: grid;
+/* Floating burger that opens the routes drawer; mobile only, styled like
+   the other 40px map HUD buttons and sitting at the top of the top-right
+   button column. */
+.menuFab {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
   place-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
-  background: var(--surface-2);
+  background: rgba(16, 24, 40, 0.92);
   cursor: pointer;
+  backdrop-filter: blur(6px);
 }
 
 @media (max-width: 720px) {
   .appLayout {
     position: relative;
-    flex-direction: column;
-  }
-
-  .mobileHeader {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    gap: 10px;
-    height: 54px;
-    padding: 0 14px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
   }
 
   .sidebar {
     position: absolute;
-    top: 54px;
+    top: 0;
     bottom: 0;
     left: 0;
     z-index: 1100;
@@ -906,8 +904,8 @@
     transform: translateX(0);
   }
 
-  .sidebarHeader {
-    display: none;
+  .sidebarHeader .sidebarCloseBtn {
+    display: inline-grid;
   }
 
   .mapContainer {
@@ -918,8 +916,18 @@
     display: block;
   }
 
+  .menuFab {
+    display: grid;
+  }
+
+  /* Drop the Leaflet top-right controls below the burger (12px inset +
+     40px button), keeping the usual 12px gap via their own margin. */
+  .appLayout :global(.leaflet-top.leaflet-right) {
+    top: 52px;
+  }
+
   /* Keep clear of the 40px-wide top-right button column (12px inset +
-     40px button + 12px gap) so the field never overlaps the places button. */
+     40px button + 12px gap) so the field never overlaps the burger. */
   .searchControl {
     right: 64px;
     width: auto;

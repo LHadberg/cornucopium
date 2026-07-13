@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LatLngTuple } from "leaflet";
-import { IconMenu2, IconRoute } from "@tabler/icons-react";
+import { IconMenu2 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { HikeMap } from "./hike-map";
 import type { SearchPin } from "./hike-map";
@@ -380,6 +380,9 @@ export function HikingApp() {
       return;
     }
     setPlacingMode(true);
+    // On mobile the drawer covers the map; close it so the first tap can
+    // land on the map right away.
+    setMobileMenuOpen(false);
     // While editing a saved route, "Add waypoints" appends to the loaded
     // route instead of starting a fresh one.
     if (!editingRouteId) {
@@ -615,20 +618,9 @@ export function HikingApp() {
 
   return (
     <div className={styles.appLayout}>
-      <header className={styles.mobileHeader}>
-        <button
-          className={styles.burgerBtn}
-          onClick={() => setMobileMenuOpen((open) => !open)}
-          aria-label={t(mobileMenuOpen ? "hiking.closeMenu" : "hiking.openMenu")}
-          aria-expanded={mobileMenuOpen}
-        >
-          <IconMenu2 size={20} />
-        </button>
-        <IconRoute size={22} />
-        <h1>{t("hiking.title")}</h1>
-      </header>
       <Sidebar
         isMobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
         waypoints={waypoints}
         routeCoords={routeCoords}
         routeWaypointDistancesKm={routeWaypointDistancesKm}
@@ -683,6 +675,14 @@ export function HikingApp() {
           onClear={() => setSearchPin(null)}
           clearSeq={searchClearSeq}
         />
+        <button
+          className={styles.menuFab}
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label={t("hiking.openMenu")}
+          aria-expanded={mobileMenuOpen}
+        >
+          <IconMenu2 size={20} />
+        </button>
         {routeLoading && (
           <div className={styles.mapOverlay}>{t("hiking.findingRoute")}</div>
         )}
