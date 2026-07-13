@@ -241,6 +241,32 @@
     "searchPlaceholder": "Søg efter en adresse...",
     "searchNoResults": "Ingen resultater fundet",
     "clearSearch": "Ryd søgning",
-    "addAsWaypoint": "Tilføj som punkt"
+    "addAsWaypoint": "Tilføj som punkt",
+    "places": "Steder",
+    "poiZoomHint": "Zoom ind for at se steder",
+    "poiWebsite": "Hjemmeside",
+    "viewOnGoogleMaps": "Vis på Google Maps",
+    "poi": {
+      "drinkingWater": "Drikkevand",
+      "shelter": "Shelter",
+      "hut": "Hytte",
+      "toilets": "Toiletter",
+      "viewpoint": "Udsigtspunkt",
+      "picnic": "Picnicområde",
+      "campsite": "Campingplads",
+      "cafe": "Café",
+      "restaurant": "Restaurant",
+      "pub": "Pub",
+      "grocery": "Dagligvarebutik",
+      "bakery": "Bager",
+      "parking": "Parkering",
+      "busStop": "Busstoppested",
+      "trainStation": "Togstation",
+      "attraction": "Attraktion",
+      "castle": "Slot / ruin",
+      "monument": "Mindesmærke",
+      "cave": "Grotte",
+      "waterfall": "Vandfald"
+    }
   }
 }

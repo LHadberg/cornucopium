@@ -17,6 +17,7 @@ import type { LatLng, SavedRoute, TrackPoint, Waypoint } from "../_types/types";
 
 interface Props {
   isMobileOpen: boolean;
+  onMobileClose: () => void;
   waypoints: Waypoint[];
   routeCoords: LatLng[] | null;
   routeWaypointDistancesKm: number[];
@@ -78,6 +79,7 @@ function formatElevation(elevationM: number | null) {
 
 export function Sidebar({
   isMobileOpen,
+  onMobileClose,
   waypoints,
   routeCoords,
   routeWaypointDistancesKm,
@@ -182,6 +184,13 @@ export function Sidebar({
       <header className={styles.sidebarHeader}>
         <IconRoute size={22} />
         <h1>{t("hiking.title")}</h1>
+        <button
+          className={`${styles.iconBtn} ${styles.sidebarCloseBtn}`}
+          onClick={onMobileClose}
+          aria-label={t("hiking.closeMenu")}
+        >
+          <IconX size={18} />
+        </button>
       </header>
 
       <section className={styles.panel}>

@@ -124,7 +124,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useTranslation();
   // Full-bleed routes hide the navbar (the burger brings it back) and drop main padding
-  const immersive = pathname === "/life-tracker";
+  const immersive = pathname === "/life-tracker" || pathname === "/hiking";
   // On phones lying sideways the header is dead space — give it to the board
   const isLandscapeTouch =
     useMediaQuery("(pointer: coarse) and (orientation: landscape)") ?? false;

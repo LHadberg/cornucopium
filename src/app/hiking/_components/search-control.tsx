@@ -57,14 +57,27 @@ function toResult(feature: PhotonFeature): SearchResult {
 interface Props {
   onSelect: (result: SearchResult) => void;
   onClear: () => void;
+  // Bumped by the parent to reset the field, e.g. after the searched
+  // address has been added as a waypoint.
+  clearSeq: number;
 }
 
-export function SearchControl({ onSelect, onClear }: Props) {
+export function SearchControl({ onSelect, onClear, clearSeq }: Props) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const prevClearSeqRef = useRef(clearSeq);
+
+  useEffect(() => {
+    if (clearSeq === prevClearSeqRef.current) return;
+    prevClearSeqRef.current = clearSeq;
+    abortRef.current?.abort();
+    setQuery("");
+    setResults([]);
+    setOpen(false);
+  }, [clearSeq]);
 
   useEffect(() => {
     const q = query.trim();

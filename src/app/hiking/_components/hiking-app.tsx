@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LatLngTuple } from "leaflet";
-import { IconMenu2, IconRoute } from "@tabler/icons-react";
+import { IconMenu2 } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { HikeMap } from "./hike-map";
 import type { SearchPin } from "./hike-map";
@@ -151,6 +151,23 @@ ${trackPoints}
 `;
 }
 
+// Index of the track point closest to the given point, using the same
+// squared-degree metric as the waypoint distance lookup.
+function nearestTrackIndex(coords: TrackPoint[], point: LatLng) {
+  let nearest = 0;
+  let nearestDist = Infinity;
+  for (let i = 0; i < coords.length; i++) {
+    const dLat = coords[i]!.lat - point.lat;
+    const dLng = coords[i]!.lng - point.lng;
+    const dist = dLat * dLat + dLng * dLng;
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearest = i;
+    }
+  }
+  return nearest;
+}
+
 function routeBounds(coords: LatLng[]): [LatLngTuple, LatLngTuple] {
   let minLat = coords[0]!.lat;
   let maxLat = coords[0]!.lat;
@@ -220,6 +237,7 @@ export function HikingApp() {
     seq: number;
   } | null>(null);
   const [searchPin, setSearchPin] = useState<SearchPin | null>(null);
+  const [searchClearSeq, setSearchClearSeq] = useState(0);
   const [routeFitSeq, setRouteFitSeq] = useState(0);
 
   const { fetchRoute, loading: routeLoading, error: routeError } = useBrouterRoute();
@@ -362,6 +380,9 @@ export function HikingApp() {
       return;
     }
     setPlacingMode(true);
+    // On mobile the drawer covers the map; close it so the first tap can
+    // land on the map right away.
+    setMobileMenuOpen(false);
     // While editing a saved route, "Add waypoints" appends to the loaded
     // route instead of starting a fresh one.
     if (!editingRouteId) {
@@ -482,20 +503,64 @@ export function HikingApp() {
     handleFlyTo(result.bounds, result.lat, result.lng);
   }
 
+  // Appends a named waypoint (search hit or POI) and arms placing mode so
+  // follow-up map clicks keep extending the route — without clearing the
+  // current route the way the "Add waypoints" toggle does.
+  const appendNamedWaypoint = useCallback(
+    async (latlng: LatLng, name: string, opts?: { fromPoi?: boolean }) => {
+      pushHistory();
+      const waypoint: Waypoint = {
+        ...latlng,
+        name: name || defaultWaypointName(waypoints.length),
+        elevationM: await fetchElevationM(latlng),
+        ...(opts?.fromPoi ? { fromPoi: true } : {}),
+      };
+      const newWaypoints = [...waypoints, waypoint];
+      setWaypoints(newWaypoints);
+      setPlacingMode(true);
+      await updateRoute(newWaypoints);
+    },
+    [pushHistory, updateRoute, waypoints],
+  );
+
   async function handleAddSearchWaypoint() {
     if (!searchPin) return;
-    pushHistory();
-    const waypoint: Waypoint = {
-      lat: searchPin.lat,
-      lng: searchPin.lng,
-      name: searchPin.name || defaultWaypointName(waypoints.length),
-      elevationM: await fetchElevationM(searchPin),
-    };
-    const newWaypoints = [...waypoints, waypoint];
-    setWaypoints(newWaypoints);
+    const { lat, lng, name } = searchPin;
     setSearchPin(null);
-    await updateRoute(newWaypoints);
+    setSearchClearSeq((seq) => seq + 1);
+    await appendNamedWaypoint({ lat, lng }, name);
   }
+
+  const handleAddPoiWaypoint = useCallback(
+    (latlng: LatLng, name: string) => {
+      void appendNamedWaypoint(latlng, name, { fromPoi: true });
+    },
+    [appendNamedWaypoint],
+  );
+
+  // Clicking the drawn route pulls in a via point between the two waypoints
+  // whose leg was clicked, located by where the click falls along the track.
+  const handleInsertWaypoint = useCallback(
+    async (latlng: LatLng) => {
+      if (!routeCoords || waypoints.length < 2) return;
+      const clickIndex = nearestTrackIndex(routeCoords, latlng);
+      let insertAt = 1;
+      for (let i = 1; i < waypoints.length - 1; i++) {
+        if (nearestTrackIndex(routeCoords, waypoints[i]!) <= clickIndex) insertAt = i + 1;
+      }
+      pushHistory();
+      const waypoint: Waypoint = {
+        ...latlng,
+        name: defaultWaypointName(insertAt),
+        elevationM: await fetchElevationM(latlng),
+      };
+      const newWaypoints = [...waypoints.slice(0, insertAt), waypoint, ...waypoints.slice(insertAt)];
+      setWaypoints(newWaypoints);
+      // The click is already on the visible route; don't yank the camera.
+      await updateRoute(newWaypoints, { fit: false });
+    },
+    [pushHistory, routeCoords, updateRoute, waypoints],
+  );
 
   function handleClear() {
     if (waypoints.length > 0 || routeCoords) pushHistory();
@@ -553,20 +618,9 @@ export function HikingApp() {
 
   return (
     <div className={styles.appLayout}>
-      <header className={styles.mobileHeader}>
-        <button
-          className={styles.burgerBtn}
-          onClick={() => setMobileMenuOpen((open) => !open)}
-          aria-label={t(mobileMenuOpen ? "hiking.closeMenu" : "hiking.openMenu")}
-          aria-expanded={mobileMenuOpen}
-        >
-          <IconMenu2 size={20} />
-        </button>
-        <IconRoute size={22} />
-        <h1>{t("hiking.title")}</h1>
-      </header>
       <Sidebar
         isMobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
         waypoints={waypoints}
         routeCoords={routeCoords}
         routeWaypointDistancesKm={routeWaypointDistancesKm}
@@ -611,10 +665,24 @@ export function HikingApp() {
           routeFitSeq={routeFitSeq}
           searchPin={searchPin}
           onAddSearchWaypoint={handleAddSearchWaypoint}
+          onAddPoiWaypoint={handleAddPoiWaypoint}
+          onRouteClick={handleInsertWaypoint}
           onWaypointDrag={handleWaypointDrag}
           onWaypointDragEnd={handleWaypointDragEnd}
         />
-        <SearchControl onSelect={handleSearchSelect} onClear={() => setSearchPin(null)} />
+        <SearchControl
+          onSelect={handleSearchSelect}
+          onClear={() => setSearchPin(null)}
+          clearSeq={searchClearSeq}
+        />
+        <button
+          className={styles.menuFab}
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label={t("hiking.openMenu")}
+          aria-expanded={mobileMenuOpen}
+        >
+          <IconMenu2 size={20} />
+        </button>
         {routeLoading && (
           <div className={styles.mapOverlay}>{t("hiking.findingRoute")}</div>
         )}
