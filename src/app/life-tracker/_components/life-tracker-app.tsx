@@ -44,6 +44,8 @@ import classes from "../_styles/LifeTracker.module.css";
 
 const MAX_PLAYERS = 4;
 const DAMAGE_FLASH_MS = 750;
+const HOLD_MS = 500;
+const HOLD_DELTA = 10;
 const PHOTO_SIZE = 480;
 const SPOTLIGHT_HOLD_MS = 2500;
 const SPOTLIGHT_FADE_MS = 600;
@@ -413,6 +415,67 @@ function CalloutControl({
   );
 }
 
+function LifePressZone({
+  sign,
+  label,
+  className,
+  onLifeChange,
+}: {
+  sign: 1 | -1;
+  label: string;
+  className: string;
+  onLifeChange: (delta: number) => void;
+}) {
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const held = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current) clearTimeout(holdTimer.current);
+    };
+  }, []);
+
+  const cancelHold = () => {
+    if (holdTimer.current) {
+      clearTimeout(holdTimer.current);
+      holdTimer.current = null;
+    }
+  };
+
+  return (
+    <UnstyledButton
+      className={className}
+      aria-label={label}
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        cancelHold();
+        held.current = false;
+        holdTimer.current = setTimeout(() => {
+          holdTimer.current = null;
+          held.current = true;
+          onLifeChange(sign * HOLD_DELTA);
+        }, HOLD_MS);
+      }}
+      onPointerUp={() => {
+        const wasHeld = held.current;
+        cancelHold();
+        held.current = false;
+        if (!wasHeld) onLifeChange(sign);
+      }}
+      onPointerCancel={() => {
+        cancelHold();
+        held.current = false;
+      }}
+      onClick={(e) => {
+        // Keyboard activation only — pointer input is fully handled above
+        if (e.detail === 0) onLifeChange(sign);
+      }}
+      onContextMenu={(e) => e.preventDefault()}
+    />
+  );
+}
+
 function PlayerArea({
   player,
   opponents,
@@ -538,6 +601,19 @@ function PlayerArea({
             />
           )}
 
+          <LifePressZone
+            sign={-1}
+            className={`${classes.lifeHalf} ${classes.lifeHalfMinus}`}
+            label={t("lifeTracker.decreaseLife", { name: player.name })}
+            onLifeChange={onLifeChange}
+          />
+          <LifePressZone
+            sign={1}
+            className={`${classes.lifeHalf} ${classes.lifeHalfPlus}`}
+            label={t("lifeTracker.increaseLife", { name: player.name })}
+            onLifeChange={onLifeChange}
+          />
+
           <div
             className={`${classes.sideControls} ${
               controlsSide === "left" ? classes.sideLeft : classes.sideRight
@@ -562,23 +638,16 @@ function PlayerArea({
             </Text>
 
             <Group gap="lg" wrap="nowrap" justify="center">
-              <UnstyledButton
-                className={classes.lifeButton}
-                onClick={() => onLifeChange(-1)}
-                aria-label={t("lifeTracker.decreaseLife", { name: player.name })}
-              >
+              {/* Visual hints only — the tap targets are the half-area zones */}
+              <div className={classes.lifeButton}>
                 <IconMinus />
-              </UnstyledButton>
+              </div>
               <Text component="div" className={classes.lifeValue}>
                 {player.life}
               </Text>
-              <UnstyledButton
-                className={classes.lifeButton}
-                onClick={() => onLifeChange(1)}
-                aria-label={t("lifeTracker.increaseLife", { name: player.name })}
-              >
+              <div className={classes.lifeButton}>
                 <IconPlus />
-              </UnstyledButton>
+              </div>
             </Group>
           </div>
         </div>
