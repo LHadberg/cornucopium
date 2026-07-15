@@ -7,6 +7,7 @@ import {
   CheckIcon,
   ColorSwatch,
   Group,
+  Loader,
   Menu,
   Modal,
   SegmentedControl,
@@ -49,6 +50,7 @@ const HOLD_DELTA = 10;
 const PHOTO_SIZE = 480;
 const SPOTLIGHT_HOLD_MS = 2500;
 const SPOTLIGHT_FADE_MS = 600;
+const ORIENTATION_STORAGE_KEY = "life-tracker-orientation";
 
 const AREA_COLORS = [
   "#b03a48",
@@ -87,7 +89,9 @@ interface CameraTarget {
 }
 
 type CounterToggles = Record<CounterKey, boolean>;
-type Orientation = "left" | "right" | "up";
+/** Which screen edge a player's text and controls point toward (their seat) */
+type Orientation = "left" | "right" | "top" | "bottom";
+type OrientationMode = "outward" | "down";
 type SpotlightPhase = "spin" | "won" | "fading";
 
 // screen.orientation.lock/unlock are missing from lib.dom and from some browsers
@@ -507,7 +511,13 @@ function PlayerArea({
   const photoFocus = player.photoFocus[activeSlot];
   const visibleCounters = COUNTER_DEFS.filter((c) => player.counterToggles[c.key]);
   const orientClass =
-    orientation === "left" ? classes.faceLeft : orientation === "right" ? classes.faceRight : "";
+    orientation === "left"
+      ? classes.faceLeft
+      : orientation === "right"
+        ? classes.faceRight
+        : orientation === "top"
+          ? classes.faceTop
+          : "";
   // Callouts open toward the area center so they don't clip on the edge
   const calloutSide = controlsSide === "right" ? "left" : "right";
 
@@ -823,6 +833,14 @@ export function LifeTrackerApp() {
   const [fullscreenAvailable, setFullscreenAvailable] = useState<boolean | null>(null);
   const [boardRotation, setBoardRotation] = useState<"none" | "cw" | "ccw">("none");
   const [settingsAspect, setSettingsAspect] = useState(1);
+  // Starts as "outward"/portrait on the server render; corrected after mount.
+  // The board stays hidden behind a loader until both corrections have landed,
+  // so the user never sees the defaults flip to the real values.
+  const [orientationMode, setOrientationMode] = useState<OrientationMode>("outward");
+  const [boardLandscape, setBoardLandscape] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [boardMeasured, setBoardMeasured] = useState(false);
+  const boardReady = settingsLoaded && boardMeasured;
   const boardRef = useRef<HTMLDivElement>(null);
   const [spotlight, setSpotlight] = useState<{ id: number; phase: SpotlightPhase } | null>(
     null,
@@ -837,6 +855,39 @@ export function LifeTrackerApp() {
       Object.values(timers).forEach(clearTimeout);
       if (spotlightTimer.current) clearTimeout(spotlightTimer.current);
     };
+  }, []);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(ORIENTATION_STORAGE_KEY);
+      if (stored === "outward" || stored === "down") setOrientationMode(stored);
+    } catch {
+      // Storage unavailable (privacy mode) — keep the default
+    }
+    setSettingsLoaded(true);
+  }, []);
+
+  const changeOrientationMode = useCallback((mode: OrientationMode) => {
+    setOrientationMode(mode);
+    try {
+      localStorage.setItem(ORIENTATION_STORAGE_KEY, mode);
+    } catch {
+      // Storage unavailable — the setting still applies for this session
+    }
+  }, []);
+
+  useEffect(() => {
+    // The board's layout box ignores the counter-rotation transform, so this
+    // is the aspect the grid actually composes in (portrait on rotated phones,
+    // possibly landscape in a wide desktop window)
+    const board = boardRef.current;
+    if (!board) return;
+    const observer = new ResizeObserver(() => {
+      setBoardLandscape(board.clientWidth > board.clientHeight);
+      setBoardMeasured(true);
+    });
+    observer.observe(board);
+    return () => observer.disconnect();
   }, []);
 
   const decideStartingPlayer = useCallback(() => {
@@ -1041,16 +1092,51 @@ export function LifeTrackerApp() {
     setSettingsOpened(false);
   }, [startingLife]);
 
+  // Two players share the board as side-by-side columns only when seated
+  // outward on a portrait board; everywhere else stacked rows fit the
+  // reading direction better.
+  const twoPlayerRows = playerCount === 2 && (orientationMode === "down" || boardLandscape);
+
+  // Outward seating puts players along the board's longer sides: left/right
+  // on a portrait board, top/bottom on a landscape one. "down" keeps every
+  // area upright for a single viewer.
+  const orientationFor = (index: number): Orientation => {
+    if (orientationMode === "down") return "bottom";
+    if (boardLandscape) return index < (playerCount === 2 ? 1 : 2) ? "top" : "bottom";
+    if (playerCount === 3 && index === 2) return "bottom";
+    return index % 2 === 0 ? "left" : "right";
+  };
+
+  // Which local side of the (possibly rotated) frame lands on the screen edge
+  // away from the center button; callouts then open toward the middle.
+  const controlsSideFor = (index: number): "left" | "right" => {
+    const orientation = orientationFor(index);
+    if (orientation === "left" || orientation === "right") {
+      // Side seats: in a 4-player grid the bottom row mirrors the top row
+      if (playerCount === 4) return index === 0 || index === 3 ? "left" : "right";
+      return index === 0 ? "left" : "right";
+    }
+    // Upright or inverted seats: aim for the outer vertical screen edge
+    // (full-width areas default to the right edge)
+    const fullWidth = playerCount === 2 ? twoPlayerRows : playerCount === 3 && index === 2;
+    const screenSide = !fullWidth && index % 2 === 0 ? "left" : "right";
+    // An inverted area's local sides are mirrored on screen
+    if (orientation === "top") return screenSide === "left" ? "right" : "left";
+    return screenSide;
+  };
+
   const openPlayerSettings = (playerId: number, gridIndex: number) => {
-    // Measure this player's quadrant (in board coordinates, which transforms
+    // Measure this player's cell (in board coordinates, which transforms
     // don't affect) so the focus picker can show the real cover crop
     const board = boardRef.current;
     if (board) {
-      const rows = playerCount === 2 ? 1 : 2;
-      const spansBothCols = playerCount === 3 && gridIndex === 2;
-      const cellW = spansBothCols ? board.clientWidth : board.clientWidth / 2;
+      const rows = playerCount === 2 && !twoPlayerRows ? 1 : 2;
+      const fullWidth =
+        (playerCount === 3 && gridIndex === 2) || (playerCount === 2 && twoPlayerRows);
+      const cellW = fullWidth ? board.clientWidth : board.clientWidth / 2;
       const cellH = board.clientHeight / rows;
-      const upright = playerCount === 3 && gridIndex === 2;
+      const orientation = orientationFor(gridIndex);
+      const upright = orientation === "top" || orientation === "bottom";
       setSettingsAspect(upright ? cellW / cellH : cellH / cellW);
     }
     setPlayerSettingsId(playerId);
@@ -1068,25 +1154,30 @@ export function LifeTrackerApp() {
       displayPlayers[3] = third;
     }
   }
-  // Side seating: even indexes face the left edge, odd ones the right;
-  // the full-width bottom player in a 3-player game faces the bottom edge.
-  const orientationFor = (index: number): Orientation =>
-    playerCount === 3 && index === 2 ? "up" : index % 2 === 0 ? "left" : "right";
-  // Which local side of the rotated frame lands on the screen edge away from
-  // the center button: in a 4-player grid the bottom row mirrors the top row.
-  const controlsSideFor = (index: number): "left" | "right" => {
-    if (playerCount === 4) return index === 0 || index === 3 ? "left" : "right";
-    return index === 0 ? "left" : "right";
-  };
   const settingsPlayer = players.find((p) => p.id === playerSettingsId) ?? null;
   const layoutClass =
-    playerCount === 2 ? classes.layout2 : playerCount === 3 ? classes.layout3 : classes.layout4;
+    playerCount === 2
+      ? twoPlayerRows
+        ? classes.layout2Rows
+        : classes.layout2
+      : playerCount === 3
+        ? classes.layout3
+        : classes.layout4;
 
   return (
     <div className={`${classes.boardViewport} ${isFullscreen ? classes.boardFullscreen : ""}`}>
+      {!boardReady && (
+        <div className={classes.boardLoader}>
+          <Loader />
+        </div>
+      )}
       <div
         ref={boardRef}
+        // Kept mounted while hidden so the ResizeObserver can take the
+        // initial measurement that flips boardReady
         className={`${classes.board} ${layoutClass} ${
+          boardReady ? "" : classes.boardHidden
+        } ${
           boardRotation === "cw"
             ? classes.boardRotateCw
             : boardRotation === "ccw"
@@ -1174,6 +1265,20 @@ export function LifeTrackerApp() {
                 label: t("lifeTracker.lifeOption", { n }),
                 value: String(n),
               }))}
+            />
+          </div>
+          <div>
+            <Text size="sm" fw={500} mb={6}>
+              {t("lifeTracker.orientation")}
+            </Text>
+            <SegmentedControl
+              fullWidth
+              value={orientationMode}
+              onChange={(v) => changeOrientationMode(v as OrientationMode)}
+              data={[
+                { label: t("lifeTracker.orientationOutward"), value: "outward" },
+                { label: t("lifeTracker.orientationDown"), value: "down" },
+              ]}
             />
           </div>
           <div>

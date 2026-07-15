@@ -22,6 +22,19 @@
   padding: clamp(8px, 1.5vmin, 16px);
 }
 
+/* Pre-hydration: the board is laid out (so it can be measured) but not shown */
+.boardHidden {
+  visibility: hidden;
+}
+
+.boardLoader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Landscape counter-rotation: the board keeps its portrait composition and is
    turned to fit the viewport, so rotating the device never changes the layout. */
 .boardRotateCw,
@@ -43,6 +56,10 @@
 
 .layout2 {
   grid-template-columns: 1fr 1fr;
+}
+
+.layout2Rows {
+  grid-template-rows: 1fr 1fr;
 }
 
 .layout3,
@@ -87,6 +104,11 @@
 
 .faceRight {
   transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+/* Inverted seat (player along the top edge): no width/height swap needed */
+.faceTop {
+  transform: rotate(180deg);
 }
 
 /* Separate from .areaInner so the shake transform doesn't fight the rotation */
