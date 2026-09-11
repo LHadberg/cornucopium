@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { ActionIcon, Group, SegmentedControl, Slider, Stack, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Anchor, Group, Select, Slider, Stack, Text, Tooltip } from '@mantine/core';
 import { IconRefresh } from '@tabler/icons-react';
 import type { VisualConfig } from '../../_types/types';
 import { defaultConfigs } from '../../_constants/default-configuration';
 import { useTranslation } from 'react-i18next';
 import { wallGeometricSvgRaw, diamondSvgRaw, linenSvgRaw } from '../texture-data';
 import NativeColorInput from './native-color-input';
+import { getHeroPattern, heroPatterns } from '../hero-patterns';
 
 const { defaultVisualConfig } = defaultConfigs;
 
@@ -20,6 +21,25 @@ const BACKGROUND_STYLES: Record<string, { svgRaw: string; baseColor: string; lab
   diamond: { svgRaw: diamondSvgRaw, baseColor: '#a07848', label: 'Diamond', tileW: 64, tileH: 64 },
   linen: { svgRaw: linenSvgRaw, baseColor: '#b8a080', label: 'Linen', tileW: 16, tileH: 16 },
 };
+
+const patternOptions = heroPatterns.map(({ id, label }) => ({ value: id, label }))
+  .sort((a, b) => a.label.localeCompare(b.label));
+
+function HeroPatternPreview({ id, color, repeat }: { id: string; color: string; repeat: number }) {
+  const pattern = getHeroPattern(id);
+  if (!pattern) return null;
+  return (
+    <div role="img" aria-label={pattern.label} style={{
+      height: 64, width: '100%', borderRadius: 6, overflow: 'hidden', backgroundColor: color,
+    }}>
+      <div style={{
+        height: '100%', backgroundColor: '#000', opacity: 0.25,
+        maskImage: `url("${pattern.src}")`, maskRepeat: 'repeat',
+        maskSize: `${pattern.width / repeat}px ${pattern.height / repeat}px`,
+      }} />
+    </div>
+  );
+}
 
 function hexToHsl(hex: string): [number, number, number] {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -94,12 +114,17 @@ const VisualsConfig: React.FC<VisualsConfigProps> = ({ config, onUpdate }) => {
         {t('visuals.title')}
       </Text>
       <div>
-        <Text size="sm" fw={500} mb={4}>{t('visuals.wallStyle')}</Text>
-        <SegmentedControl
-          fullWidth
+        <Select
+          label={t('visuals.wallStyle')}
+          searchable
+          allowDeselect={false}
+          comboboxProps={{ withinPortal: false }}
           value={config.wallStyle}
-          onChange={(value) => onUpdate({ ...config, wallStyle: value })}
-          data={Object.entries(WALL_STYLES).map(([value, { label }]) => ({ value, label }))}
+          onChange={(value) => { if (value) onUpdate({ ...config, wallStyle: value }); }}
+          data={[
+            ...Object.entries(WALL_STYLES).map(([value, { label }]) => ({ value, label })),
+            { group: 'Hero Patterns', items: patternOptions },
+          ]}
         />
       </div>
       <div>
@@ -129,16 +154,22 @@ const VisualsConfig: React.FC<VisualsConfigProps> = ({ config, onUpdate }) => {
         </Tooltip>
       </Group>
       {(() => {
+        if (getHeroPattern(config.wallStyle)) return <HeroPatternPreview id={config.wallStyle} color={config.wallColor} repeat={config.wallRepeat} />;
         const style = WALL_STYLES[config.wallStyle] ?? { svgRaw: wallGeometricSvgRaw, baseColor: '#c49050', tileW: 64, tileH: 64 };
         return <TexturePreview svgRaw={style.svgRaw} color={config.wallColor} baseColor={style.baseColor} tileW={style.tileW} tileH={style.tileH} repeat={config.wallRepeat} />;
       })()}
       <div>
-        <Text size="sm" fw={500} mb={4}>{t('visuals.backgroundStyle')}</Text>
-        <SegmentedControl
-          fullWidth
+        <Select
+          label={t('visuals.backgroundStyle')}
+          searchable
+          allowDeselect={false}
+          comboboxProps={{ withinPortal: false }}
           value={config.backgroundStyle}
-          onChange={(value) => onUpdate({ ...config, backgroundStyle: value })}
-          data={Object.entries(BACKGROUND_STYLES).map(([value, { label }]) => ({ value, label }))}
+          onChange={(value) => { if (value) onUpdate({ ...config, backgroundStyle: value }); }}
+          data={[
+            ...Object.entries(BACKGROUND_STYLES).map(([value, { label }]) => ({ value, label })),
+            { group: 'Hero Patterns', items: patternOptions },
+          ]}
         />
       </div>
       <div>
@@ -168,9 +199,15 @@ const VisualsConfig: React.FC<VisualsConfigProps> = ({ config, onUpdate }) => {
         </Tooltip>
       </Group>
       {(() => {
+        if (getHeroPattern(config.backgroundStyle)) return <HeroPatternPreview id={config.backgroundStyle} color={config.backgroundColor} repeat={config.backgroundRepeat} />;
         const style = BACKGROUND_STYLES[config.backgroundStyle] ?? { svgRaw: diamondSvgRaw, baseColor: '#a07848', tileW: 64, tileH: 64 };
         return <TexturePreview svgRaw={style.svgRaw} color={config.backgroundColor} baseColor={style.baseColor} tileW={style.tileW} tileH={style.tileH} repeat={config.backgroundRepeat} />;
       })()}
+      <Text size="xs" c="dimmed">
+        <Anchor href="https://heropatterns.com/" target="_blank" rel="noreferrer" inherit>Hero Patterns</Anchor>
+        {' by Steve Schoger · '}
+        <Anchor href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" inherit>CC BY 4.0</Anchor>
+      </Text>
     </Stack>
   );
 };

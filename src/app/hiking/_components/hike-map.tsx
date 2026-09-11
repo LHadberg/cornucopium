@@ -367,8 +367,8 @@ export function HikeMap({
   };
   return (
     <MapContainer
-      center={[46.8, 8.2]}
-      zoom={8}
+      center={[56.0, 10.0]}
+      zoom={7}
       style={{ height: "100%", width: "100%" }}
       className={placingMode ? styles.cursorCrosshair : ""}
     >

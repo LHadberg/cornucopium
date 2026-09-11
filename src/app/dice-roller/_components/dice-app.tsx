@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { PerspectiveCamera } from '@react-three/drei';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSpring, animated } from '@react-spring/three';
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 
 import { ActionIcon, Center, Loader, MantineProvider, Slider, Stack, Text, useComputedColorScheme } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
@@ -13,6 +13,8 @@ import { Configuration } from './configuration/configuration';
 import { useLocalStorageConfiguration } from '../_hooks/use-local-storage-configuration';
 import { defaultConfigs } from '../_constants/default-configuration';
 import DiceBoxComponent from './dice-box';
+import { getHeroPattern, usePatternSource } from './hero-patterns';
+import { useSurfaceTexture } from '../_hooks/use-surface-texture';
 
 // Initialize i18n (client-side only)
 import '../_i18n/i18n';
@@ -22,6 +24,12 @@ interface DiceBoxContainerProps {
   configuration: ReturnType<typeof useLocalStorageConfiguration>;
 }
 
+// Three.js must recompile the material when an asynchronously loaded map
+// changes it from an untextured surface to a textured one.
+const updateSurfaceMaterial = (material: THREE.MeshStandardMaterial) => {
+  material.needsUpdate = true;
+};
+
 const Thing: React.FC<DiceBoxContainerProps> = ({ configuration }) => {
   const ref = useRef<THREE.Mesh>(null);
   const {
@@ -30,14 +38,21 @@ const Thing: React.FC<DiceBoxContainerProps> = ({ configuration }) => {
   const { wallStyle, wallRepeat, wallColor, backgroundColor, backgroundStyle, backgroundRepeat } = configuration.visualConfig;
   const wallThickness = 0.5;
 
-  const wallMeshGeometric = useLoader(THREE.TextureLoader, '/dice-roller/textures/wall/geometric.svg');
-  const wallMeshLinenWall = useLoader(THREE.TextureLoader, '/dice-roller/textures/background/linen.svg');
-  const wallMesh = wallStyle === 'linen' ? wallMeshLinenWall : wallMeshGeometric;
-  const backgroundMeshDiamond = useLoader(THREE.TextureLoader, '/dice-roller/textures/background/diamond.svg');
-  const backgroundMeshLinen = useLoader(THREE.TextureLoader, '/dice-roller/textures/background/linen.svg');
-  const backgroundMesh = backgroundStyle === 'linen' ? backgroundMeshLinen : backgroundMeshDiamond;
+  const wallSource = usePatternSource(wallStyle, wallStyle === 'linen'
+    ? '/dice-roller/textures/background/linen.svg' : '/dice-roller/textures/wall/geometric.svg');
+  const backgroundSource = usePatternSource(backgroundStyle, backgroundStyle === 'linen'
+    ? '/dice-roller/textures/background/linen.svg' : '/dice-roller/textures/background/diamond.svg');
+  const wallMesh = useSurfaceTexture(wallSource);
+  const backgroundOriginal = useSurfaceTexture(backgroundSource);
+  const backgroundMesh = useMemo(() => {
+    if (!backgroundOriginal) return null;
+    const texture = backgroundOriginal.clone();
+    texture.needsUpdate = true;
+    return texture;
+  }, [backgroundOriginal]);
 
   const [wallMeshHorizontal, wallMeshVertical] = useMemo(() => {
+    if (!wallMesh) return [null, null];
     const h = wallMesh.clone();
     const v = wallMesh.clone();
     h.needsUpdate = true;
@@ -45,31 +60,41 @@ const Thing: React.FC<DiceBoxContainerProps> = ({ configuration }) => {
     return [h, v];
   }, [wallMesh]);
 
+  useEffect(() => () => {
+    wallMeshHorizontal?.dispose();
+    wallMeshVertical?.dispose();
+  }, [wallMeshHorizontal, wallMeshVertical]);
+
+  useEffect(() => () => backgroundMesh?.dispose(), [backgroundMesh]);
+
   useEffect(() => {
     const wallBaseScale = wallStyle === 'linen' ? 4 : 1;
+    const wallPattern = getHeroPattern(wallStyle);
+    const wallScaleX = wallPattern ? 64 / wallPattern.width : wallBaseScale;
+    const wallScaleY = wallPattern ? 64 / wallPattern.height : wallBaseScale;
 
     if (wallMeshHorizontal) {
       wallMeshHorizontal.wrapS = wallMeshHorizontal.wrapT = THREE.RepeatWrapping;
-      wallMeshHorizontal.repeat.set(viewportWidth * wallBaseScale * wallRepeat, wallThickness * wallBaseScale * wallRepeat);
+      wallMeshHorizontal.repeat.set(viewportWidth * wallScaleX * wallRepeat, wallThickness * wallScaleY * wallRepeat);
       wallMeshHorizontal.needsUpdate = true;
     }
 
     if (wallMeshVertical) {
       wallMeshVertical.wrapS = wallMeshVertical.wrapT = THREE.RepeatWrapping;
-      wallMeshVertical.repeat.set(wallThickness * wallBaseScale * wallRepeat, viewportHeight * wallBaseScale * wallRepeat);
+      wallMeshVertical.repeat.set(wallThickness * wallScaleX * wallRepeat, viewportHeight * wallScaleY * wallRepeat);
       wallMeshVertical.needsUpdate = true;
     }
 
-    const bgConfigs: [THREE.Texture, number, number][] = [
-      [backgroundMeshDiamond, 1, 1],
-      [backgroundMeshLinen,   4, 4],
-    ];
-    for (const [bg, sx, sy] of bgConfigs) {
-      bg.wrapS = bg.wrapT = THREE.RepeatWrapping;
-      bg.repeat.set(viewportWidth * sx * backgroundRepeat, viewportHeight * sy * backgroundRepeat);
-      bg.needsUpdate = true;
+    const backgroundPattern = getHeroPattern(backgroundStyle);
+    const backgroundBaseScale = backgroundStyle === 'linen' ? 4 : 1;
+    const sx = backgroundPattern ? 64 / backgroundPattern.width : backgroundBaseScale;
+    const sy = backgroundPattern ? 64 / backgroundPattern.height : backgroundBaseScale;
+    if (backgroundMesh) {
+      backgroundMesh.wrapS = backgroundMesh.wrapT = THREE.RepeatWrapping;
+      backgroundMesh.repeat.set(viewportWidth * sx * backgroundRepeat, viewportHeight * sy * backgroundRepeat);
+      backgroundMesh.needsUpdate = true;
     }
-  }, [wallMeshHorizontal, wallMeshVertical, wallStyle, wallRepeat, backgroundMeshDiamond, backgroundMeshLinen, viewportHeight, viewportWidth, backgroundRepeat]);
+  }, [wallMeshHorizontal, wallMeshVertical, wallStyle, wallRepeat, backgroundMesh, backgroundStyle, viewportHeight, viewportWidth, backgroundRepeat]);
 
   const wallMetalness = 0.2;
   const wallRoughness = 0.5;
@@ -78,23 +103,23 @@ const Thing: React.FC<DiceBoxContainerProps> = ({ configuration }) => {
     <group>
       <mesh position={[0, (viewportHeight - wallThickness) / 2, 0.5]}>
         <boxGeometry attach="geometry" args={[viewportWidth, 0.5, wallThickness]} />
-        <meshStandardMaterial map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
+        <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
       <mesh position={[-(viewportWidth - wallThickness) / 2, 0, 0.5]}>
         <boxGeometry attach="geometry" args={[0.5, viewportHeight, wallThickness]} />
-        <meshStandardMaterial map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
+        <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
       <mesh position={[(viewportWidth - wallThickness) / 2, 0, 0.5]}>
         <boxGeometry attach="geometry" args={[0.5, viewportHeight, wallThickness]} />
-        <meshStandardMaterial map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
+        <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
       <mesh position={[0, -(viewportHeight - wallThickness) / 2, 0.5]}>
         <boxGeometry attach="geometry" args={[viewportWidth, 0.5, wallThickness]} />
-        <meshStandardMaterial map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
+        <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
       <mesh ref={ref} scale={[viewportWidth, viewportHeight, 1]}>
         <boxGeometry attach="geometry" args={[1, 1, 0.1]} />
-        <meshStandardMaterial map={backgroundMesh} color={backgroundColor} roughness={0.7} metalness={0.8} />
+        <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={backgroundMesh} color={backgroundColor} roughness={0.7} metalness={0.8} />
       </mesh>
     </group>
   );

@@ -219,10 +219,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
               hiddenFrom={immersive ? undefined : "sm"}
               size="sm"
             />
-            <Group gap={6} align="center">
-              <img src="/favicon.svg" alt="Cornucopia" style={{ width: 28, height: 28 }} />
-              <Text fw={700} size="lg">Cornucopium</Text>
-            </Group>
+            <UnstyledButton component={Link} href="/" onClick={closeMobile}>
+              <Group gap={6} align="center">
+                <img src="/favicon.svg" alt="" style={{ width: 28, height: 28 }} />
+                <Text fw={700} size="lg">Cornucopium</Text>
+              </Group>
+            </UnstyledButton>
           </Group>
           <Group gap="xs">
             <ColorSchemeToggle />
