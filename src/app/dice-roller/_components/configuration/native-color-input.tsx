@@ -17,8 +17,11 @@ const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, la
   const [localColor, setLocalColor] = useState(value);
   const [textValue, setTextValue] = useState(value);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setLocalColor(value);
     setTextValue(value);
   }, [value]);
@@ -29,7 +32,7 @@ const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, la
 
   const propagate = (v: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => onChange(v), 80);
+    debounceRef.current = setTimeout(() => onChangeRef.current(v), 80);
   };
 
   const handleColorChange = (v: string) => {
@@ -69,6 +72,7 @@ const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, la
           />
           <input
             type="color"
+            aria-label={label}
             value={safeColor}
             onChange={(e) => handleColorChange(e.target.value)}
             style={{
@@ -85,6 +89,7 @@ const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, la
           />
         </div>
         <TextInput
+          aria-label={label}
           value={textValue}
           onChange={(e) => handleTextChange(e.target.value)}
           onBlur={handleTextBlur}

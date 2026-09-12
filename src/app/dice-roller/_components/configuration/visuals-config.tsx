@@ -1,215 +1,146 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { ActionIcon, Anchor, Group, Select, Slider, Stack, Text, Tooltip } from '@mantine/core';
-import { IconRefresh } from '@tabler/icons-react';
+import React, { useContext, useState } from 'react';
+import { Anchor, Button, Group, Slider, Stack, Text, TextInput } from '@mantine/core';
+import { IconCheck, IconRefresh, IconSearch } from '@tabler/icons-react';
+import { Canvas } from '@react-three/fiber';
 import type { VisualConfig } from '../../_types/types';
 import { defaultConfigs } from '../../_constants/default-configuration';
 import { useTranslation } from 'react-i18next';
-import { wallGeometricSvgRaw, diamondSvgRaw, linenSvgRaw } from '../texture-data';
 import NativeColorInput from './native-color-input';
-import { getHeroPattern, heroPatterns } from '../hero-patterns';
+import { heroPatterns } from '../hero-patterns';
+import { TrayAspectContext, TrayLighting, TraySurface, TRAY_CAMERA, TRAY_VIEW_HEIGHT } from '../tray-scene';
+import styles from '../../_styles/VisualsConfig.module.css';
 
-const { defaultVisualConfig } = defaultConfigs;
-
-const WALL_STYLES: Record<string, { svgRaw: string; baseColor: string; label: string; tileW: number; tileH: number }> = {
-  geometric: { svgRaw: wallGeometricSvgRaw, baseColor: '#c49050', label: 'Geometric', tileW: 64, tileH: 64 },
-  linen: { svgRaw: linenSvgRaw, baseColor: '#b8a080', label: 'Linen', tileW: 16, tileH: 16 },
-};
-
-const BACKGROUND_STYLES: Record<string, { svgRaw: string; baseColor: string; label: string; tileW: number; tileH: number }> = {
-  diamond: { svgRaw: diamondSvgRaw, baseColor: '#a07848', label: 'Diamond', tileW: 64, tileH: 64 },
-  linen: { svgRaw: linenSvgRaw, baseColor: '#b8a080', label: 'Linen', tileW: 16, tileH: 16 },
-};
-
-const patternOptions = heroPatterns.map(({ id, label }) => ({ value: id, label }))
-  .sort((a, b) => a.label.localeCompare(b.label));
-
-function HeroPatternPreview({ id, color, repeat }: { id: string; color: string; repeat: number }) {
-  const pattern = getHeroPattern(id);
-  if (!pattern) return null;
-  return (
-    <div role="img" aria-label={pattern.label} style={{
-      height: 64, width: '100%', borderRadius: 6, overflow: 'hidden', backgroundColor: color,
-    }}>
-      <div style={{
-        height: '100%', backgroundColor: '#000', opacity: 0.25,
-        maskImage: `url("${pattern.src}")`, maskRepeat: 'repeat',
-        maskSize: `${pattern.width / repeat}px ${pattern.height / repeat}px`,
-      }} />
-    </div>
-  );
-}
-
-function hexToHsl(hex: string): [number, number, number] {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  if (max === min) return [0, 0, l];
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  let h = 0;
-  if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-  else if (max === g) h = (b - r) / d + 2;
-  else h = (r - g) / d + 4;
-  return [h * 60, s, l];
-}
-
-function hslToHex(h: number, s: number, l: number): string {
-  h = ((h % 360) + 360) % 360;
-  s = Math.max(0, Math.min(1, s));
-  l = Math.max(0, Math.min(1, l));
-  const a = s * Math.min(l, 1 - l);
-  const f = (n: number) => {
-    const k = (n + h / 30) % 12;
-    return Math.round(255 * (l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)))
-      .toString(16).padStart(2, '0');
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
-}
-
-function recolorSvg(svgRaw: string, chosenHex: string, baseHex: string): string {
-  const [ch, cs, cl] = hexToHsl(chosenHex);
-  const [, bs, bl] = hexToHsl(baseHex);
-  return svgRaw.replace(/#[0-9a-fA-F]{6}/g, (original) => {
-    const [, os, ol] = hexToHsl(original);
-    const newS = Math.max(0, Math.min(1, cs * (bs > 0 ? os / bs : 1)));
-    const newL = Math.max(0, Math.min(1, cl * (bl > 0 ? ol / bl : 1)));
-    return hslToHex(ch, newS, newL);
-  });
-}
-
-const TexturePreview: React.FC<{ svgRaw: string; color: string; baseColor: string; tileW: number; tileH: number; repeat?: number }> = ({ svgRaw, color, baseColor, tileW, tileH, repeat = 1 }) => {
-  const dataUrl = useMemo(() => {
-    const svg = /^#[0-9a-fA-F]{6}$/.test(color) ? recolorSvg(svgRaw, color, baseColor) : svgRaw;
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-  }, [svgRaw, color, baseColor]);
-
-  return (
-    <div style={{
-      width: '100%',
-      height: 64,
-      flexShrink: 0,
-      borderRadius: 6,
-      backgroundImage: `url("${dataUrl}")`,
-      backgroundRepeat: 'repeat',
-      backgroundSize: `${tileW / repeat}px ${tileH / repeat}px`,
-    }} />
-  );
-};
+const PALETTE = ['#e8dfcf', '#c9ad82', '#8b7355', '#5b4034', '#852f42', '#b25c38', '#2d4a2d', '#347a76', '#345c89', '#655180', '#666c76', '#242831'];
+const patternOptions = heroPatterns.map(({ id, label, src, width, height }) => ({
+  id, label, src, width, height, hero: true,
+})).sort((a, b) => a.label.localeCompare(b.label));
 
 interface VisualsConfigProps {
   config: VisualConfig;
   onUpdate: (config: VisualConfig) => void;
 }
 
-const VisualsConfig: React.FC<VisualsConfigProps> = ({ config, onUpdate }) => {
+export default function VisualsConfig({ config, onUpdate }: VisualsConfigProps) {
   const { t } = useTranslation();
+  const [surface, setSurface] = useState<'wall' | 'background'>('wall');
+  const [search, setSearch] = useState('');
+  const aspect = useContext(TrayAspectContext);
+  const isWall = surface === 'wall';
+  const selectedStyle = isWall ? config.wallStyle : config.backgroundStyle;
+  const color = isWall ? config.wallColor : config.backgroundColor;
+  const repeat = isWall ? config.wallRepeat : config.backgroundRepeat;
+  const builtins = [
+    isWall
+      ? { id: 'geometric', label: t('visuals.geometric'), src: '/dice-roller/textures/wall/geometric.svg', width: 64, height: 64, hero: false }
+      : { id: 'diamond', label: t('visuals.diamond'), src: '/dice-roller/textures/background/diamond.svg', width: 64, height: 64, hero: false },
+    { id: 'linen', label: t('visuals.linen'), src: '/dice-roller/textures/background/linen.svg', width: 16, height: 16, hero: false },
+  ];
+  const choices = [...builtins, ...patternOptions];
+  const filtered = choices.filter(({ label }) => label.toLowerCase().includes(search.toLowerCase().trim()));
+  const selectedName = choices.find(({ id }) => id === selectedStyle)?.label ?? selectedStyle;
+  const updateColor = (value: string) => onUpdate({ ...config, [isWall ? 'wallColor' : 'backgroundColor']: value });
+  // Match the rolling view's camera and world dimensions, even in a small preview.
+  const height = TRAY_VIEW_HEIGHT;
 
   return (
-    <Stack gap="md">
-      <Text size="xl" fw={700}>
-        {t('visuals.title')}
-      </Text>
+    <Stack gap="lg">
       <div>
-        <Select
-          label={t('visuals.wallStyle')}
-          searchable
-          allowDeselect={false}
-          comboboxProps={{ withinPortal: false }}
-          value={config.wallStyle}
-          onChange={(value) => { if (value) onUpdate({ ...config, wallStyle: value }); }}
-          data={[
-            ...Object.entries(WALL_STYLES).map(([value, { label }]) => ({ value, label })),
-            { group: 'Hero Patterns', items: patternOptions },
-          ]}
-        />
+        <Text size="xl" fw={700}>{t('visuals.designTitle')}</Text>
+        <Text size="sm" c="dimmed">{t('visuals.designDescription')}</Text>
       </div>
-      <div>
-        <Text size="sm" fw={500} mb={4}>{t('visuals.wallRepeat')}</Text>
-        <Text size="xs" c="dimmed" mb={8}>{t('visuals.wallRepeatDescription')}</Text>
-        <Slider
-          min={1}
-          max={8}
-          step={1}
-          value={config.wallRepeat}
-          onChange={(value) => onUpdate({ ...config, wallRepeat: value })}
-          marks={[1, 2, 4, 8].map((v) => ({ value: v, label: String(v) }))}
-        />
+      <div className={styles.editor}>
+        <div className={styles.previewPanel}>
+          <div>
+            <Group justify="space-between" mb="xs">
+              <Text size="sm" fw={600}>{t('visuals.livePreview')}</Text>
+              <Text size="xs" c="dimmed">{t('visuals.autoSaved')}</Text>
+            </Group>
+            <div className={styles.preview} role="img" aria-label={t('visuals.livePreview')}>
+              <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
+                <div style={{ aspectRatio: aspect, width: `min(100%, ${210 * aspect}px)`, maxHeight: '100%' }}>
+                  <Canvas frameloop="demand" camera={TRAY_CAMERA} gl={{ antialias: true }} style={{ aspectRatio: aspect }}>
+                    <TraySurface config={config} dimensions={{ width: height * aspect, height }} />
+                    <TrayLighting />
+                  </Canvas>
+                </div>
+              </div>
+            </div>
+            <Text size="xs" c="dimmed" mt="xs">{t('visuals.previewLighting')}</Text>
+          </div>
+          <div className={styles.surfaces} role="group" aria-label={t('visuals.editSurface')}>
+            {(['wall', 'background'] as const).map((value) => (
+              <button key={value} type="button" className={styles.surface} aria-pressed={surface === value}
+                onClick={() => { setSurface(value); setSearch(''); }}>
+                <Group gap="xs">
+                  <span style={{ width: 14, height: 14, borderRadius: 4, background: value === 'wall' ? config.wallColor : config.backgroundColor }} />
+                  <Text size="sm" fw={600}>{t(value === 'wall' ? 'visuals.walls' : 'visuals.floor')}</Text>
+                </Group>
+              </button>
+            ))}
+          </div>
+          <div>
+            <Text size="sm" fw={600} mb="xs">{t('visuals.colorPalette')}</Text>
+            <div className={styles.palette}>
+              {PALETTE.map((hex) => (
+                <button key={hex} type="button" className={styles.swatch} style={{ backgroundColor: hex }}
+                  aria-label={t('visuals.chooseColor', { color: hex })} aria-pressed={color.toLowerCase() === hex}
+                  onClick={() => updateColor(hex)}>
+                  {color.toLowerCase() === hex && <IconCheck size={16} color="white" style={{ filter: 'drop-shadow(0 1px 2px black)' }} />}
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <NativeColorInput key={surface} label={t('visuals.customColor')} value={color} onChange={updateColor} />
+            </div>
+          </div>
+          <div style={{ paddingBottom: 14 }}>
+            <Group justify="space-between" mb="xs">
+              <Text size="sm" fw={600}>{t('visuals.patternDensity')}</Text>
+              <Text size="xs" c="dimmed">{repeat}×</Text>
+            </Group>
+            <Slider min={1} max={8} step={1} value={repeat} aria-label={t('visuals.patternDensity')}
+              onChange={(value) => onUpdate({ ...config, [isWall ? 'wallRepeat' : 'backgroundRepeat']: value })}
+              marks={[1, 2, 4, 8].map((value) => ({ value, label: String(value) }))} />
+          </div>
+          <Button variant="subtle" color="gray" size="xs" leftSection={<IconRefresh size={14} />} onClick={() => {
+            const defaults = defaultConfigs.defaultVisualConfig;
+            onUpdate(isWall
+              ? { ...config, wallStyle: defaults.wallStyle, wallColor: defaults.wallColor, wallRepeat: defaults.wallRepeat }
+              : { ...config, backgroundStyle: defaults.backgroundStyle, backgroundColor: defaults.backgroundColor, backgroundRepeat: defaults.backgroundRepeat });
+          }}>{t('visuals.resetSurface')}</Button>
+        </div>
+        <Stack gap="sm">
+          <Group justify="space-between">
+            <Text size="sm" fw={600}>{t(isWall ? 'visuals.wallStyle' : 'visuals.backgroundStyle')}</Text>
+            <Text size="xs" c="dimmed">{selectedName}</Text>
+          </Group>
+          <TextInput aria-label={t('visuals.searchPatterns')} placeholder={t('visuals.searchPatterns')}
+            leftSection={<IconSearch size={16} />} value={search} onChange={(event) => setSearch(event.currentTarget.value)} />
+          <div className={styles.patterns} role="group" aria-label={t('visuals.patterns')}>
+            {filtered.map((pattern) => (
+              <button key={pattern.id} type="button" className={styles.pattern} aria-label={pattern.label}
+                aria-pressed={selectedStyle === pattern.id}
+                onClick={() => onUpdate({ ...config, [isWall ? 'wallStyle' : 'backgroundStyle']: pattern.id })}>
+                <div className={styles.tile}>
+                  {pattern.hero ? <div className={styles.tileArt} style={{
+                    maskImage: `url("${pattern.src}")`, maskRepeat: 'repeat',
+                    maskSize: `${Math.min(pattern.width, 100)}px ${pattern.height * Math.min(1, 100 / pattern.width)}px`,
+                  }} /> : <div style={{ height: '100%', backgroundImage: `url("${pattern.src}")`, backgroundSize: `${pattern.width}px ${pattern.height}px` }} />}
+                </div>
+                <span className={styles.patternName}>{pattern.label}{selectedStyle === pattern.id && <IconCheck size={14} style={{ flexShrink: 0 }} />}</span>
+              </button>
+            ))}
+          </div>
+          {filtered.length === 0 && <Text size="sm" c="dimmed" py="lg" ta="center">{t('visuals.noPatterns')}</Text>}
+          <Text size="xs" c="dimmed">
+            <Anchor href="https://heropatterns.com/" target="_blank" rel="noreferrer" inherit>Hero Patterns</Anchor>
+            {' by Steve Schoger · '}
+            <Anchor href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" inherit>CC BY 4.0</Anchor>
+          </Text>
+        </Stack>
       </div>
-      <Group align="flex-end" gap="xs">
-        <NativeColorInput
-          style={{ flex: 1 }}
-          label={t('visuals.wallColor')}
-          description={t('visuals.wallColorDescription')}
-          value={config.wallColor}
-          onChange={(value) => onUpdate({ ...config, wallColor: value })}
-        />
-        <Tooltip label={t('visuals.resetToDefault')} withinPortal={false}>
-          <ActionIcon variant="default" size={36} style={{ alignSelf: 'flex-end' }} onClick={() => onUpdate({ ...config, wallColor: defaultVisualConfig.wallColor })}>
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-      {(() => {
-        if (getHeroPattern(config.wallStyle)) return <HeroPatternPreview id={config.wallStyle} color={config.wallColor} repeat={config.wallRepeat} />;
-        const style = WALL_STYLES[config.wallStyle] ?? { svgRaw: wallGeometricSvgRaw, baseColor: '#c49050', tileW: 64, tileH: 64 };
-        return <TexturePreview svgRaw={style.svgRaw} color={config.wallColor} baseColor={style.baseColor} tileW={style.tileW} tileH={style.tileH} repeat={config.wallRepeat} />;
-      })()}
-      <div>
-        <Select
-          label={t('visuals.backgroundStyle')}
-          searchable
-          allowDeselect={false}
-          comboboxProps={{ withinPortal: false }}
-          value={config.backgroundStyle}
-          onChange={(value) => { if (value) onUpdate({ ...config, backgroundStyle: value }); }}
-          data={[
-            ...Object.entries(BACKGROUND_STYLES).map(([value, { label }]) => ({ value, label })),
-            { group: 'Hero Patterns', items: patternOptions },
-          ]}
-        />
-      </div>
-      <div>
-        <Text size="sm" fw={500} mb={4}>{t('visuals.backgroundRepeat')}</Text>
-        <Text size="xs" c="dimmed" mb={8}>{t('visuals.backgroundRepeatDescription')}</Text>
-        <Slider
-          min={1}
-          max={8}
-          step={1}
-          value={config.backgroundRepeat}
-          onChange={(value) => onUpdate({ ...config, backgroundRepeat: value })}
-          marks={[1, 2, 4, 8].map((v) => ({ value: v, label: String(v) }))}
-        />
-      </div>
-      <Group align="flex-end" gap="xs">
-        <NativeColorInput
-          style={{ flex: 1 }}
-          label={t('visuals.backgroundColor')}
-          description={t('visuals.backgroundColorDescription')}
-          value={config.backgroundColor}
-          onChange={(value) => onUpdate({ ...config, backgroundColor: value })}
-        />
-        <Tooltip label={t('visuals.resetToDefault')} withinPortal={false}>
-          <ActionIcon variant="default" size={36} style={{ alignSelf: 'flex-end' }} onClick={() => onUpdate({ ...config, backgroundColor: defaultVisualConfig.backgroundColor })}>
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-      {(() => {
-        if (getHeroPattern(config.backgroundStyle)) return <HeroPatternPreview id={config.backgroundStyle} color={config.backgroundColor} repeat={config.backgroundRepeat} />;
-        const style = BACKGROUND_STYLES[config.backgroundStyle] ?? { svgRaw: diamondSvgRaw, baseColor: '#a07848', tileW: 64, tileH: 64 };
-        return <TexturePreview svgRaw={style.svgRaw} color={config.backgroundColor} baseColor={style.baseColor} tileW={style.tileW} tileH={style.tileH} repeat={config.backgroundRepeat} />;
-      })()}
-      <Text size="xs" c="dimmed">
-        <Anchor href="https://heropatterns.com/" target="_blank" rel="noreferrer" inherit>Hero Patterns</Anchor>
-        {' by Steve Schoger · '}
-        <Anchor href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" inherit>CC BY 4.0</Anchor>
-      </Text>
     </Stack>
   );
-};
-
-export default VisualsConfig;
+}
