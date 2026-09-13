@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useId } from 'react';
 import {
   Button,
   Text,
@@ -18,12 +18,15 @@ import {
   Tooltip,
   Select,
   SegmentedControl,
+  Collapse,
 } from '@mantine/core';
+import { useReducedMotion } from '@mantine/hooks';
 import DiceBox from '@3d-dice/dice-box';
 import type { Action, ActionSet, DiceResult, DiceSelections, Stats, StatSet, RollType } from '../_types/types';
 import {
   IconBackspace,
   IconChevronLeft,
+  IconChevronDown,
   IconChevronRight,
   IconInfoCircle,
   IconSettings,
@@ -118,6 +121,9 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
   const [results, setResults] = useState<DiceResult[]>([]);
   const [showActions, setShowActions] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const resultsId = useId();
+  const totalId = useId();
+  const reduceMotion = useReducedMotion();
   const [isRandomizing, setIsRandomizing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDamageRoll, setIsDamageRollState] = useState(false);
@@ -809,22 +815,30 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
           />
         )}
 
-        {/* TOTAL - top left, position absolute */}
-        <div className={`${styles.diffusedBackground} ${styles.totalBox}`}>
+        {/* Unified toolbar: results expand within the same surface. */}
+        <div className={`${styles.diffusedBackground} ${styles.toolbar}`} onKeyDown={(event) => {
+          if (event.key === 'Escape' && showResults) {
+            setShowResults(false);
+            document.getElementById(totalId)?.focus();
+          }
+        }}>
+        <div className={styles.toolbarRow}>
           <Button
             variant="subtle"
             disabled={results.length === 0}
             onClick={(e) => { e.stopPropagation(); setShowResults((v) => !v); }}
+            id={totalId}
+            c="var(--mantine-color-text)"
+            aria-expanded={showResults}
+            aria-controls={resultsId}
+            rightSection={results.length > 0 ? <IconChevronDown size={16} className={styles.resultsChevron} style={{ transform: showResults ? 'rotate(180deg)' : undefined }} /> : undefined}
             className={styles.totalButton}
           >
             <Text size="xl" fw={700} className={styles.totalText}>
               {(isRandomizing || attackHitPrompt !== null) ? '???' : `${t('diceBox.total', { value: grandTotal })}${modSuffix}`}
             </Text>
           </Button>
-        </div>
-
-        {/* ROLL MODE TOGGLE - top right, position absolute */}
-        <div className={`${styles.diffusedBackground} ${styles.rollModeToggle}`}>
+        <div className={styles.rollModeToggle}>
           <SegmentedControl
             key={rollModeKey}
             size="xs"
@@ -837,6 +851,80 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
               { value: 'advantage', label: t('diceBox.advantage') },
             ]}
           />
+        </div>
+
+        </div>
+        <Collapse in={showResults} transitionDuration={reduceMotion ? 0 : 240} transitionTimingFunction="cubic-bezier(0.2, 0, 0, 1)">
+          <div id={resultsId} role="region" aria-labelledby={totalId} className={styles.resultsContainer}>
+              <SimpleGrid cols={{ base: 1, xs: 2, sm: 3 }} spacing="md">
+                {results.map((r, index) => {
+                  const typeStyle = r.damageType ? DAMAGE_TYPE_STYLES[r.damageType] : undefined;
+                  const individualValues = r.rolls
+                    .map(roll => roll.value)
+                    .filter((v): v is number => v !== undefined);
+                  return (
+                    <div
+                      key={index}
+                      className={styles.resultCard}
+                      style={{ ...typeStyle, position: 'relative' }}
+                    >
+                      {individualValues.length > 1 && (
+                        <Tooltip
+                          label={individualValues.join(' + ')}
+                          withinPortal={false}
+                          position="top"
+                        >
+                          <IconInfoCircle
+                            size={14}
+                            style={{
+                              position: 'absolute',
+                              top: 6,
+                              right: 6,
+                              opacity: 0.4,
+                              cursor: 'default',
+                            }}
+                          />
+                        </Tooltip>
+                      )}
+                      <Text fw={600} size="md">{r.qty + (r.rolls[0]?.dieType ?? '')}</Text>
+                      <Text size="xl" fw={700}>{r.value}</Text>
+                      {r.damageType && (
+                        <Text size="xs" c="dimmed" style={{ textTransform: 'capitalize' }}>
+                          {r.damageType}
+                        </Text>
+                      )}
+                    </div>
+                  );
+                })}
+                {activeStatModifier && (
+                  <div
+                    className={styles.resultCard}
+                    style={activeStatModifier.stat ? STAT_STYLES[activeStatModifier.stat] : undefined}
+                  >
+                    <Text fw={600} size="md">{t('diceBox.modifierLabel')}</Text>
+                    <Text size="xl" fw={700}>
+                      {activeStatModifier.value >= 0 ? '+' : ''}{activeStatModifier.value}
+                    </Text>
+                    {activeStatModifier.stat && (
+                      <Text size="xs" c="dimmed" style={{ textTransform: 'capitalize' }}>
+                        {t(`statNames.${activeStatModifier.stat}`)}
+                      </Text>
+                    )}
+                  </div>
+                )}
+                {critBonus !== null && critBonus > 0 && (
+                  <div
+                    className={styles.resultCard}
+                    style={{ backgroundColor: 'rgba(255, 214, 0, 0.25)', borderColor: '#ffd600' }}
+                  >
+                    <Text fw={700} size="md" style={{ color: '#b8860b' }}>⚔ {t('diceBox.criticalHit')}</Text>
+                    <Text size="xl" fw={700}>+{critBonus}</Text>
+                    <Text size="xs" c="dimmed">{t('diceBox.critBonusLabel')}</Text>
+                  </div>
+                )}
+              </SimpleGrid>
+          </div>
+        </Collapse>
         </div>
 
         {/* ACTIONS TOGGLE - right side, vertically centered, position absolute */}
@@ -974,89 +1062,6 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
             )}
           </Transition>
         </div>
-
-        {/* RESULTS PANEL */}
-        <Transition
-          mounted={showResults}
-          transition={{
-            transitionProperty: 'opacity',
-            in: { opacity: 1 },
-            out: { opacity: 0 },
-            common: { transition: 'opacity 300ms ease' },
-          }}
-        >
-          {(style) => (
-            <div className={styles.resultsContainer} style={style} onClick={(e) => e.stopPropagation()}>
-              <SimpleGrid cols={3} spacing="md">
-                {results.map((r, index) => {
-                  const typeStyle = r.damageType ? DAMAGE_TYPE_STYLES[r.damageType] : undefined;
-                  const individualValues = r.rolls
-                    .map(roll => roll.value)
-                    .filter((v): v is number => v !== undefined);
-                  return (
-                    <div
-                      key={index}
-                      className={styles.resultCard}
-                      style={{ ...typeStyle, position: 'relative' }}
-                    >
-                      {individualValues.length > 1 && (
-                        <Tooltip
-                          label={individualValues.join(' + ')}
-                          withinPortal={false}
-                          position="top"
-                        >
-                          <IconInfoCircle
-                            size={14}
-                            style={{
-                              position: 'absolute',
-                              top: 6,
-                              right: 6,
-                              opacity: 0.4,
-                              cursor: 'default',
-                            }}
-                          />
-                        </Tooltip>
-                      )}
-                      <Text fw={600} size="md">{r.qty + (r.rolls[0]?.dieType ?? '')}</Text>
-                      <Text size="xl" fw={700}>{r.value}</Text>
-                      {r.damageType && (
-                        <Text size="xs" c="dimmed" style={{ textTransform: 'capitalize' }}>
-                          {r.damageType}
-                        </Text>
-                      )}
-                    </div>
-                  );
-                })}
-                {activeStatModifier && (
-                  <div
-                    className={styles.resultCard}
-                    style={activeStatModifier.stat ? STAT_STYLES[activeStatModifier.stat] : undefined}
-                  >
-                    <Text fw={600} size="md">{t('diceBox.modifierLabel')}</Text>
-                    <Text size="xl" fw={700}>
-                      {activeStatModifier.value >= 0 ? '+' : ''}{activeStatModifier.value}
-                    </Text>
-                    {activeStatModifier.stat && (
-                      <Text size="xs" c="dimmed" style={{ textTransform: 'capitalize' }}>
-                        {t(`statNames.${activeStatModifier.stat}`)}
-                      </Text>
-                    )}
-                  </div>
-                )}
-                {critBonus !== null && critBonus > 0 && (
-                  <div
-                    className={styles.resultCard}
-                    style={{ backgroundColor: 'rgba(255, 214, 0, 0.25)', borderColor: '#ffd600' }}
-                  >
-                    <Text fw={700} size="md" style={{ color: '#b8860b' }}>⚔ {t('diceBox.criticalHit')}</Text>
-                    <Text size="xl" fw={700}>+{critBonus}</Text>
-                    <Text size="xs" c="dimmed">{t('diceBox.critBonusLabel')}</Text>
-                  </div>
-                )}
-              </SimpleGrid>
-            </div>
-          )}
-        </Transition>
 
         {/* HIT CONFIRMATION PROMPT */}
         <Transition

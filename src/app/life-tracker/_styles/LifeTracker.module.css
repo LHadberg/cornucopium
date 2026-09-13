@@ -204,11 +204,9 @@
 
 .sideControls {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  top: clamp(6px, 2cqmin, 16px);
+  bottom: clamp(6px, 2cqmin, 16px);
+  pointer-events: none;
   z-index: 2;
 }
 
@@ -222,15 +220,40 @@
 
 .controlColumn {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  height: 100%;
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
+  place-items: center;
 }
 
-.columnGear {
-  position: absolute;
-  top: calc(100% + 8px);
+.controlColumn > * {
+  pointer-events: auto;
+}
+
+.horizontalControls .sideControls {
+  left: clamp(6px, 2cqmin, 16px);
+  right: clamp(6px, 2cqmin, 16px);
+  top: auto;
+  bottom: auto;
+}
+
+.horizontalControls .sideTop {
+  top: clamp(6px, 2cqmin, 16px);
+}
+
+.horizontalControls .sideBottom {
+  bottom: clamp(6px, 2cqmin, 16px);
+}
+
+.horizontalControls .controlColumn {
+  height: auto;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.horizontalControls .areaContent {
+  padding-inline: clamp(8px, 2cqmin, 16px);
+  padding-block: clamp(48px, 16cqmin, 110px);
 }
 
 .chipBtn {
@@ -322,6 +345,39 @@
 .calloutRight::after {
   right: 100%;
   border-right-color: rgba(0, 0, 0, 0.78);
+}
+
+.calloutTop,
+.calloutBottom {
+  left: 50%;
+  top: auto;
+  transform: translateX(-50%);
+  flex-direction: column;
+}
+
+.calloutTop {
+  bottom: calc(100% + 8px);
+}
+
+.calloutBottom {
+  top: calc(100% + 8px);
+}
+
+.calloutTop::after,
+.calloutBottom::after {
+  left: 50%;
+  top: auto;
+  transform: translateX(-50%);
+}
+
+.calloutTop::after {
+  top: 100%;
+  border-top-color: rgba(0, 0, 0, 0.78);
+}
+
+.calloutBottom::after {
+  bottom: 100%;
+  border-bottom-color: rgba(0, 0, 0, 0.78);
 }
 
 /* Wrapper owns the centering transform so the button's :active transform

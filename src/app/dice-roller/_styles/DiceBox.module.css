@@ -14,34 +14,95 @@
   z-index: 10;
 }
 
-/* Total box - top left absolute */
-.totalBox {
+/* One shared surface for the toolbar and its expanding result details. */
+.toolbar {
   position: absolute;
   top: 1rem;
-  left: 1rem;
-  z-index: 10;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2rem);
+  max-width: 500px;
+  z-index: 20;
   border-radius: 8px;
-  padding: 0.25rem 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.toolbarRow {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 5px;
+  gap: 8px;
 }
 
 .totalButton {
-  padding: 0.25rem 0.5rem;
-  height: auto;
+  padding: 0 12px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--mantine-color-default-border);
+}
+
+.totalButton:disabled {
+  color: var(--mantine-color-text);
+  background: transparent;
+  cursor: default;
+}
+
+.resultsChevron {
+  transition: transform 240ms ease;
 }
 
 .totalText {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  line-height: 1;
   text-align: left;
   width: 100%;
 }
 
-/* Roll mode toggle - top right */
 .rollModeToggle {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 10;
-  border-radius: 8px;
-  padding: 0.25rem 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.rollModeToggle :global(.mantine-SegmentedControl-root) {
+  width: 100%;
+  background: transparent;
+  display: flex;
+  height: 38px;
+  padding: 0;
+}
+
+.rollModeToggle :global(.mantine-SegmentedControl-label) {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .toolbarRow {
+    flex-wrap: wrap;
+  }
+
+  .totalButton {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--mantine-color-default-border);
+  }
+
+  .rollModeToggle {
+    flex-basis: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resultsChevron {
+    transition: none;
+  }
 }
 
 /* Actions toggle - right side, vertically centered */
@@ -57,16 +118,10 @@
 
 /* Results panel styles */
 .resultsContainer {
-  position: absolute;
-  top: 5rem;
-  left: 5%;
-  right: 5%;
   padding: 1.25rem;
-  border-radius: 14px;
-  z-index: 20;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-top: 1px solid var(--mantine-color-default-border);
+  max-height: 55dvh;
+  overflow-y: auto;
 }
 
 .resultCard {
@@ -289,10 +344,6 @@
 
 :global([data-mantine-color-scheme="dark"]) .quickCalcDisplay {
   background: rgba(255, 255, 255, 0.06);
-}
-
-:global([data-mantine-color-scheme="dark"]) .resultsContainer {
-  background: rgba(26, 27, 30, 0.95);
 }
 
 :global([data-mantine-color-scheme="dark"]) .resultCard {

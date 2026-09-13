@@ -65,14 +65,11 @@
     "diceColorDescription": "Brugerdefineret farve til terningetema"
   },
   "visuals": {
-    "designTitle": "Design din terningebakke",
-    "designDescription": "Vælg en overflade, find et mønster, og giv bakken dit eget udtryk.",
     "livePreview": "Forhåndsvisning af bakken",
     "autoSaved": "Gemmes automatisk",
-    "previewLighting": "Forhåndsvisningen bruger samme lys og materialer som terningebakken. Farveprøverne vælger grundfarven; forhåndsvisningen viser det færdige udtryk.",
     "editSurface": "Overflade der redigeres",
     "walls": "Vægge",
-    "floor": "Bund",
+    "background": "Baggrund",
     "colorPalette": "Farvepalet",
     "chooseColor": "Brug farven {{color}}",
     "customColor": "Valgfri farve",

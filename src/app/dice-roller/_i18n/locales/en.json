@@ -65,14 +65,11 @@
     "diceColorDescription": "Custom color for the dice theme"
   },
   "visuals": {
-    "designTitle": "Design your dice tray",
-    "designDescription": "Choose a surface, find a pattern, and make it yours.",
     "livePreview": "Live tray preview",
     "autoSaved": "Saved automatically",
-    "previewLighting": "The preview uses the same lighting and materials as your dice tray. Swatches set the base color; the preview shows the finished look.",
     "editSurface": "Surface to edit",
     "walls": "Walls",
-    "floor": "Floor",
+    "background": "Background",
     "colorPalette": "Color palette",
     "chooseColor": "Use color {{color}}",
     "customColor": "Custom color",
