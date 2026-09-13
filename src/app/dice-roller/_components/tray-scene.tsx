@@ -69,7 +69,8 @@ export const TraySurface = ({ config, dimensions }: { config: VisualConfig; dime
 
     if (wallMeshVertical) {
       wallMeshVertical.wrapS = wallMeshVertical.wrapT = THREE.RepeatWrapping;
-      wallMeshVertical.repeat.set(wallThickness * wallScaleX * wallRepeat, viewportHeight * wallScaleY * wallRepeat);
+      // Side walls use horizontal geometry rotated so the artwork faces outward.
+      wallMeshVertical.repeat.set(viewportHeight * wallScaleX * wallRepeat, wallThickness * wallScaleY * wallRepeat);
       wallMeshVertical.needsUpdate = true;
     }
 
@@ -93,12 +94,12 @@ export const TraySurface = ({ config, dimensions }: { config: VisualConfig; dime
         <boxGeometry attach="geometry" args={[viewportWidth, 0.5, wallThickness]} />
         <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
-      <mesh position={[-(viewportWidth - wallThickness) / 2, 0, 0.5]}>
-        <boxGeometry attach="geometry" args={[0.5, viewportHeight, wallThickness]} />
+      <mesh position={[-(viewportWidth - wallThickness) / 2, 0, 0.5]} rotation={[0, 0, Math.PI / 2]}>
+        <boxGeometry attach="geometry" args={[viewportHeight, 0.5, wallThickness]} />
         <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
-      <mesh position={[(viewportWidth - wallThickness) / 2, 0, 0.5]}>
-        <boxGeometry attach="geometry" args={[0.5, viewportHeight, wallThickness]} />
+      <mesh position={[(viewportWidth - wallThickness) / 2, 0, 0.5]} rotation={[0, 0, -Math.PI / 2]}>
+        <boxGeometry attach="geometry" args={[viewportHeight, 0.5, wallThickness]} />
         <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
       <mesh position={[0, -(viewportHeight - wallThickness) / 2, 0.5]}>

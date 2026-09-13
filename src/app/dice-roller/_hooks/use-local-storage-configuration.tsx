@@ -23,6 +23,17 @@ interface DefaultConfigs {
   defaultVisualConfig: VisualConfig;
 }
 
+function migrateVisualConfig(saved: Partial<VisualConfig>, defaults: VisualConfig): VisualConfig {
+  const config = { ...defaults, ...saved };
+  if (config.wallStyle === 'geometric' || config.wallStyle === 'linen') {
+    config.wallStyle = defaults.wallStyle;
+  }
+  if (config.backgroundStyle === 'diamond' || config.backgroundStyle === 'linen') {
+    config.backgroundStyle = defaults.backgroundStyle;
+  }
+  return config;
+}
+
 export interface LocalStorageConfigurationReturn {
   statSets: StatSet[];
   selectedStatSetId: string | null;
@@ -109,7 +120,9 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
 
     setPhysicsConfig(loadFromStorage(STORAGE_KEYS.PHYSICS, defaults.defaultPhysicsConfig));
     const storedVisual = loadFromStorage(STORAGE_KEYS.VISUAL, defaults.defaultVisualConfig);
-    setVisualConfig({ ...defaults.defaultVisualConfig, ...storedVisual });
+    const migratedVisual = migrateVisualConfig(storedVisual, defaults.defaultVisualConfig);
+    setVisualConfig(migratedVisual);
+    try { localStorage.setItem(STORAGE_KEYS.VISUAL, JSON.stringify(migratedVisual)); } catch { /* ignore */ }
 
     let sets: ActionSet[] = loadFromStorage<ActionSet[]>(STORAGE_KEYS.ACTION_SETS, []);
     if (sets.length === 0) {
@@ -164,9 +177,9 @@ export const useLocalStorageConfiguration = (defaults: DefaultConfigs): LocalSto
     }
     if (dbConfig.diceRollerVisuals) {
       try {
-        const v = JSON.parse(dbConfig.diceRollerVisuals) as VisualConfig;
-        setVisualConfig({ ...defaults.defaultVisualConfig, ...v });
-        localStorage.setItem(STORAGE_KEYS.VISUAL, dbConfig.diceRollerVisuals);
+        const v = migrateVisualConfig(JSON.parse(dbConfig.diceRollerVisuals) as Partial<VisualConfig>, defaults.defaultVisualConfig);
+        setVisualConfig(v);
+        localStorage.setItem(STORAGE_KEYS.VISUAL, JSON.stringify(v));
       } catch { /* keep localStorage value */ }
     }
     if (dbConfig.diceRollerActionSets) {
