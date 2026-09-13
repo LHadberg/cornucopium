@@ -5,6 +5,7 @@ import { createContext, useEffect, useMemo, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import type { VisualConfig } from '../_types/types';
 import { getHeroPattern, usePatternSource } from './hero-patterns';
+import { defaultConfigs } from '../_constants/default-configuration';
 import { useSurfaceTexture } from '../_hooks/use-surface-texture';
 
 export const TrayAspectContext = createContext(16 / 9);
@@ -26,10 +27,8 @@ export const TraySurface = ({ config, dimensions }: { config: VisualConfig; dime
   const { wallStyle, wallRepeat, wallColor, backgroundColor, backgroundStyle, backgroundRepeat } = config;
   const wallThickness = 0.5;
 
-  const wallSource = usePatternSource(wallStyle, wallStyle === 'linen'
-    ? '/dice-roller/textures/background/linen.svg' : '/dice-roller/textures/wall/geometric.svg');
-  const backgroundSource = usePatternSource(backgroundStyle, backgroundStyle === 'linen'
-    ? '/dice-roller/textures/background/linen.svg' : '/dice-roller/textures/background/diamond.svg');
+  const wallSource = usePatternSource(wallStyle, defaultConfigs.defaultVisualConfig.wallStyle);
+  const backgroundSource = usePatternSource(backgroundStyle, defaultConfigs.defaultVisualConfig.backgroundStyle);
   const wallMesh = useSurfaceTexture(wallSource);
   const backgroundOriginal = useSurfaceTexture(backgroundSource);
   const backgroundMesh = useMemo(() => {
@@ -56,10 +55,9 @@ export const TraySurface = ({ config, dimensions }: { config: VisualConfig; dime
   useEffect(() => () => backgroundMesh?.dispose(), [backgroundMesh]);
 
   useEffect(() => {
-    const wallBaseScale = wallStyle === 'linen' ? 4 : 1;
     const wallPattern = getHeroPattern(wallStyle);
-    const wallScaleX = wallPattern ? 64 / wallPattern.width : wallBaseScale;
-    const wallScaleY = wallPattern ? 64 / wallPattern.height : wallBaseScale;
+    const wallScaleX = wallPattern ? 64 / wallPattern.width : 1;
+    const wallScaleY = wallPattern ? 64 / wallPattern.height : 1;
 
     if (wallMeshHorizontal) {
       wallMeshHorizontal.wrapS = wallMeshHorizontal.wrapT = THREE.RepeatWrapping;
@@ -75,9 +73,8 @@ export const TraySurface = ({ config, dimensions }: { config: VisualConfig; dime
     }
 
     const backgroundPattern = getHeroPattern(backgroundStyle);
-    const backgroundBaseScale = backgroundStyle === 'linen' ? 4 : 1;
-    const sx = backgroundPattern ? 64 / backgroundPattern.width : backgroundBaseScale;
-    const sy = backgroundPattern ? 64 / backgroundPattern.height : backgroundBaseScale;
+    const sx = backgroundPattern ? 64 / backgroundPattern.width : 1;
+    const sy = backgroundPattern ? 64 / backgroundPattern.height : 1;
     if (backgroundMesh) {
       backgroundMesh.wrapS = backgroundMesh.wrapT = THREE.RepeatWrapping;
       backgroundMesh.repeat.set(viewportWidth * sx * backgroundRepeat, viewportHeight * sy * backgroundRepeat);
@@ -102,7 +99,7 @@ export const TraySurface = ({ config, dimensions }: { config: VisualConfig; dime
         <boxGeometry attach="geometry" args={[viewportHeight, 0.5, wallThickness]} />
         <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>
-      <mesh position={[0, -(viewportHeight - wallThickness) / 2, 0.5]}>
+      <mesh position={[0, -(viewportHeight - wallThickness) / 2, 0.5]} rotation={[0, 0, Math.PI]}>
         <boxGeometry attach="geometry" args={[viewportWidth, 0.5, wallThickness]} />
         <meshStandardMaterial onUpdate={updateSurfaceMaterial} map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
       </mesh>

@@ -25,10 +25,10 @@ interface DefaultConfigs {
 
 function migrateVisualConfig(saved: Partial<VisualConfig>, defaults: VisualConfig): VisualConfig {
   const config = { ...defaults, ...saved };
-  if (config.wallStyle === 'geometric' || config.wallStyle === 'linen') {
+  if (['geometric', 'linen', 'diamond'].includes(config.wallStyle)) {
     config.wallStyle = defaults.wallStyle;
   }
-  if (config.backgroundStyle === 'diamond' || config.backgroundStyle === 'linen') {
+  if (['geometric', 'linen', 'diamond'].includes(config.backgroundStyle)) {
     config.backgroundStyle = defaults.backgroundStyle;
   }
   return config;

@@ -41,12 +41,12 @@ const defaultVisualConfig = {
   diceColor: '#ffffff',
   textColor: '#000000',
   trayColor: '#1a1a1a',
-  wallStyle: 'hero-circuit-board',
-  wallRepeat: 1,
+  wallStyle: 'hero-endless-clouds',
+  wallRepeat: 2,
   wallColor: '#852f42',
   backgroundColor: '#852f42',
   backgroundStyle: 'hero-circuit-board',
-  backgroundRepeat: 1,
+  backgroundRepeat: 2,
 };
 
 export const defaultConfigs = {

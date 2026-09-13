@@ -36,7 +36,7 @@ function loadPatternSource(pattern: typeof heroPatterns[number]): Promise<string
 }
 
 export function usePatternSource(id: string, fallback: string) {
-  const pattern = getHeroPattern(id);
+  const pattern = getHeroPattern(id) ?? getHeroPattern(fallback);
   const [loaded, setLoaded] = useState<{ src: string; url: string } | null>(null);
 
   useEffect(() => {
@@ -50,6 +50,6 @@ export function usePatternSource(id: string, fallback: string) {
     return () => { active = false; };
   }, [pattern]);
 
-  if (!pattern) return fallback;
+  if (!pattern) return null;
   return loaded?.src === pattern.src ? loaded.url : null;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { Anchor, Button, Group, Slider, Stack, Text, TextInput } from '@mantine/core';
 import { IconCheck, IconRefresh, IconSearch } from '@tabler/icons-react';
 import { Canvas } from '@react-three/fiber';
@@ -10,11 +10,11 @@ import { useTranslation } from 'react-i18next';
 import NativeColorInput from './native-color-input';
 import ColorPalette from './color-palette';
 import { heroPatterns } from '../hero-patterns';
-import { TrayAspectContext, TrayLighting, TraySurface, TRAY_CAMERA } from '../tray-scene';
+import { TrayLighting, TraySurface, TRAY_CAMERA } from '../tray-scene';
 import styles from '../../_styles/VisualsConfig.module.css';
 
 const patternOptions = heroPatterns.map(({ id, label, src, width, height }) => ({
-  id, label, src, width, height, hero: true,
+  id, label, src, width, height,
 })).sort((a, b) => a.label.localeCompare(b.label));
 
 interface VisualsConfigProps {
@@ -30,13 +30,7 @@ export default function VisualsConfig({ config, onUpdate }: VisualsConfigProps) 
   const selectedStyle = isWall ? config.wallStyle : config.backgroundStyle;
   const color = isWall ? config.wallColor : config.backgroundColor;
   const repeat = isWall ? config.wallRepeat : config.backgroundRepeat;
-  const builtins = [
-    isWall
-      ? { id: 'geometric', label: t('visuals.geometric'), src: '/dice-roller/textures/wall/geometric.svg', width: 64, height: 64, hero: false }
-      : { id: 'diamond', label: t('visuals.diamond'), src: '/dice-roller/textures/background/diamond.svg', width: 64, height: 64, hero: false },
-    { id: 'linen', label: t('visuals.linen'), src: '/dice-roller/textures/background/linen.svg', width: 16, height: 16, hero: false },
-  ];
-  const choices = [...builtins, ...patternOptions];
+  const choices = patternOptions;
   const filtered = choices.filter(({ label }) => label.toLowerCase().includes(search.toLowerCase().trim()));
   const selectedName = choices.find(({ id }) => id === selectedStyle)?.label ?? selectedStyle;
   const updateColor = (value: string) => onUpdate({ ...config, [isWall ? 'wallColor' : 'backgroundColor']: value });
@@ -66,17 +60,10 @@ export default function VisualsConfig({ config, onUpdate }: VisualsConfigProps) 
                 onClick={() => { setSurface(value); setSearch(''); }}>
                 <Group gap="xs">
                   <span style={{ width: 14, height: 14, borderRadius: 4, background: value === 'wall' ? config.wallColor : config.backgroundColor }} />
-                  <Text size="sm" fw={600}>{t(value === 'wall' ? 'visuals.walls' : 'visuals.floor')}</Text>
+                  <Text size="sm" fw={600}>{t(value === 'wall' ? 'visuals.walls' : 'visuals.background')}</Text>
                 </Group>
               </button>
             ))}
-          </div>
-          <div>
-            <Text size="sm" fw={600} mb="xs">{t('visuals.colorPalette')}</Text>
-            <ColorPalette value={color} onChange={updateColor} />
-            <div style={{ marginTop: 14 }}>
-              <NativeColorInput key={surface} label={t('visuals.customColor')} value={color} onChange={updateColor} />
-            </div>
           </div>
           <div style={{ paddingBottom: 14 }}>
             <Group justify="space-between" mb="xs">
@@ -86,6 +73,13 @@ export default function VisualsConfig({ config, onUpdate }: VisualsConfigProps) 
             <Slider min={1} max={8} step={1} value={repeat} aria-label={t('visuals.patternDensity')}
               onChange={(value) => onUpdate({ ...config, [isWall ? 'wallRepeat' : 'backgroundRepeat']: value })}
               marks={[1, 2, 4, 8].map((value) => ({ value, label: String(value) }))} />
+          </div>
+          <div>
+            <Text size="sm" fw={600} mb="xs">{t('visuals.chooseAColor')}</Text>
+            <ColorPalette value={color} onChange={updateColor} />
+            <div style={{ marginTop: 14 }}>
+              <NativeColorInput key={surface} ariaLabel={t('visuals.customColor')} value={color} onChange={updateColor} />
+            </div>
           </div>
           <Button variant="subtle" color="gray" size="xs" leftSection={<IconRefresh size={14} />} onClick={() => {
             const defaults = defaultConfigs.defaultVisualConfig;
@@ -107,10 +101,10 @@ export default function VisualsConfig({ config, onUpdate }: VisualsConfigProps) 
                 aria-pressed={selectedStyle === pattern.id}
                 onClick={() => onUpdate({ ...config, [isWall ? 'wallStyle' : 'backgroundStyle']: pattern.id })}>
                 <div className={styles.tile} style={{ backgroundColor: color }}>
-                  {pattern.hero ? <div className={styles.tileArt} style={{
+                  <div className={styles.tileArt} style={{
                     maskImage: `url("${pattern.src}")`, maskRepeat: 'repeat',
                     maskSize: `${Math.min(pattern.width, 100)}px ${pattern.height * Math.min(1, 100 / pattern.width)}px`,
-                  }} /> : <div style={{ height: '100%', backgroundColor: color, backgroundBlendMode: 'multiply', backgroundImage: `url("${pattern.src}")`, backgroundSize: `${pattern.width}px ${pattern.height}px` }} />}
+                  }} />
                 </div>
                 <span className={styles.patternName}>{pattern.label}{selectedStyle === pattern.id && <IconCheck size={14} style={{ flexShrink: 0 }} />}</span>
               </button>
