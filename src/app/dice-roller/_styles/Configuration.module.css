@@ -1,4 +1,12 @@
 /* Disable all interactions when the config panel is not the active face */
+.sizeIndicator { display: none; }
+
+/* Keep the size highlight tied to selection, even when mounted in a hidden tab. */
+.sizeLabel[data-active] {
+  background: var(--mantine-color-default);
+  box-shadow: var(--mantine-shadow-xs);
+}
+
 .inactive * {
   pointer-events: none !important;
 }

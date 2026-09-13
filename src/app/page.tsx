@@ -6,7 +6,6 @@ import {
   SimpleGrid,
   Card,
   ThemeIcon,
-  Badge,
   Divider,
   Anchor,
   Group,
@@ -14,12 +13,10 @@ import {
 } from "@mantine/core";
 import {
   IconCards,
-  IconLayoutGrid,
   IconHeart,
   IconDice,
   IconMapRoute,
   IconArrowRight,
-  IconLock,
   type Icon,
 } from "@tabler/icons-react";
 import Link from "next/link";
@@ -36,6 +33,7 @@ type Tool = {
   exampleHref?: string;
   /** Call-to-action label shown on the primary button. */
   cta: string;
+  secondaryAction?: { href: string; label: string };
 };
 
 type Section = {
@@ -64,20 +62,11 @@ const sections: Section[] = [
         title: "MTG Complete",
         href: "/mtg-complete",
         description:
-          "Build and showcase your Commander collection across all 32 color combinations. Scryfall search, full partner support, alternate prints, and shareable lists.",
+          "Build and showcase your Commander collection across all 32 color combinations, or browse every deck in a single grid. Scryfall search, full partner support, alternate prints, and shareable lists.",
         requiresAuth: true,
-        exampleHref: "/mtg-complete/example",
+        exampleHref: "https://cornucopium.net/mtg-complete/Lasses-liste",
         cta: "Your collection",
-      },
-      {
-        icon: IconLayoutGrid,
-        color: "indigo",
-        title: "All Decks",
-        href: "/decks",
-        description:
-          "Browse every deck in your collection in a single grid — a quick overview of what you've built so far.",
-        requiresAuth: true,
-        cta: "Browse decks",
+        secondaryAction: { href: "/decks", label: "Browse decks" },
       },
     ],
   },
@@ -126,17 +115,6 @@ function ToolCard({ tool, signedIn }: { tool: Tool; signedIn: boolean }) {
           <Title order={3} size="h4">
             {tool.title}
           </Title>
-          {tool.requiresAuth && (
-            <Badge
-              variant="light"
-              color="gray"
-              size="xs"
-              leftSection={<IconLock size={10} />}
-              ml="auto"
-            >
-              Account
-            </Badge>
-          )}
         </Group>
 
         <Text size="sm" c="dimmed" lh={1.6} style={{ flex: 1 }}>
@@ -164,15 +142,24 @@ function ToolCard({ tool, signedIn }: { tool: Tool; signedIn: boolean }) {
               )}
             </>
           ) : (
-            <Link href={tool.href}>
-              <Button
-                size="sm"
-                color={tool.color}
-                rightSection={<IconArrowRight size={14} />}
-              >
-                {tool.cta}
-              </Button>
-            </Link>
+            <>
+              <Link href={tool.href}>
+                <Button
+                  size="sm"
+                  color={tool.color}
+                  rightSection={<IconArrowRight size={14} />}
+                >
+                  {tool.cta}
+                </Button>
+              </Link>
+              {tool.secondaryAction && (
+                <Link href={tool.secondaryAction.href}>
+                  <Button size="sm" variant="default">
+                    {tool.secondaryAction.label}
+                  </Button>
+                </Link>
+              )}
+            </>
           )}
         </Group>
       </Stack>

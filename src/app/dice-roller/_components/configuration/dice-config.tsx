@@ -7,6 +7,8 @@ import type { DiceBoxConfig, VisualConfig } from '../../_types/types';
 import { DICE_SIZE_PRESETS, DICE_WEIGHT_PRESETS, defaultConfigs } from '../../_constants/default-configuration';
 import { useTranslation } from 'react-i18next';
 import NativeColorInput from './native-color-input';
+import ColorPalette from './color-palette';
+import styles from '../../_styles/Configuration.module.css';
 
 type DiceWeight = 'light' | 'medium' | 'heavy';
 type DiceSize = 'small' | 'medium' | 'large';
@@ -70,6 +72,7 @@ const DiceConfig: React.FC<DiceConfigProps> = ({ physicsConfig, visualConfig, on
         <SegmentedControl
           fullWidth
           value={size}
+          classNames={{ indicator: styles.sizeIndicator, label: styles.sizeLabel }}
           onChange={(v) => onVisualsUpdate({ ...visualConfig, scale: DICE_SIZE_PRESETS[v as DiceSize] })}
           data={[
             { value: 'small', label: t('dice.small') },
@@ -89,6 +92,10 @@ const DiceConfig: React.FC<DiceConfigProps> = ({ physicsConfig, visualConfig, on
             { value: 'rust', label: t('dice.themeRust') },
           ]}
         />
+      </div>
+      <div>
+        <Text size="sm" fw={500} mb="xs">{t('visuals.colorPalette')}</Text>
+        <ColorPalette value={visualConfig.themeColor} onChange={(themeColor) => onVisualsUpdate({ ...visualConfig, themeColor })} />
       </div>
       <Group align="flex-end" gap="xs">
         <NativeColorInput

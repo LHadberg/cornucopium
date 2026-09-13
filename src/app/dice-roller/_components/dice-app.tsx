@@ -1,11 +1,11 @@
 'use client';
 
-import * as THREE from 'three';
+import type * as THREE from 'three';
 
 import { PerspectiveCamera } from '@react-three/drei';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSpring, animated } from '@react-spring/three';
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 
 import { ActionIcon, Center, Loader, MantineProvider, Slider, Stack, Text, useComputedColorScheme } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
@@ -13,100 +13,11 @@ import { Configuration } from './configuration/configuration';
 import { useLocalStorageConfiguration } from '../_hooks/use-local-storage-configuration';
 import { defaultConfigs } from '../_constants/default-configuration';
 import DiceBoxComponent from './dice-box';
+import { useElementSize } from '@mantine/hooks';
+import { TraySurface, TrayLighting, TrayAspectContext, TRAY_CAMERA, DEFAULT_LIGHTING, type LightingConfig } from './tray-scene';
 
 // Initialize i18n (client-side only)
 import '../_i18n/i18n';
-
-interface DiceBoxContainerProps {
-  onClick: () => void;
-  configuration: ReturnType<typeof useLocalStorageConfiguration>;
-}
-
-const Thing: React.FC<DiceBoxContainerProps> = ({ configuration }) => {
-  const ref = useRef<THREE.Mesh>(null);
-  const {
-    viewport: { width: viewportWidth, height: viewportHeight },
-  } = useThree();
-  const { wallStyle, wallRepeat, wallColor, backgroundColor, backgroundStyle, backgroundRepeat } = configuration.visualConfig;
-  const wallThickness = 0.5;
-
-  const wallMeshGeometric = useLoader(THREE.TextureLoader, '/dice-roller/textures/wall/geometric.svg');
-  const wallMeshLinenWall = useLoader(THREE.TextureLoader, '/dice-roller/textures/background/linen.svg');
-  const wallMesh = wallStyle === 'linen' ? wallMeshLinenWall : wallMeshGeometric;
-  const backgroundMeshDiamond = useLoader(THREE.TextureLoader, '/dice-roller/textures/background/diamond.svg');
-  const backgroundMeshLinen = useLoader(THREE.TextureLoader, '/dice-roller/textures/background/linen.svg');
-  const backgroundMesh = backgroundStyle === 'linen' ? backgroundMeshLinen : backgroundMeshDiamond;
-
-  const [wallMeshHorizontal, wallMeshVertical] = useMemo(() => {
-    const h = wallMesh.clone();
-    const v = wallMesh.clone();
-    h.needsUpdate = true;
-    v.needsUpdate = true;
-    return [h, v];
-  }, [wallMesh]);
-
-  useEffect(() => {
-    const wallBaseScale = wallStyle === 'linen' ? 4 : 1;
-
-    if (wallMeshHorizontal) {
-      wallMeshHorizontal.wrapS = wallMeshHorizontal.wrapT = THREE.RepeatWrapping;
-      wallMeshHorizontal.repeat.set(viewportWidth * wallBaseScale * wallRepeat, wallThickness * wallBaseScale * wallRepeat);
-      wallMeshHorizontal.needsUpdate = true;
-    }
-
-    if (wallMeshVertical) {
-      wallMeshVertical.wrapS = wallMeshVertical.wrapT = THREE.RepeatWrapping;
-      wallMeshVertical.repeat.set(wallThickness * wallBaseScale * wallRepeat, viewportHeight * wallBaseScale * wallRepeat);
-      wallMeshVertical.needsUpdate = true;
-    }
-
-    const bgConfigs: [THREE.Texture, number, number][] = [
-      [backgroundMeshDiamond, 1, 1],
-      [backgroundMeshLinen,   4, 4],
-    ];
-    for (const [bg, sx, sy] of bgConfigs) {
-      bg.wrapS = bg.wrapT = THREE.RepeatWrapping;
-      bg.repeat.set(viewportWidth * sx * backgroundRepeat, viewportHeight * sy * backgroundRepeat);
-      bg.needsUpdate = true;
-    }
-  }, [wallMeshHorizontal, wallMeshVertical, wallStyle, wallRepeat, backgroundMeshDiamond, backgroundMeshLinen, viewportHeight, viewportWidth, backgroundRepeat]);
-
-  const wallMetalness = 0.2;
-  const wallRoughness = 0.5;
-
-  return (
-    <group>
-      <mesh position={[0, (viewportHeight - wallThickness) / 2, 0.5]}>
-        <boxGeometry attach="geometry" args={[viewportWidth, 0.5, wallThickness]} />
-        <meshStandardMaterial map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
-      </mesh>
-      <mesh position={[-(viewportWidth - wallThickness) / 2, 0, 0.5]}>
-        <boxGeometry attach="geometry" args={[0.5, viewportHeight, wallThickness]} />
-        <meshStandardMaterial map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
-      </mesh>
-      <mesh position={[(viewportWidth - wallThickness) / 2, 0, 0.5]}>
-        <boxGeometry attach="geometry" args={[0.5, viewportHeight, wallThickness]} />
-        <meshStandardMaterial map={wallMeshVertical} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
-      </mesh>
-      <mesh position={[0, -(viewportHeight - wallThickness) / 2, 0.5]}>
-        <boxGeometry attach="geometry" args={[viewportWidth, 0.5, wallThickness]} />
-        <meshStandardMaterial map={wallMeshHorizontal} color={wallColor} metalness={wallMetalness} roughness={wallRoughness} />
-      </mesh>
-      <mesh ref={ref} scale={[viewportWidth, viewportHeight, 1]}>
-        <boxGeometry attach="geometry" args={[1, 1, 0.1]} />
-        <meshStandardMaterial map={backgroundMesh} color={backgroundColor} roughness={0.7} metalness={0.8} />
-      </mesh>
-    </group>
-  );
-};
-
-export interface LightingConfig {
-  ambientIntensity: number;
-  pointIntensity: number;
-  pointX: number;
-  pointY: number;
-  pointZ: number;
-}
 
 // Inside-canvas component: camera + background only.
 // Drives the DOM flip card directly via useFrame to avoid React re-render overhead.
@@ -145,22 +56,13 @@ export const DiceApp: React.FC<DiceAppProps> = ({ configuration, lighting, isFli
     <>
       <animated.group rotation-y={rotation}>
         <animated.group position-z={cameraZOffset}>
-          <PerspectiveCamera makeDefault position={[0, 0, 10]} lookAt={() => [0, 0, 10]} />
+          <PerspectiveCamera makeDefault {...TRAY_CAMERA} />
         </animated.group>
       </animated.group>
-      <Thing onClick={() => {}} configuration={configuration} />
-      <ambientLight intensity={lighting.ambientIntensity} />
-      <pointLight position={[lighting.pointX, lighting.pointY, lighting.pointZ]} intensity={lighting.pointIntensity} />
+      <TraySurface config={configuration.visualConfig} />
+      <TrayLighting lighting={lighting} />
     </>
   );
-};
-
-const DEFAULT_LIGHTING: LightingConfig = {
-  ambientIntensity: 0.5,
-  pointIntensity: 70,
-  pointX: 0,
-  pointY: 1,
-  pointZ: 3,
 };
 
 function LightingDebugOverlay({
@@ -234,6 +136,7 @@ function LightingDebugOverlay({
 }
 
 export const DiceAppWrapper = () => {
+  const { ref: trayRef, width: trayWidth, height: trayHeight } = useElementSize();
   const configuration = useLocalStorageConfiguration(defaultConfigs);
   const [lighting] = useState<LightingConfig>(DEFAULT_LIGHTING);
   const [ready, setReady] = useState(false);
@@ -322,7 +225,8 @@ export const DiceAppWrapper = () => {
   }
 
   return (
-    <div style={darkBg}>
+    <TrayAspectContext.Provider value={trayWidth > 0 && trayHeight > 0 ? trayWidth / trayHeight : 16 / 9}>
+    <div ref={trayRef} style={darkBg}>
       <Canvas
         key={canvasKey}
         style={{ position: 'absolute', inset: 0 }}
@@ -387,5 +291,6 @@ export const DiceAppWrapper = () => {
       ) : ( ... )}
       */}
     </div>
+    </TrayAspectContext.Provider>
   );
 };

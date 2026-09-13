@@ -204,7 +204,7 @@ export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox,
           />
         </Tabs.Panel>
 
-        <Tabs.Panel value="dice-box" pt="xs">
+        <Tabs.Panel value="dice-box" pt="xs" keepMounted={false}>
           <VisualsConfig config={visualConfig} onUpdate={handleVisualsUpdate} />
         </Tabs.Panel>
       </Tabs>

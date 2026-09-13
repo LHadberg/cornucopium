@@ -1,0 +1,611 @@
+[
+  {
+    "id": "hero-jigsaw",
+    "label": "Jigsaw",
+    "src": "/assets/dice-roller/hero-patterns/jigsaw.svg",
+    "width": 192.0,
+    "height": 192.0
+  },
+  {
+    "id": "hero-overcast",
+    "label": "Overcast",
+    "src": "/assets/dice-roller/hero-patterns/overcast.svg",
+    "width": 80.0,
+    "height": 80.0
+  },
+  {
+    "id": "hero-formal-invitation",
+    "label": "Formal Invitation",
+    "src": "/assets/dice-roller/hero-patterns/formal-invitation.svg",
+    "width": 100.0,
+    "height": 18.0
+  },
+  {
+    "id": "hero-topography",
+    "label": "Topography",
+    "src": "/assets/dice-roller/hero-patterns/topography.svg",
+    "width": 600.0,
+    "height": 600.0
+  },
+  {
+    "id": "hero-texture",
+    "label": "Texture",
+    "src": "/assets/dice-roller/hero-patterns/texture.svg",
+    "width": 4.0,
+    "height": 4.0
+  },
+  {
+    "id": "hero-jupiter",
+    "label": "Jupiter",
+    "src": "/assets/dice-roller/hero-patterns/jupiter.svg",
+    "width": 52.0,
+    "height": 52.0
+  },
+  {
+    "id": "hero-architect",
+    "label": "Architect",
+    "src": "/assets/dice-roller/hero-patterns/architect.svg",
+    "width": 100.0,
+    "height": 199.0
+  },
+  {
+    "id": "hero-cutout",
+    "label": "Cutout",
+    "src": "/assets/dice-roller/hero-patterns/cutout.svg",
+    "width": 48.0,
+    "height": 48.0
+  },
+  {
+    "id": "hero-hideout",
+    "label": "Hideout",
+    "src": "/assets/dice-roller/hero-patterns/hideout.svg",
+    "width": 40.0,
+    "height": 40.0
+  },
+  {
+    "id": "hero-graph-paper",
+    "label": "Graph Paper",
+    "src": "/assets/dice-roller/hero-patterns/graph-paper.svg",
+    "width": 100.0,
+    "height": 100.0
+  },
+  {
+    "id": "hero-yyy",
+    "label": "YYY",
+    "src": "/assets/dice-roller/hero-patterns/yyy.svg",
+    "width": 60.0,
+    "height": 96.0
+  },
+  {
+    "id": "hero-squares",
+    "label": "Squares",
+    "src": "/assets/dice-roller/hero-patterns/squares.svg",
+    "width": 32.0,
+    "height": 32.0
+  },
+  {
+    "id": "hero-falling-triangles",
+    "label": "Falling Triangles",
+    "src": "/assets/dice-roller/hero-patterns/falling-triangles.svg",
+    "width": 36.0,
+    "height": 72.0
+  },
+  {
+    "id": "hero-piano-man",
+    "label": "Piano Man",
+    "src": "/assets/dice-roller/hero-patterns/piano-man.svg",
+    "width": 70.0,
+    "height": 46.0
+  },
+  {
+    "id": "hero-pie-factory",
+    "label": "Pie Factory",
+    "src": "/assets/dice-roller/hero-patterns/pie-factory.svg",
+    "width": 60.0,
+    "height": 60.0
+  },
+  {
+    "id": "hero-dominos",
+    "label": "Dominos",
+    "src": "/assets/dice-roller/hero-patterns/dominos.svg",
+    "width": 126.0,
+    "height": 84.0
+  },
+  {
+    "id": "hero-hexagons",
+    "label": "Hexagons",
+    "src": "/assets/dice-roller/hero-patterns/hexagons.svg",
+    "width": 28.0,
+    "height": 49.0
+  },
+  {
+    "id": "hero-charlie-brown",
+    "label": "Charlie Brown",
+    "src": "/assets/dice-roller/hero-patterns/charlie-brown.svg",
+    "width": 20.0,
+    "height": 12.0
+  },
+  {
+    "id": "hero-autumn",
+    "label": "Autumn",
+    "src": "/assets/dice-roller/hero-patterns/autumn.svg",
+    "width": 88.0,
+    "height": 24.0
+  },
+  {
+    "id": "hero-temple",
+    "label": "Temple",
+    "src": "/assets/dice-roller/hero-patterns/temple.svg",
+    "width": 152.0,
+    "height": 152.0
+  },
+  {
+    "id": "hero-stamp-collection",
+    "label": "Stamp Collection",
+    "src": "/assets/dice-roller/hero-patterns/stamp-collection.svg",
+    "width": 77.0,
+    "height": 107.0
+  },
+  {
+    "id": "hero-death-star",
+    "label": "Death Star",
+    "src": "/assets/dice-roller/hero-patterns/death-star.svg",
+    "width": 80.0,
+    "height": 105.0
+  },
+  {
+    "id": "hero-church-on-sunday",
+    "label": "Church On Sunday",
+    "src": "/assets/dice-roller/hero-patterns/church-on-sunday.svg",
+    "width": 80.0,
+    "height": 80.0
+  },
+  {
+    "id": "hero-i-like-food",
+    "label": "I Like Food",
+    "src": "/assets/dice-roller/hero-patterns/i-like-food.svg",
+    "width": 260.0,
+    "height": 260.0
+  },
+  {
+    "id": "hero-overlapping-hexagons",
+    "label": "Overlapping Hexagons",
+    "src": "/assets/dice-roller/hero-patterns/overlapping-hexagons.svg",
+    "width": 50.0,
+    "height": 40.0
+  },
+  {
+    "id": "hero-4-point-stars",
+    "label": "4 Point Stars",
+    "src": "/assets/dice-roller/hero-patterns/4-point-stars.svg",
+    "width": 24.0,
+    "height": 24.0
+  },
+  {
+    "id": "hero-bamboo",
+    "label": "Bamboo",
+    "src": "/assets/dice-roller/hero-patterns/bamboo.svg",
+    "width": 16.0,
+    "height": 32.0
+  },
+  {
+    "id": "hero-bathroom-floor",
+    "label": "Bathroom Floor",
+    "src": "/assets/dice-roller/hero-patterns/bathroom-floor.svg",
+    "width": 80.0,
+    "height": 80.0
+  },
+  {
+    "id": "hero-cork-screw",
+    "label": "Cork Screw",
+    "src": "/assets/dice-roller/hero-patterns/cork-screw.svg",
+    "width": 20.0,
+    "height": 16.0
+  },
+  {
+    "id": "hero-happy-intersection",
+    "label": "Happy Intersection",
+    "src": "/assets/dice-roller/hero-patterns/happy-intersection.svg",
+    "width": 88.0,
+    "height": 88.0
+  },
+  {
+    "id": "hero-kiwi",
+    "label": "Kiwi",
+    "src": "/assets/dice-roller/hero-patterns/kiwi.svg",
+    "width": 34.0,
+    "height": 44.0
+  },
+  {
+    "id": "hero-lips",
+    "label": "Lips",
+    "src": "/assets/dice-roller/hero-patterns/lips.svg",
+    "width": 112.0,
+    "height": 92.0
+  },
+  {
+    "id": "hero-lisbon",
+    "label": "Lisbon",
+    "src": "/assets/dice-roller/hero-patterns/lisbon.svg",
+    "width": 80.0,
+    "height": 80.0
+  },
+  {
+    "id": "hero-random-shapes",
+    "label": "Random Shapes",
+    "src": "/assets/dice-roller/hero-patterns/random-shapes.svg",
+    "width": 80.0,
+    "height": 80.0
+  },
+  {
+    "id": "hero-steel-beams",
+    "label": "Steel Beams",
+    "src": "/assets/dice-roller/hero-patterns/steel-beams.svg",
+    "width": 42.0,
+    "height": 58.0
+  },
+  {
+    "id": "hero-tiny-checkers",
+    "label": "Tiny Checkers",
+    "src": "/assets/dice-roller/hero-patterns/tiny-checkers.svg",
+    "width": 8.0,
+    "height": 8.0
+  },
+  {
+    "id": "hero-x-equals",
+    "label": "X Equals",
+    "src": "/assets/dice-roller/hero-patterns/x-equals.svg",
+    "width": 48.0,
+    "height": 48.0
+  },
+  {
+    "id": "hero-anchors-away",
+    "label": "Anchors Away",
+    "src": "/assets/dice-roller/hero-patterns/anchors-away.svg",
+    "width": 80.0,
+    "height": 80.0
+  },
+  {
+    "id": "hero-bevel-circle",
+    "label": "Bevel Circle",
+    "src": "/assets/dice-roller/hero-patterns/bevel-circle.svg",
+    "width": 38.0,
+    "height": 38.0
+  },
+  {
+    "id": "hero-brick-wall",
+    "label": "Brick Wall",
+    "src": "/assets/dice-roller/hero-patterns/brick-wall.svg",
+    "width": 42.0,
+    "height": 44.0
+  },
+  {
+    "id": "hero-fancy-rectangles",
+    "label": "Fancy Rectangles",
+    "src": "/assets/dice-roller/hero-patterns/fancy-rectangles.svg",
+    "width": 60.0,
+    "height": 48.0
+  },
+  {
+    "id": "hero-heavy-rain",
+    "label": "Heavy Rain",
+    "src": "/assets/dice-roller/hero-patterns/heavy-rain.svg",
+    "width": 12.0,
+    "height": 24.0
+  },
+  {
+    "id": "hero-overlapping-circles",
+    "label": "Overlapping Circles",
+    "src": "/assets/dice-roller/hero-patterns/overlapping-circles.svg",
+    "width": 80.0,
+    "height": 80.0
+  },
+  {
+    "id": "hero-plus",
+    "label": "Plus",
+    "src": "/assets/dice-roller/hero-patterns/plus.svg",
+    "width": 60.0,
+    "height": 60.0
+  },
+  {
+    "id": "hero-rounded-plus-connected",
+    "label": "Rounded Plus Connected",
+    "src": "/assets/dice-roller/hero-patterns/rounded-plus-connected.svg",
+    "width": 84.0,
+    "height": 84.0
+  },
+  {
+    "id": "hero-volcano-lamp",
+    "label": "Volcano Lamp",
+    "src": "/assets/dice-roller/hero-patterns/volcano-lamp.svg",
+    "width": 48.0,
+    "height": 32.0
+  },
+  {
+    "id": "hero-wiggle",
+    "label": "Wiggle",
+    "src": "/assets/dice-roller/hero-patterns/wiggle.svg",
+    "width": 52.0,
+    "height": 26.0
+  },
+  {
+    "id": "hero-bubbles",
+    "label": "Bubbles",
+    "src": "/assets/dice-roller/hero-patterns/bubbles.svg",
+    "width": 100.0,
+    "height": 100.0
+  },
+  {
+    "id": "hero-cage",
+    "label": "Cage",
+    "src": "/assets/dice-roller/hero-patterns/cage.svg",
+    "width": 32.0,
+    "height": 26.0
+  },
+  {
+    "id": "hero-connections",
+    "label": "Connections",
+    "src": "/assets/dice-roller/hero-patterns/connections.svg",
+    "width": 36.0,
+    "height": 36.0
+  },
+  {
+    "id": "hero-current",
+    "label": "Current",
+    "src": "/assets/dice-roller/hero-patterns/current.svg",
+    "width": 76.0,
+    "height": 18.0
+  },
+  {
+    "id": "hero-diagonal-stripes",
+    "label": "Diagonal Stripes",
+    "src": "/assets/dice-roller/hero-patterns/diagonal-stripes.svg",
+    "width": 40.0,
+    "height": 40.0
+  },
+  {
+    "id": "hero-flipped-diamonds",
+    "label": "Flipped Diamonds",
+    "src": "/assets/dice-roller/hero-patterns/flipped-diamonds.svg",
+    "width": 16.0,
+    "height": 20.0
+  },
+  {
+    "id": "hero-floating-cogs",
+    "label": "Floating Cogs",
+    "src": "/assets/dice-roller/hero-patterns/floating-cogs.svg",
+    "width": 360.0,
+    "height": 360.0
+  },
+  {
+    "id": "hero-glamorous",
+    "label": "Glamorous",
+    "src": "/assets/dice-roller/hero-patterns/glamorous.svg",
+    "width": 180.0,
+    "height": 180.0
+  },
+  {
+    "id": "hero-houndstooth",
+    "label": "Houndstooth",
+    "src": "/assets/dice-roller/hero-patterns/houndstooth.svg",
+    "width": 24.0,
+    "height": 24.0
+  },
+  {
+    "id": "hero-leaf",
+    "label": "Leaf",
+    "src": "/assets/dice-roller/hero-patterns/leaf.svg",
+    "width": 80.0,
+    "height": 40.0
+  },
+  {
+    "id": "hero-lines-in-motion",
+    "label": "Lines In Motion",
+    "src": "/assets/dice-roller/hero-patterns/lines-in-motion.svg",
+    "width": 120.0,
+    "height": 120.0
+  },
+  {
+    "id": "hero-moroccan",
+    "label": "Moroccan",
+    "src": "/assets/dice-roller/hero-patterns/moroccan.svg",
+    "width": 80.0,
+    "height": 88.0
+  },
+  {
+    "id": "hero-morphing-diamonds",
+    "label": "Morphing Diamonds",
+    "src": "/assets/dice-roller/hero-patterns/morphing-diamonds.svg",
+    "width": 60.0,
+    "height": 60.0
+  },
+  {
+    "id": "hero-rails",
+    "label": "Rails",
+    "src": "/assets/dice-roller/hero-patterns/rails.svg",
+    "width": 20.0,
+    "height": 10.0
+  },
+  {
+    "id": "hero-rain",
+    "label": "Rain",
+    "src": "/assets/dice-roller/hero-patterns/rain.svg",
+    "width": 12.0,
+    "height": 16.0
+  },
+  {
+    "id": "hero-skulls",
+    "label": "Skulls",
+    "src": "/assets/dice-roller/hero-patterns/skulls.svg",
+    "width": 180.0,
+    "height": 180.0
+  },
+  {
+    "id": "hero-squares-in-squares",
+    "label": "Squares In Squares",
+    "src": "/assets/dice-roller/hero-patterns/squares-in-squares.svg",
+    "width": 70.0,
+    "height": 70.0
+  },
+  {
+    "id": "hero-stripes",
+    "label": "Stripes",
+    "src": "/assets/dice-roller/hero-patterns/stripes.svg",
+    "width": 40.0,
+    "height": 1.0
+  },
+  {
+    "id": "hero-tic-tac-toe",
+    "label": "Tic Tac Toe",
+    "src": "/assets/dice-roller/hero-patterns/tic-tac-toe.svg",
+    "width": 64.0,
+    "height": 64.0
+  },
+  {
+    "id": "hero-zig-zag",
+    "label": "Zig Zag",
+    "src": "/assets/dice-roller/hero-patterns/zig-zag.svg",
+    "width": 40.0,
+    "height": 12.0
+  },
+  {
+    "id": "hero-aztec",
+    "label": "Aztec",
+    "src": "/assets/dice-roller/hero-patterns/aztec.svg",
+    "width": 32.0,
+    "height": 64.0
+  },
+  {
+    "id": "hero-bank-note",
+    "label": "Bank Note",
+    "src": "/assets/dice-roller/hero-patterns/bank-note.svg",
+    "width": 100.0,
+    "height": 20.0
+  },
+  {
+    "id": "hero-boxes",
+    "label": "Boxes",
+    "src": "/assets/dice-roller/hero-patterns/boxes.svg",
+    "width": 20.0,
+    "height": 20.0
+  },
+  {
+    "id": "hero-circles-and-squares",
+    "label": "Circles & Squares",
+    "src": "/assets/dice-roller/hero-patterns/circles-and-squares.svg",
+    "width": 40.0,
+    "height": 40.0
+  },
+  {
+    "id": "hero-circuit-board",
+    "label": "Circuit Board",
+    "src": "/assets/dice-roller/hero-patterns/circuit-board.svg",
+    "width": 304.0,
+    "height": 304.0
+  },
+  {
+    "id": "hero-curtain",
+    "label": "Curtain",
+    "src": "/assets/dice-roller/hero-patterns/curtain.svg",
+    "width": 44.0,
+    "height": 12.0
+  },
+  {
+    "id": "hero-diagonal-lines",
+    "label": "Diagonal Lines",
+    "src": "/assets/dice-roller/hero-patterns/diagonal-lines.svg",
+    "width": 6.0,
+    "height": 6.0
+  },
+  {
+    "id": "hero-endless-clouds",
+    "label": "Endless Clouds",
+    "src": "/assets/dice-roller/hero-patterns/endless-clouds.svg",
+    "width": 56.0,
+    "height": 28.0
+  },
+  {
+    "id": "hero-eyes",
+    "label": "Eyes",
+    "src": "/assets/dice-roller/hero-patterns/eyes.svg",
+    "width": 20.0,
+    "height": 12.0
+  },
+  {
+    "id": "hero-floor-tile",
+    "label": "Floor Tile",
+    "src": "/assets/dice-roller/hero-patterns/floor-tile.svg",
+    "width": 30.0,
+    "height": 30.0
+  },
+  {
+    "id": "hero-groovy",
+    "label": "Groovy",
+    "src": "/assets/dice-roller/hero-patterns/groovy.svg",
+    "width": 24.0,
+    "height": 40.0
+  },
+  {
+    "id": "hero-intersecting-circles",
+    "label": "Intersecting Circles",
+    "src": "/assets/dice-roller/hero-patterns/intersecting-circles.svg",
+    "width": 30.0,
+    "height": 30.0
+  },
+  {
+    "id": "hero-melt",
+    "label": "Melt",
+    "src": "/assets/dice-roller/hero-patterns/melt.svg",
+    "width": 24.0,
+    "height": 20.0
+  },
+  {
+    "id": "hero-overlapping-diamonds",
+    "label": "Overlapping Diamonds",
+    "src": "/assets/dice-roller/hero-patterns/overlapping-diamonds.svg",
+    "width": 48.0,
+    "height": 64.0
+  },
+  {
+    "id": "hero-parkay-floor",
+    "label": "Parkay Floor",
+    "src": "/assets/dice-roller/hero-patterns/parkay-floor.svg",
+    "width": 40.0,
+    "height": 40.0
+  },
+  {
+    "id": "hero-pixel-dots",
+    "label": "Pixel Dots",
+    "src": "/assets/dice-roller/hero-patterns/pixel-dots.svg",
+    "width": 16.0,
+    "height": 16.0
+  },
+  {
+    "id": "hero-polka-dots",
+    "label": "Polka Dots",
+    "src": "/assets/dice-roller/hero-patterns/polka-dots.svg",
+    "width": 20.0,
+    "height": 20.0
+  },
+  {
+    "id": "hero-signal",
+    "label": "Signal",
+    "src": "/assets/dice-roller/hero-patterns/signal.svg",
+    "width": 84.0,
+    "height": 48.0
+  },
+  {
+    "id": "hero-slanted-stars",
+    "label": "Slanted Stars",
+    "src": "/assets/dice-roller/hero-patterns/slanted-stars.svg",
+    "width": 30.0,
+    "height": 30.0
+  },
+  {
+    "id": "hero-wallpaper",
+    "label": "Wallpaper",
+    "src": "/assets/dice-roller/hero-patterns/wallpaper.svg",
+    "width": 84.0,
+    "height": 16.0
+  }
+]

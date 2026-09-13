@@ -28,7 +28,7 @@ export function HomeButtons({ isLoggedIn }: { isLoggedIn: boolean }) {
           </Button>
           <Button
             component={Link}
-            href="/mtg-complete/example"
+            href="https://cornucopium.net/mtg-complete/Lasses-liste"
             size="md"
             variant="default"
           >

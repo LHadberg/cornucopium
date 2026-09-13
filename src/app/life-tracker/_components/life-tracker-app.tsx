@@ -37,7 +37,6 @@ import {
   IconTrash,
   IconUpload,
 } from "@tabler/icons-react";
-import { useClickOutside } from "@mantine/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "../../dice-roller/_i18n/i18n";
@@ -354,6 +353,15 @@ function FocusPicker({
   );
 }
 
+type ControlSide = "left" | "right" | "top" | "bottom";
+
+const OPPOSITE_SIDE: Record<ControlSide, ControlSide> = {
+  left: "right",
+  right: "left",
+  top: "bottom",
+  bottom: "top",
+};
+
 function CalloutControl({
   label,
   value,
@@ -365,22 +373,43 @@ function CalloutControl({
 }: {
   label: string;
   value: number;
-  calloutSide: "left" | "right";
+  calloutSide: ControlSide;
   onAdjust: (sign: number) => void;
   buttonClassName: string | undefined;
   buttonStyle?: React.CSSProperties;
   children: React.ReactNode;
 }) {
   const [opened, setOpened] = useState(false);
-  const ref = useClickOutside<HTMLDivElement>(() => setOpened(false));
+  const ref = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!opened) return;
+
+    const dismissOutside = (event: Event) => {
+      if (event.target instanceof Node && ref.current?.contains(event.target)) return;
+
+      // Block the whole gesture so life controls cannot start a hold or receive
+      // the dismissal click. Keep the callout open until that click is consumed.
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (event.type === "click") setOpened(false);
+    };
+    const events = ["pointerdown", "pointerup", "mousedown", "mouseup", "click"];
+    events.forEach((event) => document.addEventListener(event, dismissOutside, { capture: true, passive: false }));
+    return () => {
+      events.forEach((event) => document.removeEventListener(event, dismissOutside, true));
+    };
+  }, [opened]);
 
   return (
     <div className={classes.calloutWrap} ref={ref}>
       {opened && (
         <div
           className={`${classes.callout} ${
-            calloutSide === "left" ? classes.calloutLeft : classes.calloutRight
+            calloutSide === "left" ? classes.calloutLeft :
+            calloutSide === "right" ? classes.calloutRight :
+            calloutSide === "top" ? classes.calloutTop : classes.calloutBottom
           }`}
         >
           <ActionIcon
@@ -497,7 +526,7 @@ function PlayerArea({
   flashAmount: number | null;
   spotlight: SpotlightPhase | null;
   orientation: Orientation;
-  controlsSide: "left" | "right";
+  controlsSide: ControlSide;
   onLifeChange: (delta: number) => void;
   onCounterChange: (key: CounterKey, delta: number) => void;
   onCommanderChange: (fromId: number, delta: number) => void;
@@ -519,7 +548,11 @@ function PlayerArea({
           ? classes.faceTop
           : "";
   // Callouts open toward the area center so they don't clip on the edge
-  const calloutSide = controlsSide === "right" ? "left" : "right";
+  const calloutSide = OPPOSITE_SIDE[controlsSide];
+  const horizontalControls = controlsSide === "top" || controlsSide === "bottom";
+  const sideClass = (side: ControlSide) =>
+    side === "left" ? classes.sideLeft : side === "right" ? classes.sideRight :
+    side === "top" ? classes.sideTop : classes.sideBottom;
 
   const countersColumn =
     visibleCounters.length > 0 ? (
@@ -529,7 +562,7 @@ function PlayerArea({
             key={def.key}
             label={t(`lifeTracker.counter.${def.key}`)}
             value={player.counters[def.key]}
-            calloutSide={calloutSide}
+            calloutSide={controlsSide}
             onAdjust={(sign) => onCounterChange(def.key, sign * def.step)}
             buttonClassName={classes.counterButton}
           >
@@ -556,13 +589,10 @@ function PlayerArea({
         </CalloutControl>
       ))}
       <ActionIcon
-        // Out of flow so the damage trio stays exactly centered on the edge,
-        // keeping the totals aligned across with the facing player's
-        className={classes.columnGear}
         variant="filled"
         color="rgba(0, 0, 0, 0.3)"
         radius="xl"
-        size="lg"
+        size="clamp(28px, 10cqmin, 46px)"
         onClick={onOpenSettings}
         aria-label={t("lifeTracker.settingsFor", { name: player.name })}
       >
@@ -573,7 +603,7 @@ function PlayerArea({
 
   return (
     <div className={classes.area} style={{ background: player.color }}>
-      <div className={`${classes.areaInner} ${orientClass}`}>
+      <div className={`${classes.areaInner} ${orientClass} ${horizontalControls ? classes.horizontalControls : ""}`}>
         <div className={classes.areaFill}>
           {photo && (
             <div
@@ -626,21 +656,21 @@ function PlayerArea({
 
           <div
             className={`${classes.sideControls} ${
-              controlsSide === "left" ? classes.sideLeft : classes.sideRight
+              sideClass(controlsSide)
             }`}
           >
-            {controlsSide === "left" ? (
-              <>
-                {commanderColumn}
-                {countersColumn}
-              </>
-            ) : (
-              <>
-                {countersColumn}
-                {commanderColumn}
-              </>
-            )}
+            {commanderColumn}
           </div>
+
+          {countersColumn && (
+            <div
+              className={`${classes.sideControls} ${
+                sideClass(calloutSide)
+              }`}
+            >
+              {countersColumn}
+            </div>
+          )}
 
           <div className={classes.areaContent}>
             <Text fw={600} className={classes.nameLabel}>
@@ -1109,7 +1139,10 @@ export function LifeTrackerApp() {
 
   // Which local side of the (possibly rotated) frame lands on the screen edge
   // away from the center button; callouts then open toward the middle.
-  const controlsSideFor = (index: number): "left" | "right" => {
+  const controlsSideFor = (index: number): ControlSide => {
+    if (orientationMode === "down") {
+      return index < (playerCount === 2 ? 1 : 2) ? "top" : "bottom";
+    }
     const orientation = orientationFor(index);
     if (orientation === "left" || orientation === "right") {
       // Side seats: in a 4-player grid the bottom row mirrors the top row
