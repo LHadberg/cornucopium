@@ -94,28 +94,27 @@ const DiceConfig: React.FC<DiceConfigProps> = ({ physicsConfig, visualConfig, on
         />
       </div>
       <div>
-        <Text size="sm" fw={500} mb="xs">{t('visuals.colorPalette')}</Text>
+        <Text size="sm" fw={500} mb="xs">{t('visuals.chooseAColor')}</Text>
         <ColorPalette value={visualConfig.themeColor} onChange={(themeColor) => onVisualsUpdate({ ...visualConfig, themeColor })} />
+        <Group align="flex-end" gap="xs" mt={14}>
+          <NativeColorInput
+            style={{ flex: 1 }}
+            ariaLabel={t('dice.diceColor')}
+            value={visualConfig.themeColor}
+            onChange={(value) => onVisualsUpdate({ ...visualConfig, themeColor: value })}
+          />
+          <Tooltip label={t('visuals.resetToDefault')} withinPortal={false}>
+            <ActionIcon
+              variant="default"
+              size={36}
+              style={{ alignSelf: 'flex-end' }}
+              onClick={() => onVisualsUpdate({ ...visualConfig, themeColor: defaultConfigs.defaultVisualConfig.themeColor })}
+            >
+              <IconRefresh size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
       </div>
-      <Group align="flex-end" gap="xs">
-        <NativeColorInput
-          style={{ flex: 1 }}
-          label={t('dice.diceColor')}
-          description={t('dice.diceColorDescription')}
-          value={visualConfig.themeColor}
-          onChange={(value) => onVisualsUpdate({ ...visualConfig, themeColor: value })}
-        />
-        <Tooltip label={t('visuals.resetToDefault')} withinPortal={false}>
-          <ActionIcon
-            variant="default"
-            size={36}
-            style={{ alignSelf: 'flex-end' }}
-            onClick={() => onVisualsUpdate({ ...visualConfig, themeColor: defaultConfigs.defaultVisualConfig.themeColor })}
-          >
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
     </Stack>
   );
 };

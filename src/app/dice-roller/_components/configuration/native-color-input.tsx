@@ -7,13 +7,14 @@ interface NativeColorInputProps {
   value: string;
   onChange: (value: string) => void;
   label?: string;
+  ariaLabel?: string;
   description?: string;
   style?: React.CSSProperties;
 }
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
-const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, label, description, style }) => {
+const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, label, ariaLabel, description, style }) => {
   const [localColor, setLocalColor] = useState(value);
   const [textValue, setTextValue] = useState(value);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -72,7 +73,7 @@ const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, la
           />
           <input
             type="color"
-            aria-label={label}
+            aria-label={ariaLabel ?? label}
             value={safeColor}
             onChange={(e) => handleColorChange(e.target.value)}
             style={{
@@ -89,7 +90,7 @@ const NativeColorInput: React.FC<NativeColorInputProps> = ({ value, onChange, la
           />
         </div>
         <TextInput
-          aria-label={label}
+          aria-label={ariaLabel ?? label}
           value={textValue}
           onChange={(e) => handleTextChange(e.target.value)}
           onBlur={handleTextBlur}
