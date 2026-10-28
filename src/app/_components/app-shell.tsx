@@ -51,7 +51,7 @@ function ColorSchemeToggle() {
 
   return (
     <ActionIcon
-      variant="subtle"
+      variant="subtle" className="navigation-accent"
       onClick={() => setColorScheme(computed === "dark" ? "light" : "dark")}
       aria-label="Toggle color scheme"
     >
@@ -70,8 +70,11 @@ function LanguagePicker() {
       {(['en', 'da'] as const).map((lng) => (
         <Button
           key={lng}
+          className="navigation-accent"
+          data-selected={i18n.language.startsWith(lng) || undefined}
+          aria-pressed={i18n.language.startsWith(lng)}
           size="xs"
-          variant={i18n.language.startsWith(lng) ? 'filled' : 'default'}
+          variant={i18n.language.startsWith(lng) ? 'light' : 'default'}
           onClick={() => {
             void i18n.changeLanguage(lng);
             localStorage.setItem('i18n-language', lng);
@@ -94,7 +97,7 @@ function AccountButton() {
 
   if (!session?.user) {
     return (
-      <Anchor component={Link} href="/api/auth/signin" size="sm">
+      <Anchor component={Link} href="/api/auth/signin" size="sm" className="navigation-accent navigation-signin">
         {t('nav.signIn')}
       </Anchor>
     );
@@ -173,6 +176,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
           component={Link}
           href={link.href}
           aria-label={link.label}
+          className="navigation-link"
+          data-active={pathname === link.href || undefined}
+          aria-current={pathname === link.href ? "page" : undefined}
           onClick={closeMobile}
           style={{
             display: "flex",
@@ -181,8 +187,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             width: "100%",
             height: 36,
             borderRadius: "var(--mantine-radius-sm)",
-            background: pathname === link.href ? "var(--mantine-color-blue-light)" : undefined,
-            color: pathname === link.href ? "var(--mantine-color-blue-text)" : "var(--mantine-color-dimmed)",
+            color: "var(--mantine-color-text)",
           }}
         >
           <link.icon size={18} />
@@ -193,6 +198,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
         key={link.href}
         component={Link}
         href={link.href}
+        className="navigation-link"
+        aria-current={pathname === link.href ? "page" : undefined}
         label={link.label}
         leftSection={<link.icon size={18} />}
         active={pathname === link.href}
@@ -210,7 +217,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       }}
       padding={immersive ? 0 : "md"}
     >
-      <AppShell.Header>
+      <AppShell.Header className="app-navigation">
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger
@@ -236,7 +243,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="sm" style={{ display: "flex", flexDirection: "column" }}>
+      <AppShell.Navbar className="app-navigation" p="sm" style={{ display: "flex", flexDirection: "column" }}>
         <Tooltip
           label={desktopCollapsed ? t('nav.expand') : t('nav.collapse')}
           position="right"
@@ -254,12 +261,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
               gap: 6,
               padding: "6px 8px",
               borderRadius: "var(--mantine-radius-sm)",
-              color: "var(--mantine-color-dimmed)",
+              color: "var(--mantine-color-text)",
               width: "100%",
             }}
           >
             {desktopCollapsed ? <IconChevronRight size={14} /> : <IconChevronLeft size={14} />}
-            {!desktopCollapsed && <Text size="xs" c="dimmed">{t('nav.collapse')}</Text>}
+            {!desktopCollapsed && <Text size="xs" c="var(--mantine-color-text)">{t('nav.collapse')}</Text>}
           </UnstyledButton>
         </Tooltip>
 
@@ -272,7 +279,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             {iconsOnly ? (
               <Divider mb="xs" />
             ) : (
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="xs" mb={4}>
+              <Text size="xs" fw={700} c="var(--mantine-color-text)" tt="uppercase" px="xs" mb={4}>
                 {section.label}
               </Text>
             )}
@@ -287,6 +294,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </AppShell.Navbar>
 
       <AppShell.Main>{children}</AppShell.Main>
+
     </AppShell>
   );
 }

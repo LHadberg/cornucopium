@@ -179,7 +179,7 @@ const StatsConfig = forwardRef<ConfigPanelHandle, StatsConfigProps>(({ statSets,
                 <Group align="center">
                   <ActionIcon
                     variant="light"
-                    color="blue"
+                    color="control"
                     onClick={() => updateProficiencyBonus(setIndex, -1)}
                     disabled={set.proficiencyBonus <= 1}
                   >
@@ -190,7 +190,7 @@ const StatsConfig = forwardRef<ConfigPanelHandle, StatsConfigProps>(({ statSets,
                   </Text>
                   <ActionIcon
                     variant="light"
-                    color="blue"
+                    color="control"
                     onClick={() => updateProficiencyBonus(setIndex, 1)}
                     disabled={set.proficiencyBonus >= 10}
                   >
@@ -213,7 +213,7 @@ const StatsConfig = forwardRef<ConfigPanelHandle, StatsConfigProps>(({ statSets,
                       <Group gap="xs" wrap="nowrap">
                         <ActionIcon
                           variant="light"
-                          color="blue"
+                          color="control"
                           onClick={() => updateStat(setIndex, statKey, -1)}
                           disabled={set.stats[statKey].value <= 1}
                         >
@@ -221,7 +221,7 @@ const StatsConfig = forwardRef<ConfigPanelHandle, StatsConfigProps>(({ statSets,
                         </ActionIcon>
                         <ActionIcon
                           variant="light"
-                          color="blue"
+                          color="control"
                           onClick={() => updateStat(setIndex, statKey, 1)}
                           disabled={set.stats[statKey].value >= 30}
                         >

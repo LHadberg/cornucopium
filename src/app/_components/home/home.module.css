@@ -1,0 +1,33 @@
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 12px; font-weight: 650; }
+.actions a { display: inline-flex; align-items: center; gap: 8px; padding: 7px 0; }
+.actions a:hover { text-decoration: underline; text-underline-offset: 5px; }
+.actions .example { font-weight: 400; font-size: 11px; }
+.footer { display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid currentColor; padding-top: 22px; margin-top: 60px; font-size: 10px; opacity: .65; }
+.footer a { text-decoration: underline; }
+.launchpad { background: var(--mantine-color-body); color: var(--mantine-color-text); }
+.launchGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 20px; }
+.launchGrid article { background: var(--mantine-color-default); border: 1px solid var(--mantine-color-default-border); border-radius: var(--mantine-radius-md); overflow: hidden; transition: transform .2s, box-shadow .2s; }
+.launchGrid article:hover { transform: translateY(-4px); box-shadow: var(--mantine-shadow-md); }
+.launchArt { height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: color-mix(in srgb, var(--accent) 12%, var(--mantine-color-default)); }
+.launchArt .toolIcon { background: transparent; }
+.launchArt > span:last-child { font-size: 9px; text-transform: uppercase; letter-spacing: .15em; color: var(--accent); }
+.launchBody { padding: 22px; }
+.launchBody h2 { font-size: 21px; margin: 6px 0; letter-spacing: -.04em; }
+.launchBody p { min-height: 40px; font-size: 12px; color: var(--mantine-color-dimmed); }
+.launchpad { padding: clamp(24px, 4vw, 64px); min-width: 0; }
+.launchpad h2, .launchpad p { margin: 0; }
+.actions a { text-decoration: none; }
+.actions a:hover { text-decoration: underline; text-underline-offset: 5px; }
+.launchpad a:focus-visible { outline: 2px solid var(--mantine-color-text); outline-offset: 4px; }
+.toolIcon { display: inline-flex; align-items: center; justify-content: center; width: 90px; height: 90px; color: var(--accent); }
+.launchBody .actions { margin-top: 14px; }
+.launchBody h2 { margin: 6px 0; }
+.footer { display: block; color: var(--mantine-color-dimmed); border-color: var(--mantine-color-default-border); opacity: 1; }
+@media (max-width: 700px) {
+  .launchpad { padding: 25px 20px; }
+  .launchGrid { grid-template-columns: repeat(auto-fit, minmax(min(205px, 100%), 1fr)); }
+  .launchArt { height: 125px; }
+  .footer { margin-top: 35px; line-height: 1.7; }
+}
+@media (prefers-reduced-motion: reduce) { .launchGrid article { transition: none; } }
+

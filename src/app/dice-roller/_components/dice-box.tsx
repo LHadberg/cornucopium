@@ -1050,7 +1050,7 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
                   </UnstyledButton>
                   <ActionIcon
                     variant="light"
-                    color="blue"
+                    color="control"
                     style={{ width: '100%', height: 36, borderRadius: 6 }}
                     disabled={!calcHasDice || isRandomizing}
                     onClick={() => { void rollCalcExpression(); if (window.innerWidth <= 1024) setShowQuickDice(false); }}
@@ -1170,7 +1170,7 @@ const DiceBoxComponent: React.FC<DiceBoxProps> = ({
         {/* FOOTER */}
         <div className={`${styles.diffusedBackground} ${styles.footer}`}>
           <Group justify="space-between" align="center">
-            <ActionIcon variant="light" size={48} onClick={rollD20} color="blue">
+            <ActionIcon variant="light" size={48} onClick={rollD20} color="control">
               <D20Icon size={28} />
             </ActionIcon>
 

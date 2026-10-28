@@ -462,7 +462,7 @@ export function DeckSlot({ deck, onDelete, tooltipSide = "right" }: { deck: Deck
           {isColorless ? <ColorlessSymbol /> : colors.length === 0 ? null : colors.map((c) => <ManaSymbol key={c} color={c} />)}
           {isValidUrl(deckListUrl) && (
             <Tooltip label="Open deck list" withArrow position="top" openDelay={400}>
-              <ActionIcon size="xs" variant="subtle" color="blue"
+              <ActionIcon size="xs" variant="subtle" color="control"
                 component="a" href={deckListUrl!} target="_blank" rel="noopener noreferrer"
               >
                 <IconList size={14} />
@@ -514,7 +514,7 @@ export function DeckSlot({ deck, onDelete, tooltipSide = "right" }: { deck: Deck
                 <Stack gap="xs">
                   {slotName && (
                     <Button
-                      size="xs" variant="subtle" color="teal"
+                      size="xs" variant="subtle" color="control"
                       leftSection={<IconLayersIntersect size={12} />}
                       fullWidth justify="flex-start"
                       loading={setAsActiveSelection.isPending}
@@ -619,7 +619,7 @@ export function DeckSlot({ deck, onDelete, tooltipSide = "right" }: { deck: Deck
             />
             <Tooltip label="Open deck list" withArrow position="top">
               <ActionIcon
-                size="sm" variant="subtle" color="blue"
+                size="sm" variant="subtle" color="control"
                 component="a" href={deckListUrl ?? "https://moxfield.com/decks"} target="_blank" rel="noopener noreferrer"
               >
                 <IconExternalLink size={14} />

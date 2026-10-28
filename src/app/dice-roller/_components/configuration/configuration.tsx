@@ -221,7 +221,7 @@ export const Configuration: React.FC<ConfigurationProps> = ({ toggleShowDiceBox,
           borderTop: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)',
         }}
       >
-        <ActionIcon variant="light" size={48} onClick={handleBack} color="blue">
+        <ActionIcon variant="light" size={48} onClick={handleBack} color="control">
           <IconDiceFilled size={36} />
         </ActionIcon>
 
