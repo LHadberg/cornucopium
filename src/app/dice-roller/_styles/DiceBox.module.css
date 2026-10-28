@@ -148,7 +148,7 @@
 .resultCard:focus {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
-  outline: 2px solid #2196F3;
+  outline: 2px solid var(--mantine-color-control-text);
 }
 
 .dieType {
@@ -159,7 +159,7 @@
 }
 
 .dieValue {
-  background: linear-gradient(135deg, #2196F3, #1976D2);
+  background: var(--mantine-color-control-text);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-size: 1.5rem;

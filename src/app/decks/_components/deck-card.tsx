@@ -503,7 +503,7 @@ export function DeckCard({ deck, onDelete, tooltipSide = "right" }: { deck: Deck
           {isColorless ? <ColorlessSymbol /> : colors.length === 0 ? null : colors.map((c) => <ManaSymbol key={c} color={c} />)}
           {isValidUrl(deckListUrl) && (
             <Tooltip label="Open deck list" withArrow position="top" openDelay={400}>
-              <ActionIcon size="xs" variant="subtle" color="blue" component="a" href={deckListUrl!} target="_blank" rel="noopener noreferrer">
+              <ActionIcon size="xs" variant="subtle" color="control" component="a" href={deckListUrl!} target="_blank" rel="noopener noreferrer">
                 <IconExternalLink size={14} />
               </ActionIcon>
             </Tooltip>
@@ -537,7 +537,7 @@ export function DeckCard({ deck, onDelete, tooltipSide = "right" }: { deck: Deck
                 />
                 <Divider />
                 <Button
-                  size="xs" variant="subtle" color="indigo"
+                  size="xs" variant="subtle" color="control"
                   leftSection={<IconLayersIntersect size={12} />}
                   fullWidth justify="flex-start"
                   disabled={!deck.colorId} loading={setAsActiveSelection.isPending}

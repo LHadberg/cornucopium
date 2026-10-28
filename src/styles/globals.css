@@ -16,3 +16,49 @@
   justify-content: center;
   line-height: 0;
 }
+
+/* Links and shell controls share the wordmark's light/dark text color. */
+a[href]:not(.mantine-Button-root):not(.mantine-ActionIcon-root),
+.app-navigation :is(button, .mantine-Text-root) {
+  color: var(--mantine-color-text) !important;
+}
+
+/* Navigation follows the shared neutral control palette. */
+.app-navigation {
+  --navigation-accent: var(--mantine-color-control-light-color);
+  --navigation-background: var(--mantine-color-control-light);
+  --navigation-hover: var(--mantine-color-control-light-hover);
+  --navigation-border: color-mix(in srgb, var(--navigation-accent) 35%, transparent);
+}
+.app-navigation .navigation-accent,
+.app-navigation .navigation-link[data-active] {
+  color: var(--navigation-accent) !important;
+  background-color: var(--navigation-background);
+  border-color: var(--navigation-border);
+}
+.app-navigation .navigation-accent[data-selected] {
+  color: #202020 !important;
+  background-color: #dedede;
+  border-color: #777777;
+  box-shadow: inset 0 -3px 0 #555555;
+  font-weight: 800;
+}
+.app-navigation .navigation-accent:hover,
+.app-navigation .navigation-link:hover {
+  color: var(--navigation-accent) !important;
+  background-color: var(--navigation-hover);
+}
+.app-navigation .navigation-accent[data-selected]:hover {
+  color: #202020 !important;
+  background-color: #c6c6c6;
+}
+.app-navigation .navigation-accent:focus-visible,
+.app-navigation .navigation-link:focus-visible {
+  outline: 2px solid var(--navigation-accent);
+  outline-offset: 2px;
+}
+.app-navigation .navigation-signin {
+  padding: 4px 8px;
+  border-radius: var(--mantine-radius-sm);
+  text-decoration: none;
+}

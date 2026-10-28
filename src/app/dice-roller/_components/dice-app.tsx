@@ -122,7 +122,7 @@ function LightingDebugOverlay({
               max={max}
               step={step}
               size="xs"
-              color="blue"
+              color="control"
               styles={{
                 track: { backgroundColor: 'rgba(255,255,255,0.15)' },
                 label: { display: 'none' },
@@ -218,7 +218,7 @@ export const DiceAppWrapper = () => {
     return (
       <div style={darkBg}>
         <Center style={{ height: '100%' }}>
-          <Loader color="blue" size="xl" />
+          <Loader color="control" size="xl" />
         </Center>
       </div>
     );

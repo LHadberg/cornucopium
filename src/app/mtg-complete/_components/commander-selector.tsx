@@ -1001,7 +1001,7 @@ export function CommanderSlot({
           {isValidUrl(deckListUrl) && (
             <Tooltip label={t('mtg.selector.openDeckList')} withArrow position="top" openDelay={400}>
               <ActionIcon
-                size="xs" variant="subtle" color="blue"
+                size="xs" variant="subtle" color="control"
                 component="a" href={deckListUrl!} target="_blank" rel="noopener noreferrer"
               >
                 <IconList size={14} />
@@ -1095,7 +1095,7 @@ export function CommanderSlot({
                   <Button
                     size="xs"
                     variant="subtle"
-                    color="teal"
+                    color="control"
                     leftSection={<IconLayersIntersect size={12} />}
                     fullWidth
                     justify="flex-start"
@@ -1108,7 +1108,7 @@ export function CommanderSlot({
                   <Button
                     size="xs"
                     variant="subtle"
-                    color="indigo"
+                    color="control"
                     leftSection={<IconDownload size={12} />}
                     fullWidth
                     justify="flex-start"
@@ -1214,7 +1214,7 @@ export function CommanderSlot({
             />
             <Tooltip label={t('mtg.selector.goToMoxfield')} withArrow position="top">
               <ActionIcon
-                size="sm" variant="subtle" color="blue"
+                size="sm" variant="subtle" color="control"
                 component="a" href={deckListUrl ?? "https://moxfield.com/decks"} target="_blank" rel="noopener noreferrer"
               >
                 <IconExternalLink size={14} />
