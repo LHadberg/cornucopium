@@ -515,3 +515,9 @@
   background: #000;
   transform: scaleX(-1);
 }
+
+.commanderContent { position: absolute; top: 10%; transform: none; padding-block: 0; }
+.commanderContent .lifeValue { font-size: clamp(28px, 16cqmin, 76px); }
+
+.counterPair { display: flex; flex-direction: column; gap: 4px; pointer-events: auto; }
+.counterPair .themedCounter { width: clamp(30px, 10cqmin, 46px); min-height: 36px; padding: 4px 2px; gap: 1px; font-size: 12px; font-weight: 700; }
