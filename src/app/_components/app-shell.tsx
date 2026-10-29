@@ -5,7 +5,7 @@ import {
   ActionIcon,
   Box,
   Burger,
-  Button,
+  SegmentedControl,
   Divider,
   Group,
   NavLink,
@@ -66,24 +66,16 @@ function LanguagePicker() {
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
   return (
-    <Button.Group>
-      {(['en', 'da'] as const).map((lng) => (
-        <Button
-          key={lng}
-          className="navigation-accent"
-          data-selected={i18n.language.startsWith(lng) || undefined}
-          aria-pressed={i18n.language.startsWith(lng)}
-          size="xs"
-          variant={i18n.language.startsWith(lng) ? 'light' : 'default'}
-          onClick={() => {
-            void i18n.changeLanguage(lng);
-            localStorage.setItem('i18n-language', lng);
-          }}
-        >
-          {lng.toUpperCase()}
-        </Button>
-      ))}
-    </Button.Group>
+    <SegmentedControl
+      size="xs"
+      aria-label="Language"
+      value={i18n.language.startsWith('da') ? 'da' : 'en'}
+      data={[{ value: 'en', label: 'EN' }, { value: 'da', label: 'DA' }]}
+      onChange={(lng) => {
+        void i18n.changeLanguage(lng);
+        localStorage.setItem('i18n-language', lng);
+      }}
+    />
   );
 }
 
@@ -149,7 +141,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       links: [{ label: t('nav.diceRoller'), href: "/dice-roller", icon: IconDice }],
     },
     {
-      label: t('nav.sectionLife'),
+      label: t('nav.sectionOutdoors'),
       links: [{ label: t('nav.hiking'), href: "/hiking", icon: IconMapRoute }],
     },
   ];

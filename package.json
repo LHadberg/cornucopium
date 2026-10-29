@@ -13,7 +13,8 @@
     "postinstall": "prisma generate",
     "preview": "next build && next start",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:pickers": "playwright test tests/archetype-select.spec.ts"
   },
   "dependencies": {
     "@3d-dice/dice-box": "^1.1.4",
@@ -50,11 +51,13 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4.0.15",
     "@types/node": "^20.14.10",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/three": "^0.183.1",
+    "esbuild": "^0.28.2",
     "postcss": "^8.5.3",
     "postcss-preset-mantine": "^1.18.0",
     "prisma": "^6.6.0",

@@ -36,21 +36,10 @@ a[href]:not(.mantine-Button-root):not(.mantine-ActionIcon-root),
   background-color: var(--navigation-background);
   border-color: var(--navigation-border);
 }
-.app-navigation .navigation-accent[data-selected] {
-  color: #202020 !important;
-  background-color: #dedede;
-  border-color: #777777;
-  box-shadow: inset 0 -3px 0 #555555;
-  font-weight: 800;
-}
 .app-navigation .navigation-accent:hover,
 .app-navigation .navigation-link:hover {
   color: var(--navigation-accent) !important;
   background-color: var(--navigation-hover);
-}
-.app-navigation .navigation-accent[data-selected]:hover {
-  color: #202020 !important;
-  background-color: #c6c6c6;
 }
 .app-navigation .navigation-accent:focus-visible,
 .app-navigation .navigation-link:focus-visible {

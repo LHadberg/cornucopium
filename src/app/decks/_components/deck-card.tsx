@@ -42,6 +42,7 @@ import {
   ManaSymbol,
 } from "~/app/_components/commander-card-body";
 import { api } from "~/trpc/react";
+import { ArchetypeSelect } from "~/app/_components/archetype-select";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -639,7 +640,7 @@ export function DeckCard({ deck, onDelete, tooltipSide = "right" }: { deck: Deck
             tags={tags} setTags={(v) => { mark(); setTags(v); }}
             favoriteTag={favoriteTag} setFavoriteTag={(v) => { mark(); setFavoriteTag(v); }}
           />
-          <Select
+          <ArchetypeSelect
             size="xs" placeholder="Archetype" data={ARCHETYPES} value={archetype} clearable
             onChange={(v) => { mark(); setArchetype(v); }}
           />

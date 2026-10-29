@@ -8,11 +8,31 @@
     "allDecks": "Alle Dæk",
     "sectionMtg": "MTG",
     "sectionTtrpg": "TTRPG",
-    "sectionLife": "Liv",
+    "sectionOutdoors": "Friluftsliv",
     "collapse": "Skjul",
     "expand": "Udvid",
     "signIn": "Log ind",
     "signOut": "Log ud"
+  },
+  "home": {
+    "toolsLabel": "Cornucopiums værktøjer",
+    "availableTools": "Tilgængelige værktøjer",
+    "signInToStart": "Log ind for at komme i gang",
+    "viewExample": "Se eksempel",
+    "dataBy": "MTG-data fra",
+    "disclaimer": "Ikke tilknyttet Wizards of the Coast.",
+    "categories": {
+      "magic": "Magic",
+      "roleplaying": "Rollespil",
+      "outdoors": "Friluftsliv"
+    },
+    "tools": {
+      "life": { "title": "Livstæller", "short": "Hold hele bordet med i spillet.", "action": "Start et spil" },
+      "collection": { "title": "MTG Komplet", "short": "Alle farver. Din samling.", "action": "Din samling" },
+      "decks": { "title": "Dæk", "short": "Dine dæk, samlet ét sted.", "action": "Se dine dæk" },
+      "dice": { "title": "Terningeruller", "short": "Overlad lidt til tilfældighederne.", "action": "Slå med terningerne" },
+      "hiking": { "title": "Vandring", "short": "Tag den lange vej hjem.", "action": "Planlæg en vandretur" }
+    }
   },
   "tabs": {
     "stats": "Statistik",

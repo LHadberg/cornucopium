@@ -43,6 +43,7 @@ import type { Deck } from "../../../../generated/prisma";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "~/trpc/react";
+import { ArchetypeSelect } from "~/app/_components/archetype-select";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -1188,7 +1189,7 @@ export function CommanderSlot({
             tags={tags} setTags={(v) => { mark(); setTags(v); }}
             favoriteTag={favoriteTag} setFavoriteTag={(v) => { mark(); setFavoriteTag(v); }}
           />
-          <Select
+          <ArchetypeSelect
             size="xs"
             placeholder={t('mtg.selector.archetypePlaceholder')}
             data={ARCHETYPES}
