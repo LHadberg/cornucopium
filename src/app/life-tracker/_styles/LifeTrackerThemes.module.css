@@ -1,0 +1,26 @@
+.theme :global([data-commander-key]) { transition: transform .15s, filter .15s; }
+.theme :global([data-player-name]) { letter-spacing: .08em; }
+.theme :global([data-commander-key][data-press]) { transform: translateY(3px); filter: brightness(1.2); }
+
+/* A: anodized aluminum, recessed wells, beveled keycaps. */
+.theme:global([data-visual-variant="A"]) :global([data-life-zone]) { background: linear-gradient(155deg, #ffffff18, #0008), repeating-linear-gradient(0deg, #ffffff04 0 1px, transparent 1px 3px), color-mix(in srgb, var(--player-color) 70%, #172026) !important; border: 2px solid #ffffff38; border-radius: 14px; box-shadow: inset 0 1px 1px #ffffff60, inset 0 -8px 16px #0005; }
+.theme:global([data-visual-variant="A"]) :global([data-life-hint]) { background: #10151c88; border: 1px solid #0008; box-shadow: inset 0 3px 5px #0008, 0 1px 0 #ffffff45; border-radius: 9px; }
+.theme:global([data-visual-variant="A"]) :global([data-commander-panel]) { padding: 6px; border-radius: 12px; background: #090e1666; box-shadow: inset 0 2px 5px #0008, 0 1px 0 #ffffff35; }
+.theme:global([data-visual-variant="A"]) :global([data-commander-key]) { border: 1px solid #ffffff55; border-bottom: 4px solid #0007; border-radius: 6px; background: var(--partner-stripes, linear-gradient(transparent, transparent)), linear-gradient(#ffffff30, #0003), var(--opponent); box-shadow: 0 2px 3px #0008, inset 0 1px 0 #ffffff50; }
+.theme:global([data-visual-variant="A"]) :global([data-life-value]) { text-shadow: 0 2px 0 #0008; font-family: monospace; }
+
+/* B: translucent glass over a saturated, luminous zone. */
+.theme:global([data-visual-variant="B"]) :global([data-life-zone]) { background: radial-gradient(ellipse at 10% 0%, #ffffff40, transparent 60%), radial-gradient(ellipse at 95% 100%, #050b2cbb, transparent 80%), var(--player-color) !important; border: 1px solid #ffffff55; border-radius: 28px; box-shadow: inset 0 0 60px #ffffff10; }
+.theme:global([data-visual-variant="B"]) :global([data-life-hint]) { background: #ffffff15; border: 1px solid #ffffff60; box-shadow: 0 6px 20px #0002, inset 0 1px 0 #ffffff60; }
+.theme:global([data-visual-variant="B"]) :global([data-commander-key]) { background: var(--partner-stripes, linear-gradient(transparent, transparent)), linear-gradient(140deg, #ffffff50, #ffffff08), color-mix(in srgb, var(--opponent) 65%, transparent); backdrop-filter: blur(12px); border: 1px solid #ffffff88; border-radius: 16px; box-shadow: 0 8px 16px #0003, inset 0 1px 0 #fff8; }
+.theme:global([data-visual-variant="B"]) :global([data-life-value]) { font-weight: 300; text-shadow: 0 0 25px #ffffff60; }
+
+/* D: terminal grid, luminous rails and sharply cut control surfaces. */
+.theme:global([data-visual-variant="D"]) :global([data-life-zone]) { background: linear-gradient(#ffffff04 1px, transparent 1px), linear-gradient(90deg, #ffffff04 1px, transparent 1px), #0b101b !important; background-size: 20px 20px, 20px 20px, auto !important; border: 1px solid var(--player-color); border-radius: 0; box-shadow: inset 0 0 35px color-mix(in srgb, var(--player-color) 25%, transparent); }
+.theme:global([data-visual-variant="D"]) :global([data-life-hint]) { background: #0b101b; border: 1px solid var(--player-color); border-radius: 0; box-shadow: 0 0 10px color-mix(in srgb, var(--player-color) 40%, transparent); }
+.theme:global([data-visual-variant="D"]) :global([data-commander-key]) { background: var(--partner-stripes, linear-gradient(transparent, transparent)), color-mix(in srgb, var(--opponent) 18%, #090e19); border: 1px solid var(--opponent); border-bottom: 4px solid var(--opponent); border-radius: 0; box-shadow: 0 0 12px color-mix(in srgb, var(--opponent) 40%, transparent), inset 0 0 12px color-mix(in srgb, var(--opponent) 20%, transparent); }
+.theme:global([data-visual-variant="D"]) :global([data-life-value]) { font-family: monospace; font-weight: 500; text-shadow: 0 0 20px var(--player-color); }
+.theme:global([data-visual-variant="D"]) :global([data-player-name]) { font-family: monospace; text-transform: uppercase; }
+
+
+@media (prefers-reduced-motion: reduce) { .theme :global([data-commander-key]) { transition: none; } }

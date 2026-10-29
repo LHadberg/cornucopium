@@ -21,9 +21,9 @@ import {
 import {
   IconBolt,
   IconCamera,
-  IconCrown,
+  IconTaxPound,
   IconDice,
-  IconDroplet,
+  IconSkull,
   IconFlame,
   IconMaximize,
   IconMenu2,
@@ -42,10 +42,16 @@ import { useTranslation } from "react-i18next";
 import i18n from "../../dice-roller/_i18n/i18n";
 import classes from "../_styles/LifeTracker.module.css";
 
+import themeStyles from "../_styles/LifeTrackerThemes.module.css";
+import { savedGameSchema, GAME_STORAGE_KEY } from "./saved-game";
+import { CounterPressButton } from "./counter-press-button";
+import { CommanderControls } from "./commander-controls";
+
 const MAX_PLAYERS = 4;
 const DAMAGE_FLASH_MS = 750;
 const HOLD_MS = 500;
 const HOLD_DELTA = 10;
+const LIFE_REPEAT_MS = 500;
 const PHOTO_SIZE = 480;
 const SPOTLIGHT_HOLD_MS = 2500;
 const SPOTLIGHT_FADE_MS = 600;
@@ -64,6 +70,7 @@ const AREA_COLORS = [
 
 type PhotoSlot = "resting" | "damage";
 type CounterKey = "poison" | "energy" | "experience" | "tax";
+type CounterValueKey = CounterKey | "partnerTax";
 
 interface PhotoFocus {
   x: number;
@@ -77,8 +84,9 @@ interface Player {
   color: string;
   photos: Record<PhotoSlot, string | null>;
   photoFocus: Record<PhotoSlot, PhotoFocus>;
-  counters: Record<CounterKey, number>;
+  counters: Record<CounterValueKey, number>;
   counterToggles: CounterToggles;
+  partnerCommanders: boolean;
   commanderDamage: Record<number, number>;
 }
 
@@ -103,12 +111,12 @@ type LockableOrientation = {
 const COUNTER_DEFS: {
   key: CounterKey;
   step: number;
-  icon: typeof IconDroplet;
+  icon: typeof IconSkull;
 }[] = [
-  { key: "poison", step: 1, icon: IconDroplet },
+  { key: "poison", step: 1, icon: IconSkull },
   { key: "energy", step: 1, icon: IconBolt },
   { key: "experience", step: 1, icon: IconStar },
-  { key: "tax", step: 2, icon: IconCrown },
+  { key: "tax", step: 2, icon: IconTaxPound },
 ];
 
 function makePlayers(startingLife: number): Player[] {
@@ -119,8 +127,9 @@ function makePlayers(startingLife: number): Player[] {
     color: AREA_COLORS[i] ?? "#4a5568",
     photos: { resting: null, damage: null },
     photoFocus: { resting: { x: 50, y: 50 }, damage: { x: 50, y: 50 } },
-    counters: { poison: 0, energy: 0, experience: 0, tax: 0 },
+    counters: { poison: 0, energy: 0, experience: 0, tax: 0, partnerTax: 0 },
     counterToggles: { poison: false, energy: false, experience: false, tax: false },
+    partnerCommanders: false,
     commanderDamage: {},
   }));
 }
@@ -362,92 +371,6 @@ const OPPOSITE_SIDE: Record<ControlSide, ControlSide> = {
   bottom: "top",
 };
 
-function CalloutControl({
-  label,
-  value,
-  calloutSide,
-  onAdjust,
-  buttonClassName,
-  buttonStyle,
-  children,
-}: {
-  label: string;
-  value: number;
-  calloutSide: ControlSide;
-  onAdjust: (sign: number) => void;
-  buttonClassName: string | undefined;
-  buttonStyle?: React.CSSProperties;
-  children: React.ReactNode;
-}) {
-  const [opened, setOpened] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
-
-  useEffect(() => {
-    if (!opened) return;
-
-    const dismissOutside = (event: Event) => {
-      if (event.target instanceof Node && ref.current?.contains(event.target)) return;
-
-      // Block the whole gesture so life controls cannot start a hold or receive
-      // the dismissal click. Keep the callout open until that click is consumed.
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (event.type === "click") setOpened(false);
-    };
-    const events = ["pointerdown", "pointerup", "mousedown", "mouseup", "click"];
-    events.forEach((event) => document.addEventListener(event, dismissOutside, { capture: true, passive: false }));
-    return () => {
-      events.forEach((event) => document.removeEventListener(event, dismissOutside, true));
-    };
-  }, [opened]);
-
-  return (
-    <div className={classes.calloutWrap} ref={ref}>
-      {opened && (
-        <div
-          className={`${classes.callout} ${
-            calloutSide === "left" ? classes.calloutLeft :
-            calloutSide === "right" ? classes.calloutRight :
-            calloutSide === "top" ? classes.calloutTop : classes.calloutBottom
-          }`}
-        >
-          <ActionIcon
-            size="sm"
-            variant="transparent"
-            className={classes.chipBtn}
-            onClick={() => onAdjust(-1)}
-            aria-label={t("lifeTracker.decrease", { label })}
-          >
-            <IconMinus size={16} />
-          </ActionIcon>
-          <Text size="sm" fw={600} className={classes.chipValue}>
-            {value}
-          </Text>
-          <ActionIcon
-            size="sm"
-            variant="transparent"
-            className={classes.chipBtn}
-            onClick={() => onAdjust(1)}
-            aria-label={t("lifeTracker.increase", { label })}
-          >
-            <IconPlus size={16} />
-          </ActionIcon>
-        </div>
-      )}
-      <UnstyledButton
-        className={buttonClassName}
-        style={buttonStyle}
-        onClick={() => setOpened((o) => !o)}
-        title={label}
-        aria-label={label}
-      >
-        {children}
-      </UnstyledButton>
-    </div>
-  );
-}
-
 function LifePressZone({
   sign,
   label,
@@ -461,45 +384,54 @@ function LifePressZone({
 }) {
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const held = useRef(false);
+  const activePointer = useRef<number | null>(null);
+  const changeRef = useRef(onLifeChange);
+  useEffect(() => { changeRef.current = onLifeChange; }, [onLifeChange]);
 
-  useEffect(() => {
-    return () => {
-      if (holdTimer.current) clearTimeout(holdTimer.current);
-    };
+  const cancelHold = useCallback(() => {
+    if (holdTimer.current !== null) clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+    activePointer.current = null;
   }, []);
 
-  const cancelHold = () => {
-    if (holdTimer.current) {
-      clearTimeout(holdTimer.current);
-      holdTimer.current = null;
-    }
-  };
+  useEffect(() => {
+    const onVisibility = () => { if (document.hidden) cancelHold(); };
+    window.addEventListener("blur", cancelHold);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancelHold();
+      window.removeEventListener("blur", cancelHold);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [cancelHold]);
 
   return (
     <UnstyledButton
       className={className}
       aria-label={label}
       onPointerDown={(e) => {
-        if (e.button !== 0) return;
+        if (e.button !== 0 || activePointer.current !== null) return;
         e.currentTarget.setPointerCapture(e.pointerId);
         cancelHold();
+        activePointer.current = e.pointerId;
         held.current = false;
-        holdTimer.current = setTimeout(() => {
-          holdTimer.current = null;
+        const repeat = () => {
+          if (activePointer.current === null) return;
           held.current = true;
-          onLifeChange(sign * HOLD_DELTA);
-        }, HOLD_MS);
+          changeRef.current(sign * HOLD_DELTA);
+          holdTimer.current = setTimeout(repeat, LIFE_REPEAT_MS);
+        };
+        holdTimer.current = setTimeout(repeat, HOLD_MS);
       }}
-      onPointerUp={() => {
+      onPointerUp={(e) => {
+        if (activePointer.current !== e.pointerId) return;
         const wasHeld = held.current;
         cancelHold();
         held.current = false;
         if (!wasHeld) onLifeChange(sign);
       }}
-      onPointerCancel={() => {
-        cancelHold();
-        held.current = false;
-      }}
+      onPointerCancel={cancelHold}
+      onLostPointerCapture={cancelHold}
       onClick={(e) => {
         // Keyboard activation only — pointer input is fully handled above
         if (e.detail === 0) onLifeChange(sign);
@@ -528,7 +460,7 @@ function PlayerArea({
   orientation: Orientation;
   controlsSide: ControlSide;
   onLifeChange: (delta: number) => void;
-  onCounterChange: (key: CounterKey, delta: number) => void;
+  onCounterChange: (key: CounterValueKey, delta: number) => void;
   onCommanderChange: (fromId: number, delta: number) => void;
   onOpenSettings: () => void;
 }) {
@@ -558,36 +490,25 @@ function PlayerArea({
     visibleCounters.length > 0 ? (
       <div className={classes.controlColumn}>
         {visibleCounters.map((def) => (
-          <CalloutControl
-            key={def.key}
-            label={t(`lifeTracker.counter.${def.key}`)}
-            value={player.counters[def.key]}
-            calloutSide={controlsSide}
-            onAdjust={(sign) => onCounterChange(def.key, sign * def.step)}
-            buttonClassName={classes.counterButton}
-          >
-            <def.icon size={14} />
-            <span>{player.counters[def.key]}</span>
-          </CalloutControl>
+          <div className={classes.counterPair} key={def.key}>
+            {Array.from({ length: def.key === "tax" && player.partnerCommanders ? 2 : 1 }, (_, index) => {
+              const key: CounterValueKey = index === 1 ? "partnerTax" : def.key;
+              return <CounterPressButton key={key}
+                label={def.key === "tax" ? t("lifeTracker.commanderTaxSlot", { number: index + 1, value: player.counters[key] }) : t(`lifeTracker.counter.${def.key}`) + ": " + player.counters[key]}
+                onChange={(sign) => onCounterChange(key, sign * def.step)}
+                style={{ "--opponent": player.color } as React.CSSProperties}
+                className={classes.themedCounter} partner={index === 1}>
+                <def.icon size={14} />
+                <span>{player.counters[key]}</span>
+              </CounterPressButton>;
+            })}
+          </div>
         ))}
       </div>
     ) : null;
 
   const commanderColumn = (
     <div className={classes.controlColumn}>
-      {opponents.map((op) => (
-        <CalloutControl
-          key={op.id}
-          label={t("lifeTracker.commanderDamageFrom", { name: op.name })}
-          value={player.commanderDamage[op.id] ?? 0}
-          calloutSide={calloutSide}
-          onAdjust={(sign) => onCommanderChange(op.id, sign)}
-          buttonClassName={classes.cmdButton}
-          buttonStyle={{ background: op.color }}
-        >
-          {player.commanderDamage[op.id] ?? 0}
-        </CalloutControl>
-      ))}
       <ActionIcon
         variant="filled"
         color="rgba(0, 0, 0, 0.3)"
@@ -602,7 +523,7 @@ function PlayerArea({
   );
 
   return (
-    <div className={classes.area} style={{ background: player.color }}>
+    <div data-life-zone className={classes.area} style={{ background: player.color, "--player-color": player.color } as React.CSSProperties}>
       <div className={`${classes.areaInner} ${orientClass} ${horizontalControls ? classes.horizontalControls : ""}`}>
         <div className={classes.areaFill}>
           {photo && (
@@ -672,20 +593,21 @@ function PlayerArea({
             </div>
           )}
 
-          <div className={classes.areaContent}>
-            <Text fw={600} className={classes.nameLabel}>
+          <CommanderControls opponents={opponents} damage={player.commanderDamage} onChange={onCommanderChange} />
+          <div className={`${classes.areaContent} ${classes.commanderContent}`}>
+            <Text fw={600} data-player-name className={classes.nameLabel}>
               {player.name}
             </Text>
 
             <Group gap="lg" wrap="nowrap" justify="center">
               {/* Visual hints only — the tap targets are the half-area zones */}
-              <div className={classes.lifeButton}>
+              <div data-life-hint className={classes.lifeButton}>
                 <IconMinus />
               </div>
-              <Text component="div" className={classes.lifeValue}>
+              <Text component="div" data-life-value className={classes.lifeValue}>
                 {player.life}
               </Text>
-              <div className={classes.lifeButton}>
+              <div data-life-hint className={classes.lifeButton}>
                 <IconPlus />
               </div>
             </Group>
@@ -702,6 +624,7 @@ function PlayerSettingsModal({
   onRename,
   onColorChange,
   onToggleCounter,
+  onTogglePartners,
   onOpenCamera,
   onUploadPhoto,
   onClearPhoto,
@@ -714,6 +637,7 @@ function PlayerSettingsModal({
   onRename: (name: string) => void;
   onColorChange: (color: string) => void;
   onToggleCounter: (key: CounterKey, value: boolean) => void;
+  onTogglePartners: (value: boolean) => void;
   onSetFocus: (slot: PhotoSlot, focus: PhotoFocus) => void;
   onOpenCamera: (slot: PhotoSlot) => void;
   onUploadPhoto: (slot: PhotoSlot, file: File) => void;
@@ -737,6 +661,7 @@ function PlayerSettingsModal({
     >
       {player && (
         <Stack>
+          <Switch label={t("lifeTracker.partnerCommanders")} description={t("lifeTracker.partnerCommandersDescription")} checked={player.partnerCommanders} onChange={(e) => onTogglePartners(e.currentTarget.checked)} />
           <TextInput
             label={t("lifeTracker.name")}
             value={player.name}
@@ -849,6 +774,8 @@ function PlayerSettingsModal({
 }
 
 export function LifeTrackerApp() {
+  const [theme, setTheme] = useState<"A" | "B" | "D">("A");
+  const [saveError, setSaveError] = useState(false);
   const { t } = useTranslation();
   const [startingLife, setStartingLife] = useState(40);
   const [playerCount, setPlayerCount] = useState(4);
@@ -894,8 +821,40 @@ export function LifeTrackerApp() {
     } catch {
       // Storage unavailable (privacy mode) — keep the default
     }
+    try {
+      const raw = localStorage.getItem(GAME_STORAGE_KEY);
+      const saved = raw ? savedGameSchema.safeParse(JSON.parse(raw)) : null;
+      if (saved?.success) {
+        const game = saved.data;
+        setPlayers(game.players);
+        setPlayerCount(game.playerCount);
+        setStartingLife(game.startingLife);
+        setOrientationMode(game.orientationMode);
+        setTheme(game.theme);
+        setStarter(game.starter);
+      }
+    } catch {
+      // Invalid or inaccessible saved data must not prevent opening the board.
+    }
     setSettingsLoaded(true);
   }, []);
+
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    const save = () => {
+      try {
+        localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify({
+          version: 1, players, playerCount, startingLife, orientationMode, theme, starter,
+        }));
+        setSaveError(false);
+      } catch {
+        setSaveError(true);
+      }
+    };
+    save();
+    window.addEventListener("pagehide", save);
+    return () => window.removeEventListener("pagehide", save);
+  }, [settingsLoaded, players, playerCount, startingLife, orientationMode, theme, starter]);
 
   const changeOrientationMode = useCallback((mode: OrientationMode) => {
     setOrientationMode(mode);
@@ -1040,7 +999,7 @@ export function LifeTrackerApp() {
     );
   }, []);
 
-  const adjustCounter = useCallback((id: number, key: CounterKey, delta: number) => {
+  const adjustCounter = useCallback((id: number, key: CounterValueKey, delta: number) => {
     setPlayers((prev) =>
       prev.map((p) =>
         p.id === id
@@ -1114,7 +1073,7 @@ export function LifeTrackerApp() {
       prev.map((p) => ({
         ...p,
         life: startingLife,
-        counters: { poison: 0, energy: 0, experience: 0, tax: 0 },
+        counters: { poison: 0, energy: 0, experience: 0, tax: 0, partnerTax: 0 },
         commanderDamage: {},
       })),
     );
@@ -1198,7 +1157,8 @@ export function LifeTrackerApp() {
         : classes.layout4;
 
   return (
-    <div className={`${classes.boardViewport} ${isFullscreen ? classes.boardFullscreen : ""}`}>
+    <div data-visual-variant={theme} className={`${classes.boardViewport} ${themeStyles.theme} ${isFullscreen ? classes.boardFullscreen : ""}`}>
+      {saveError && <Alert color="orange" style={{ position: "absolute", top: 8, left: 8, right: 8, zIndex: 20 }} withCloseButton onClose={() => setSaveError(false)}>{t("lifeTracker.saveError")}</Alert>}
       {!boardReady && (
         <div className={classes.boardLoader}>
           <Loader />
@@ -1267,6 +1227,12 @@ export function LifeTrackerApp() {
                 {t("lifeTracker.starts", { name: starter })}
               </Text>
             )}
+          </div>
+          <div>
+            <Text size="sm" fw={500} mb={6}>{t("lifeTracker.theme")}</Text>
+            <SegmentedControl fullWidth value={theme} onChange={(value) => {
+              if (value === "A" || value === "B" || value === "D") setTheme(value);
+            }} data={[{ value: "A", label: "Machined" }, { value: "B", label: "Spellglass" }, { value: "D", label: "Neon Circuit" }]} />
           </div>
           <div>
             <Text size="sm" fw={500} mb={6}>
@@ -1356,6 +1322,7 @@ export function LifeTrackerApp() {
             prev.map((p) => (p.id === playerSettingsId ? { ...p, color } : p)),
           )
         }
+        onTogglePartners={(value) => setPlayers((prev) => prev.map((p) => p.id === playerSettingsId ? { ...p, partnerCommanders: value } : p))}
         onToggleCounter={(key, value) => {
           if (playerSettingsId !== null) toggleCounter(playerSettingsId, key, value);
         }}
