@@ -8,11 +8,31 @@
     "allDecks": "All Decks",
     "sectionMtg": "MTG",
     "sectionTtrpg": "TTRPG",
-    "sectionLife": "Life",
+    "sectionOutdoors": "Outdoors",
     "collapse": "Collapse",
     "expand": "Expand",
     "signIn": "Sign in",
     "signOut": "Sign out"
+  },
+  "home": {
+    "toolsLabel": "Cornucopium tools",
+    "availableTools": "Available tools",
+    "signInToStart": "Sign in to start",
+    "viewExample": "View example",
+    "dataBy": "MTG data by",
+    "disclaimer": "Not affiliated with Wizards of the Coast.",
+    "categories": {
+      "magic": "Magic",
+      "roleplaying": "Roleplaying",
+      "outdoors": "Outdoors"
+    },
+    "tools": {
+      "life": { "title": "Life Tracker", "short": "Keep the whole table in play.", "action": "Start a game" },
+      "collection": { "title": "MTG Complete", "short": "Every color. Your collection.", "action": "Your collection" },
+      "decks": { "title": "Decks", "short": "Your decks, all in one place.", "action": "Browse your decks" },
+      "dice": { "title": "Dice Roller", "short": "Leave a little to chance.", "action": "Roll some dice" },
+      "hiking": { "title": "Hiking", "short": "Take the long way home.", "action": "Plan a hike" }
+    }
   },
   "tabs": {
     "stats": "Stats",

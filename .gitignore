@@ -57,3 +57,6 @@ yarn-error.log*
 
 # Claude
 .claude/
+# Browser regression test artifacts
+/test-results/
+/playwright-report/

@@ -38,6 +38,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { COLOR_COMBINATIONS, CommanderCardBody, ManaSymbol, ColorlessSymbol } from "~/app/_components/commander-card-body";
 import { api } from "~/trpc/react";
+import { ArchetypeSelect } from "~/app/_components/archetype-select";
 import type { Deck } from "../../../../generated/prisma";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -605,7 +606,7 @@ export function DeckSlot({ deck, onDelete, tooltipSide = "right" }: { deck: Deck
             favoriteTag={favoriteTag} setFavoriteTag={(v) => { mark(); setFavoriteTag(v); }}
           />
 
-          <Select
+          <ArchetypeSelect
             size="xs" placeholder="Archetype" data={ARCHETYPES}
             value={archetype} onChange={(v) => { mark(); setArchetype(v); }} clearable
           />

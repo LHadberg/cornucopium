@@ -23,6 +23,7 @@ import {
 import { useDebouncedValue, useDisclosure, useLocalStorage, useMediaQuery } from "@mantine/hooks";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "~/trpc/react";
+import { ArchetypeSelect } from "~/app/_components/archetype-select";
 import type { Deck as DeckRow } from "../../../../generated/prisma";
 import { DeckCard } from "./deck-card";
 import { SelectionCharts } from "../../mtg-complete/_components/selection-charts";
@@ -344,7 +345,7 @@ function AddDeckForm({ onSuccess, tooltipSide = "right" }: { onSuccess: () => vo
         searchable clearable maxDropdownHeight={200}
       />
       {tags.length > 0 && <Select size="xs" placeholder="Favorite tag" data={tags} value={favoriteTag} onChange={setFavoriteTag} clearable />}
-      <Select size="xs" placeholder="Archetype" data={ARCHETYPES} value={archetype} onChange={setArchetype} clearable />
+      <ArchetypeSelect size="xs" placeholder="Archetype" data={ARCHETYPES} value={archetype} onChange={setArchetype} clearable />
       <TextInput size="xs" placeholder="Deck list URL (e.g. moxfield.com/...)" value={deckListUrl} onChange={(e) => setDeckListUrl(e.currentTarget.value)} />
 
       <Group gap="xs">
