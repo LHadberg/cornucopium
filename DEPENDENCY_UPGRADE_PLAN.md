@@ -122,3 +122,11 @@ For each batch record: starting checkpoint; exact versions and advisory/release-
 - Added `node --test tests/db-compatibility.test.cjs`: disposable local SQLite/libSQL fixture tests Auth.js account/session lifecycle, deck isolation filters/updates, hiking persistence/deletion, and dice settings across reconnect. Passed against the original Auth.js/Prisma versions. This is a persistence contract test, not a full router authorization test.
 - The clean install created an unused `public/assets/themes` directory through dice-box postinstall; removed only that newly generated directory.
 - Remaining: full browser behavior matrix, real Discord manual check, and subsequent upgrade batches.
+
+### Batch 2: Auth.js
+
+- `next-auth` -> 5.0.0-beta.32; `@auth/prisma-adapter` -> 2.11.3, resolving `@auth/core` to 0.41.3. Audit now reports 13 packages (0 critical, 10 high, 3 moderate).
+- Evidence: npm metadata and https://github.com/nextauthjs/next-auth/security/advisories/GHSA-8fpg-xm3f-6cx3.
+- Build, typecheck, 8 picker tests, and local persistence test pass. Fixed strict TypeScript checks in the newly added fixture test rather than disabling type checking.
+- Added `playwright.smoke.config.ts` and 16 production smoke tests across Chromium/WebKit: main guest pages render without uncaught page errors, guest/malformed bearer requests get no session and cannot access protected decks, dice assets load. Tests use in-memory DB configuration and disable external rate limiting; they do not establish real Redis behavior or authenticated flows.
+- Real Discord round trip remains a manual verification item by user choice.

@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@3d-dice/dice-box": "^1.1.4",
-    "@auth/prisma-adapter": "^2.7.2",
+    "@auth/prisma-adapter": "~2.11.3",
     "@libsql/client": "^0.17.2",
     "@mantine/core": "^8.3.16",
     "@mantine/hooks": "^8.3.16",
@@ -39,7 +39,7 @@
     "i18next": "^26.0.4",
     "leaflet": "^1.9.4",
     "next": "~16.4.3",
-    "next-auth": "5.0.0-beta.30",
+    "next-auth": "^5.0.0-beta.32",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-i18next": "^17.0.3",

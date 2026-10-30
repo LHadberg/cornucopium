@@ -21,19 +21,20 @@ test('local libSQL persistence and Auth.js adapter contracts', async () => {
     db = new PrismaClient({ adapter: new PrismaLibSql({ url }) });
     const { PrismaAdapter } = await import('@auth/prisma-adapter');
     let adapter = PrismaAdapter(db);
-    const user = await adapter.createUser({ name: 'Fixture', email: 'fixture@example.test', emailVerified: null, image: null });
-    const other = await adapter.createUser({ name: 'Other', email: 'other@example.test', emailVerified: null, image: null });
+    assert.ok(adapter.createUser && adapter.linkAccount && adapter.getUserByAccount && adapter.createSession && adapter.getSessionAndUser && adapter.updateSession);
+    const user = await adapter.createUser({ id: 'fixture-user', name: 'Fixture', email: 'fixture@example.test', emailVerified: null, image: null });
+    const other = await adapter.createUser({ id: 'other-user', name: 'Other', email: 'other@example.test', emailVerified: null, image: null });
     await adapter.linkAccount({ userId: user.id, type: 'oauth', provider: 'discord', providerAccountId: 'fixture-discord' });
-    assert.equal((await adapter.getUserByAccount({ provider: 'discord', providerAccountId: 'fixture-discord' })).id, user.id);
+    assert.equal((await adapter.getUserByAccount({ provider: 'discord', providerAccountId: 'fixture-discord' }))?.id, user.id);
     const token = 'local-fixture-session';
     await adapter.createSession({ sessionToken: token, userId: user.id, expires: new Date(Date.now() + 60000) });
-    assert.equal((await adapter.getSessionAndUser(token)).user.id, user.id);
+    assert.equal((await adapter.getSessionAndUser(token))?.user.id, user.id);
     await adapter.updateSession({ sessionToken: token, expires: new Date(Date.now() + 120000) });
 
     const deck = await db.deck.create({ data: { userId: user.id, name: 'Fixture deck' } });
     assert.equal(await db.deck.findFirst({ where: { id: deck.id, userId: other.id } }), null);
     await db.deck.update({ where: { id: deck.id, userId: user.id }, data: { archetype: 'Aggro' } });
-    assert.equal((await db.deck.findUnique({ where: { id: deck.id } })).archetype, 'Aggro');
+    assert.equal((await db.deck.findUnique({ where: { id: deck.id } }))?.archetype, 'Aggro');
     const route = await db.hikingMapData.create({ data: {
       userId: user.id, name: 'Fixture route', waypoints: '[]', routeCoords: '[]',
       routeSegments: '[]', routeWaypointDistancesKm: '[]', distanceKm: 0,
@@ -42,10 +43,11 @@ test('local libSQL persistence and Auth.js adapter contracts', async () => {
     await db.$disconnect();
     db = new PrismaClient({ adapter: new PrismaLibSql({ url }) });
     adapter = PrismaAdapter(db);
-    assert.equal((await db.user.findUnique({ where: { id: user.id } })).diceRollerStats, '{"rolls":1}');
-    assert.equal((await db.hikingMapData.findUnique({ where: { id: route.id } })).name, 'Fixture route');
+    assert.equal((await db.user.findUnique({ where: { id: user.id } }))?.diceRollerStats, '{"rolls":1}');
+    assert.equal((await db.hikingMapData.findUnique({ where: { id: route.id } }))?.name, 'Fixture route');
     await db.hikingMapData.delete({ where: { id: route.id } });
     await db.deck.delete({ where: { id: deck.id } });
+    assert.ok(adapter.deleteSession && adapter.getSessionAndUser);
     await adapter.deleteSession(token);
     assert.equal(await adapter.getSessionAndUser(token), null);
   } catch (error) {
@@ -56,3 +58,4 @@ test('local libSQL persistence and Auth.js adapter contracts', async () => {
     await rm(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
 });
+
