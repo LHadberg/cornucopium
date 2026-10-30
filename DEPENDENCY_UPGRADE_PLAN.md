@@ -130,3 +130,12 @@ For each batch record: starting checkpoint; exact versions and advisory/release-
 - Build, typecheck, 8 picker tests, and local persistence test pass. Fixed strict TypeScript checks in the newly added fixture test rather than disabling type checking.
 - Added `playwright.smoke.config.ts` and 16 production smoke tests across Chromium/WebKit: main guest pages render without uncaught page errors, guest/malformed bearer requests get no session and cannot access protected decks, dice assets load. Tests use in-memory DB configuration and disable external rate limiting; they do not establish real Redis behavior or authenticated flows.
 - Real Discord round trip remains a manual verification item by user choice.
+
+### Batch 3: Prisma/libSQL
+
+- Aligned Prisma CLI/client/libSQL adapter on 7.10.1. Prisma 6.19.3 still pins vulnerable deepmerge-ts 7.1.5, so the secure supported combination required a major upgrade. Avoided npm's latest Prisma 8 release candidate.
+- Evidence: version-specific npm engines/dependencies and https://www.prisma.io/docs/guides/upgrade-prisma-orm/v7.
+- Moved the existing CLI datasource URL into `prisma.config.ts`, explicitly loaded dotenv, declared ESM and the runtime requirement. Kept the existing generated-client path/provider and runtime Turso adapter. No models or production data changed; no migration applied.
+- Prisma generation/validation, typecheck, build, local persistence test, 8 picker tests, and 16 production browser smoke tests pass. Build tracing/module warnings disappeared.
+- Audit after installation: 8 packages (0 critical, 5 high, 3 moderate).
+- Added baseline tests for saved life-tracker game defaults, malformed/oversized inputs, and environment validation before the Zod migration; both pass on Zod 3.

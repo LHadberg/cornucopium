@@ -16,7 +16,7 @@ test('local libSQL persistence and Auth.js adapter contracts', async () => {
     // The explicit URL overrides .env. Never use the configured remote database.
     execFileSync(process.execPath, [
       resolve('node_modules/prisma/build/index.js'), 'db', 'push',
-      '--schema', resolve('prisma/schema.prisma'), '--skip-generate',
+      '--schema', resolve('prisma/schema.prisma'),
     ], { env: { ...process.env, DATABASE_URL: url }, stdio: 'pipe' });
     db = new PrismaClient({ adapter: new PrismaLibSql({ url }) });
     const { PrismaAdapter } = await import('@auth/prisma-adapter');
