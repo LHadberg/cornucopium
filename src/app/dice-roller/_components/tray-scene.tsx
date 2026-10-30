@@ -1,7 +1,7 @@
 'use client';
 
 import * as THREE from 'three';
-import { createContext, useEffect, useMemo, useRef } from 'react';
+import { createContext, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
 import type { VisualConfig } from '../_types/types';
 import { getHeroPattern, usePatternSource } from './hero-patterns';
@@ -21,7 +21,7 @@ const updateSurfaceMaterial = (material: THREE.MeshStandardMaterial) => {
 export const TraySurface = ({ config, dimensions }: { config: VisualConfig; dimensions?: { width: number; height: number } }) => {
   const ref = useRef<THREE.Mesh>(null);
   const {
-    viewport,
+    viewport, invalidate,
   } = useThree();
   const { width: viewportWidth, height: viewportHeight } = dimensions ?? viewport;
   const { wallStyle, wallRepeat, wallColor, backgroundColor, backgroundStyle, backgroundRepeat } = config;
@@ -54,7 +54,8 @@ export const TraySurface = ({ config, dimensions }: { config: VisualConfig; dime
 
   useEffect(() => () => backgroundMesh?.dispose(), [backgroundMesh]);
 
-  useEffect(() => {
+  // Configure new maps before the demand-rendered preview paints them.
+  useLayoutEffect(() => {
     const wallPattern = getHeroPattern(wallStyle);
     const wallScaleX = wallPattern ? 64 / wallPattern.width : 1;
     const wallScaleY = wallPattern ? 64 / wallPattern.height : 1;
@@ -80,7 +81,8 @@ export const TraySurface = ({ config, dimensions }: { config: VisualConfig; dime
       backgroundMesh.repeat.set(viewportWidth * sx * backgroundRepeat, viewportHeight * sy * backgroundRepeat);
       backgroundMesh.needsUpdate = true;
     }
-  }, [wallMeshHorizontal, wallMeshVertical, wallStyle, wallRepeat, backgroundMesh, backgroundStyle, viewportHeight, viewportWidth, backgroundRepeat]);
+    invalidate();
+  }, [wallMeshHorizontal, wallMeshVertical, wallStyle, wallRepeat, backgroundMesh, backgroundStyle, viewportHeight, viewportWidth, backgroundRepeat, invalidate]);
 
   const wallMetalness = 0.2;
   const wallRoughness = 0.5;
@@ -134,3 +136,4 @@ export function TrayLighting({ lighting = DEFAULT_LIGHTING }: { lighting?: Light
     <pointLight position={[lighting.pointX, lighting.pointY, lighting.pointZ]} intensity={lighting.pointIntensity} />
   </>;
 }
+
