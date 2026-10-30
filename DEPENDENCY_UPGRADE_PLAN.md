@@ -139,3 +139,11 @@ For each batch record: starting checkpoint; exact versions and advisory/release-
 - Prisma generation/validation, typecheck, build, local persistence test, 8 picker tests, and 16 production browser smoke tests pass. Build tracing/module warnings disappeared.
 - Audit after installation: 8 packages (0 critical, 5 high, 3 moderate).
 - Added baseline tests for saved life-tracker game defaults, malformed/oversized inputs, and environment validation before the Zod migration; both pass on Zod 3.
+
+### Batch 4: Zod/environment validation
+
+- Zod -> 4.6.7 and env-nextjs/env-core -> 0.13.11. Evidence: npm metadata/audit and https://zod.dev/v4/changelog. No application schema rewrites were required.
+- Build, typecheck, validation fixtures, 8 picker tests, and 16 production browser smoke tests pass.
+- Expanded the local persistence test to invoke real tRPC routers with explicit local contexts (external auth-context creation and Redis mocked). Guest rejection, per-user deck/hiking lists, dice settings persistence, and malformed dice/hiking input rejection pass.
+- Audit: 5 packages (0 critical, 2 high, 3 moderate). Remaining paths traced with `npm explain`: Next.js baseline-browser-mapping; three types/three-stdlib fflate; PostCSS selector/source-map utilities; libSQL ws. All permit patched versions within their declared ranges.
+- Restored an exact pin for the Auth.js prerelease to avoid unintended beta upgrades.
