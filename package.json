@@ -18,7 +18,9 @@
     "preview": "next build && next start",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test:pickers": "playwright test tests/archetype-select.spec.ts"
+    "test:pickers": "playwright test tests/archetype-select.spec.ts",
+    "test:compatibility": "node --test tests/db-compatibility.test.cjs tests/validation-compatibility.test.cjs",
+    "test:smoke": "playwright test --config playwright.smoke.config.ts"
   },
   "dependencies": {
     "@3d-dice/dice-box": "^1.1.4",

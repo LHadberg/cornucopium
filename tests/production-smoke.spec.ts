@@ -31,3 +31,36 @@ test("dice physics and theme assets remain available", async ({ request }) => {
     expect((await response.body()).byteLength).toBeGreaterThan(0);
   }
 });
+
+test("life changes survive reload", async ({ page }) => {
+  await page.goto("/life-tracker");
+  const increase = page.getByRole("button", { name: "Increase Player 1 life", exact: true });
+  await expect(increase).toBeVisible();
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("life-tracker-game-v1"))).not.toBeNull();
+  const readLife = () => page.evaluate(() => JSON.parse(localStorage.getItem("life-tracker-game-v1") ?? "{}").players?.[0]?.life as number);
+  const initial = await readLife();
+  await increase.click();
+  await expect.poll(readLife).toBe(initial + 1);
+  await page.reload();
+  await expect(increase).toBeVisible();
+  await expect.poll(readLife).toBe(initial + 1);
+});
+
+test("D20 rolls and rerolls produce bounded results", async ({ page }) => {
+  test.setTimeout(90000);
+  await page.goto("/dice-roller");
+  const reroll = page.getByRole("button", { name: "Reroll", exact: true });
+  await expect(reroll).toBeVisible();
+  // The existing D20 icon button is the first control in the reroll footer.
+  await reroll.locator("..").getByRole("button").first().click();
+  const total = page.getByRole("button", { name: /^Total \d+/ });
+  await expect(total).toBeEnabled({ timeout: 30000 });
+  const first = Number((await total.innerText()).match(/Total (\d+)/)?.[1]);
+  expect(first).toBeGreaterThanOrEqual(1);
+  expect(first).toBeLessThanOrEqual(20);
+  await reroll.click();
+  await expect(total).toBeEnabled({ timeout: 30000 });
+  const second = Number((await total.innerText()).match(/Total (\d+)/)?.[1]);
+  expect(second).toBeGreaterThanOrEqual(1);
+  expect(second).toBeLessThanOrEqual(20);
+});

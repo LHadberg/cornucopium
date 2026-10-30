@@ -1,6 +1,6 @@
 # Dependency upgrade plan
 
-Created: 2026-10-30. Status: upgrades in progress; see execution log.
+Created: 2026-10-30. Status: dependency upgrades and local verification complete; manual/staging verification remains before deployment. See execution log for evidence and limitations.
 
 ## Objective and scope
 
@@ -147,3 +147,25 @@ For each batch record: starting checkpoint; exact versions and advisory/release-
 - Expanded the local persistence test to invoke real tRPC routers with explicit local contexts (external auth-context creation and Redis mocked). Guest rejection, per-user deck/hiking lists, dice settings persistence, and malformed dice/hiking input rejection pass.
 - Audit: 5 packages (0 critical, 2 high, 3 moderate). Remaining paths traced with `npm explain`: Next.js baseline-browser-mapping; three types/three-stdlib fflate; PostCSS selector/source-map utilities; libSQL ws. All permit patched versions within their declared ranges.
 - Restored an exact pin for the Auth.js prerelease to avoid unintended beta upgrades.
+
+### Batch 5 and final local acceptance
+
+- Updated only compatible transitive ranges: baseline-browser-mapping 2.11.34, fflate 0.8.3 and nested 0.6.11, postcss-selector-parser 7.1.7, source-map-js 1.2.2, ws 8.22.0. No overrides or forced upgrades.
+- Final clean `npm ci` passed and regenerated Prisma 7.10.1. Full and `--omit=dev` audits both report **0 vulnerabilities**. `npm ls --all` passes.
+- Final production build, explicit typecheck, and Prisma validation with a local file URL pass.
+- All **31 automated tests pass**: 3 compatibility tests, 8 picker browser tests, 20 production browser tests. Added real D20 roll/reroll result checks and life-total persistence across reload in Chromium/WebKit.
+- Development server starts with the existing `--turbo` option and returns HTTP 200 for `/dice-roller`; stopped the test server afterward.
+- Added `test:compatibility` and `test:smoke` scripts and documented their isolation/limitations in `tests/README.md`. Default Playwright discovery is restricted to its picker suite; production tests use their own server configuration.
+- Next.js 16.4.3 automatically creates root `AGENTS.md` during development startup. Retained its generated framework guidance so subsequent starts do not dirty the checkout.
+- Removed the unused dice-box postinstall-generated `public/assets/themes` directory again after the final clean install. Existing dice-box asset files were preserved.
+
+### Remaining verification before deployment
+
+- Real Discord sign-in/callback/sign-out is a manual check by user choice. OAuth provider state and real expired-session behavior are not certified by the local adapter/guest tests.
+- Staging must verify the deployed Node version against package.json's Prisma 7 runtime requirement, live Turso/Redis connectivity and rate limits, Scryfall image/card requests, and external map/route services. No production database writes or schema migrations were performed.
+- The automated suite does not cover every combination in the original behavior matrix: public list fixtures, all authenticated UI editing paths, advantage/disadvantage, explicit forced dice fallback, language switching, and detailed visual comparisons remain manual checks. Zero npm findings is not a complete application-security audit.
+- The original checklist above is retained as the broader rollout checklist; the execution log records what has actually been verified. No deployment or push was performed.
+
+### Separate pre-existing security follow-up
+
+While inspecting routers for compatibility tests, `src/server/api/routers/hiking.ts` showed that `save` upserts by route ID without checking the existing route's owner. An authenticated caller supplying another user's known route ID appears able to update that route. The list/delete paths do filter by user. This code predates the dependency upgrades and is unchanged here; investigate and add an ownership regression test in a separate focused fix before treating the application as security-reviewed.
