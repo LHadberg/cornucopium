@@ -72,6 +72,26 @@
   grid-column: 1 / -1;
 }
 
+.layoutRoundtable {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.layoutRoundtable > .area:first-child,
+.layoutRoundtable > .area:nth-child(4) {
+  grid-column: 1 / -1;
+}
+
+.layoutRoundtableLandscape {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+
+.layoutRoundtableLandscape > .area:first-child { grid-area: 1 / 2; }
+.layoutRoundtableLandscape > .area:nth-child(2) { grid-area: 1 / 1 / 3 / 2; }
+.layoutRoundtableLandscape > .area:nth-child(3) { grid-area: 1 / 3 / 3 / 4; }
+.layoutRoundtableLandscape > .area:nth-child(4) { grid-area: 2 / 2; }
+
 .area {
   position: relative;
   min-width: 0;
@@ -85,6 +105,7 @@
 /* Orientation wrapper: rotated variants swap width/height via container
    query units so the rotated box exactly fills the quadrant. */
 .areaInner {
+  border-radius: inherit;
   position: absolute;
   inset: 0;
 }
@@ -113,6 +134,7 @@
 
 /* Separate from .areaInner so the shake transform doesn't fight the rotation */
 .areaFill {
+  border-radius: inherit;
   position: absolute;
   inset: 0;
   display: flex;
@@ -121,6 +143,7 @@
 }
 
 .areaPhoto {
+  background-repeat: no-repeat;
   position: absolute;
   inset: 0;
   background-size: cover;
@@ -147,6 +170,10 @@
 
 .nameLabel {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.nameLabel[data-starting-player] {
+  color: #ffd700;
 }
 
 .lifeValue {
@@ -416,13 +443,12 @@
 }
 
 .flashOverlay {
+  border-radius: inherit;
   position: absolute;
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  /* Match the area's corner radius so the glow frame follows the corners
-     (inherit resolved to 0 — the parent fill has no radius of its own) */
-  border-radius: var(--mantine-radius-lg);
+  /* Radius is inherited through both wrappers from the themed player area. */
 }
 
 .hurt {
@@ -520,4 +546,77 @@
 .commanderContent .lifeValue { font-size: clamp(28px, 16cqmin, 76px); }
 
 .counterPair { display: flex; flex-direction: column; gap: 4px; pointer-events: auto; }
-.counterPair .themedCounter { width: clamp(30px, 10cqmin, 46px); min-height: 36px; padding: 4px 2px; gap: 1px; font-size: 12px; font-weight: 700; }
+.counterPair .themedCounter { display: flex; flex-direction: row; align-items: center; justify-content: center; width: auto; min-width: clamp(38px, 12cqmin, 50px); min-height: 30px; padding: 2px 4px; gap: 3px; font-size: 12px; font-weight: 700; }
+.sideRight .themedCounter { flex-direction: row-reverse; }
+.themedCounter svg { flex-shrink: 0; }
+.counterPair .counterAtCap { color: #ffd700; }
+
+.monarchControls { padding-top: 34px; }
+.monarchButton { position: absolute; top: 0; right: 0; pointer-events: auto; color: white; }
+.sideLeft .monarchButton { left: 0; right: auto; }
+.monarchButton[aria-pressed="true"] { color: #ffd700; }
+.horizontalControls .monarchControls { padding-top: 34px; }
+
+/* Upright portrait seats need separate rows instead of edge overlays. */
+@container (aspect-ratio < 1) {
+  .horizontalControls .areaFill {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    gap: 8px;
+    padding: 8px;
+    align-items: center;
+  }
+
+  .horizontalControls .sideControls {
+    position: relative;
+    inset: auto;
+    width: 100%;
+  }
+
+  .horizontalControls [data-tax-controls] { grid-row: 1; }
+  .horizontalControls [data-counter-controls] { grid-row: 3; }
+  .horizontalControls .controlColumn {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .horizontalControls [data-tax-controls] .controlColumn { grid-template-columns: 1fr; }
+  .horizontalControls [data-tax-controls] .counterPair { flex-direction: row; }
+  .horizontalControls .counterPair { min-width: 0; }
+  .horizontalControls .commanderContent {
+    position: relative;
+    inset: auto;
+    grid-row: 2;
+    padding: 0;
+    min-width: 0;
+    gap: 4px;
+  }
+  .horizontalControls .nameLabel { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .horizontalControls .commanderContent > :last-child { gap: 8px; }
+  .horizontalControls [data-commander-panel] {
+    position: relative;
+    inset: auto;
+    grid-row: 4;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+  }
+  .horizontalControls [data-commander-panel] [data-commander-key] {
+    padding-inline: 1px;
+    min-width: 0;
+  }
+}
+
+.area[data-monarch-highlight="border"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 3px solid #ffd700;
+  border-radius: inherit;
+  box-shadow: inset 0 0 16px #ffd70066;
+  pointer-events: none;
+  z-index: 5;
+}

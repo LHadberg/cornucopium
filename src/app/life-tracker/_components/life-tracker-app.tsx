@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Accordion,
   ActionIcon,
   Alert,
   Button,
@@ -19,7 +20,11 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import {
+  IconArrowLeft,
   IconBolt,
+  IconGauge,
+  IconCrown,
+  IconCrownFilled,
   IconCamera,
   IconTaxPound,
   IconDice,
@@ -32,7 +37,6 @@ import {
   IconMoodSmile,
   IconPlus,
   IconRefresh,
-  IconSettings,
   IconStar,
   IconTrash,
   IconUpload,
@@ -69,7 +73,7 @@ const AREA_COLORS = [
 ];
 
 type PhotoSlot = "resting" | "damage";
-type CounterKey = "poison" | "energy" | "experience" | "tax";
+type CounterKey = "poison" | "energy" | "experience" | "tax" | "speed";
 type CounterValueKey = CounterKey | "partnerTax";
 
 interface PhotoFocus {
@@ -84,6 +88,7 @@ interface Player {
   color: string;
   photos: Record<PhotoSlot, string | null>;
   photoFocus: Record<PhotoSlot, PhotoFocus>;
+  photoFit: "cover" | "contain";
   counters: Record<CounterValueKey, number>;
   counterToggles: CounterToggles;
   partnerCommanders: boolean;
@@ -98,7 +103,7 @@ interface CameraTarget {
 type CounterToggles = Record<CounterKey, boolean>;
 /** Which screen edge a player's text and controls point toward (their seat) */
 type Orientation = "left" | "right" | "top" | "bottom";
-type OrientationMode = "outward" | "down";
+type OrientationMode = "outward" | "down" | "roundtable";
 type SpotlightPhase = "spin" | "won" | "fading";
 
 // screen.orientation.lock/unlock are missing from lib.dom and from some browsers
@@ -115,6 +120,7 @@ const COUNTER_DEFS: {
 }[] = [
   { key: "poison", step: 1, icon: IconSkull },
   { key: "energy", step: 1, icon: IconBolt },
+  { key: "speed", step: 1, icon: IconGauge },
   { key: "experience", step: 1, icon: IconStar },
   { key: "tax", step: 2, icon: IconTaxPound },
 ];
@@ -127,8 +133,9 @@ function makePlayers(startingLife: number): Player[] {
     color: AREA_COLORS[i] ?? "#4a5568",
     photos: { resting: null, damage: null },
     photoFocus: { resting: { x: 50, y: 50 }, damage: { x: 50, y: 50 } },
-    counters: { poison: 0, energy: 0, experience: 0, tax: 0, partnerTax: 0 },
-    counterToggles: { poison: false, energy: false, experience: false, tax: false },
+    photoFit: "cover",
+    counters: { poison: 0, energy: 0, experience: 0, tax: 0, partnerTax: 0, speed: 0 },
+    counterToggles: { poison: false, energy: false, experience: false, tax: false, speed: false },
     partnerCommanders: false,
     commanderDamage: {},
   }));
@@ -443,6 +450,10 @@ function LifePressZone({
 
 function PlayerArea({
   player,
+  isStartingPlayer,
+  monarchEnabled,
+  isMonarch,
+  onClaimMonarch,
   opponents,
   flashAmount,
   spotlight,
@@ -451,9 +462,12 @@ function PlayerArea({
   onLifeChange,
   onCounterChange,
   onCommanderChange,
-  onOpenSettings,
 }: {
   player: Player;
+  isStartingPlayer: boolean;
+  monarchEnabled: boolean;
+  isMonarch: boolean;
+  onClaimMonarch: () => void;
   opponents: Player[];
   flashAmount: number | null;
   spotlight: SpotlightPhase | null;
@@ -462,7 +476,6 @@ function PlayerArea({
   onLifeChange: (delta: number) => void;
   onCounterChange: (key: CounterValueKey, delta: number) => void;
   onCommanderChange: (fromId: number, delta: number) => void;
-  onOpenSettings: () => void;
 }) {
   const { t } = useTranslation();
   const isHurt = flashAmount !== null && flashAmount < 0;
@@ -486,10 +499,10 @@ function PlayerArea({
     side === "left" ? classes.sideLeft : side === "right" ? classes.sideRight :
     side === "top" ? classes.sideTop : classes.sideBottom;
 
-  const countersColumn =
-    visibleCounters.length > 0 ? (
+  const renderCounters = (counters: typeof visibleCounters) =>
+    counters.length > 0 ? (
       <div className={classes.controlColumn}>
-        {visibleCounters.map((def) => (
+        {counters.map((def) => (
           <div className={classes.counterPair} key={def.key}>
             {Array.from({ length: def.key === "tax" && player.partnerCommanders ? 2 : 1 }, (_, index) => {
               const key: CounterValueKey = index === 1 ? "partnerTax" : def.key;
@@ -497,7 +510,7 @@ function PlayerArea({
                 label={def.key === "tax" ? t("lifeTracker.commanderTaxSlot", { number: index + 1, value: player.counters[key] }) : t(`lifeTracker.counter.${def.key}`) + ": " + player.counters[key]}
                 onChange={(sign) => onCounterChange(key, sign * def.step)}
                 style={{ "--opponent": player.color } as React.CSSProperties}
-                className={classes.themedCounter} partner={index === 1}>
+                className={`${classes.themedCounter} ${key === "speed" && player.counters.speed === 4 ? classes.counterAtCap : ""}`} partner={index === 1}>
                 <def.icon size={14} />
                 <span>{player.counters[key]}</span>
               </CounterPressButton>;
@@ -507,23 +520,11 @@ function PlayerArea({
       </div>
     ) : null;
 
-  const commanderColumn = (
-    <div className={classes.controlColumn}>
-      <ActionIcon
-        variant="filled"
-        color="rgba(0, 0, 0, 0.3)"
-        radius="xl"
-        size="clamp(28px, 10cqmin, 46px)"
-        onClick={onOpenSettings}
-        aria-label={t("lifeTracker.settingsFor", { name: player.name })}
-      >
-        <IconSettings size={18} />
-      </ActionIcon>
-    </div>
-  );
+  const countersColumn = renderCounters(visibleCounters.filter((counter) => counter.key !== "tax"));
+  const taxColumn = renderCounters(visibleCounters.filter((counter) => counter.key === "tax"));
 
   return (
-    <div data-life-zone className={classes.area} style={{ background: player.color, "--player-color": player.color } as React.CSSProperties}>
+    <div data-life-zone data-monarch-highlight={isMonarch ? "border" : undefined} className={classes.area} style={{ background: player.color, "--player-color": player.color } as React.CSSProperties}>
       <div className={`${classes.areaInner} ${orientClass} ${horizontalControls ? classes.horizontalControls : ""}`}>
         <div className={classes.areaFill}>
           {photo && (
@@ -531,7 +532,8 @@ function PlayerArea({
               className={classes.areaPhoto}
               style={{
                 backgroundImage: `url(${photo})`,
-                backgroundPosition: `${photoFocus.x}% ${photoFocus.y}%`,
+                backgroundPosition: player.photoFit === "contain" ? "center" : `${photoFocus.x}% ${photoFocus.y}%`,
+                backgroundSize: player.photoFit,
               }}
             />
           )}
@@ -575,16 +577,26 @@ function PlayerArea({
             onLifeChange={onLifeChange}
           />
 
-          <div
-            className={`${classes.sideControls} ${
-              sideClass(controlsSide)
-            }`}
-          >
-            {commanderColumn}
-          </div>
-
+          {(taxColumn || monarchEnabled) && (
+            <div data-tax-controls className={`${classes.sideControls} ${sideClass(controlsSide)} ${monarchEnabled ? classes.monarchControls : ""}`}>
+              {monarchEnabled && (
+                <ActionIcon
+                  className={classes.monarchButton}
+                  variant="subtle"
+                  color={isMonarch ? "yellow" : "gray"}
+                  aria-label={t("lifeTracker.claimMonarch", { name: player.name })}
+                  aria-pressed={isMonarch}
+                  onClick={onClaimMonarch}
+                >
+                  {isMonarch ? <IconCrownFilled size={24} /> : <IconCrown size={24} />}
+                </ActionIcon>
+              )}
+              {taxColumn}
+            </div>
+          )}
           {countersColumn && (
             <div
+              data-counter-controls
               className={`${classes.sideControls} ${
                 sideClass(calloutSide)
               }`}
@@ -595,7 +607,7 @@ function PlayerArea({
 
           <CommanderControls opponents={opponents} damage={player.commanderDamage} onChange={onCommanderChange} />
           <div className={`${classes.areaContent} ${classes.commanderContent}`}>
-            <Text fw={600} data-player-name className={classes.nameLabel}>
+            <Text fw={600} data-player-name data-starting-player={isStartingPlayer || undefined} className={classes.nameLabel}>
               {player.name}
             </Text>
 
@@ -618,9 +630,10 @@ function PlayerArea({
   );
 }
 
-function PlayerSettingsModal({
+function PlayerSettingsForm({
   player,
-  onClose,
+  onPhotoFitChange,
+  unavailableColors,
   onRename,
   onColorChange,
   onToggleCounter,
@@ -632,7 +645,8 @@ function PlayerSettingsModal({
   areaAspect,
 }: {
   player: Player | null;
-  onClose: () => void;
+  onPhotoFitChange: (fit: "cover" | "contain") => void;
+  unavailableColors: string[];
   areaAspect: number;
   onRename: (name: string) => void;
   onColorChange: (color: string) => void;
@@ -653,16 +667,12 @@ function PlayerSettingsModal({
   };
 
   return (
-    <Modal
-      opened={player !== null}
-      onClose={onClose}
-      title={t("lifeTracker.playerSettings")}
-      centered
-    >
+    <>
       {player && (
         <Stack>
-          <Switch label={t("lifeTracker.partnerCommanders")} description={t("lifeTracker.partnerCommandersDescription")} checked={player.partnerCommanders} onChange={(e) => onTogglePartners(e.currentTarget.checked)} />
+          <Switch label={t("lifeTracker.partnerCommanders")} checked={player.partnerCommanders} onChange={(e) => onTogglePartners(e.currentTarget.checked)} />
           <TextInput
+            autoFocus
             label={t("lifeTracker.name")}
             value={player.name}
             onChange={(e) => onRename(e.currentTarget.value)}
@@ -672,21 +682,23 @@ function PlayerSettingsModal({
             <Text size="sm" fw={500} mb={6}>
               {t("lifeTracker.areaColor")}
             </Text>
-            <Group gap="xs">
+            <SimpleGrid cols={4} spacing="xs" style={{ justifyItems: "center" }}>
               {AREA_COLORS.map((color) => (
                 <ColorSwatch
                   key={color}
                   color={color}
                   component="button"
                   type="button"
+                  disabled={unavailableColors.includes(color)}
                   onClick={() => onColorChange(color)}
-                  style={{ cursor: "pointer", color: "#fff" }}
+                  style={{ cursor: unavailableColors.includes(color) ? "not-allowed" : "pointer", opacity: unavailableColors.includes(color) ? 0.3 : 1, color: "#fff" }}
+                  aria-pressed={player.color === color}
                   aria-label={t("lifeTracker.useColor", { color })}
                 >
                   {player.color === color && <CheckIcon size={12} />}
                 </ColorSwatch>
               ))}
-            </Group>
+            </SimpleGrid>
           </div>
 
           <div>
@@ -712,6 +724,16 @@ function PlayerSettingsModal({
             <Text size="xs" c="dimmed" mb={8}>
               {t("lifeTracker.imagesDescription")}
             </Text>
+            <SegmentedControl
+              fullWidth mb="sm"
+              aria-label={t("lifeTracker.imageFit")}
+              value={player.photoFit}
+              onChange={(value) => { if (value === "cover" || value === "contain") onPhotoFitChange(value); }}
+              data={[
+                { value: "cover", label: t("lifeTracker.fitArea") },
+                { value: "contain", label: t("lifeTracker.fitImage") },
+              ]}
+            />
             <Group gap="xs">
               <PhotoSlotMenu
                 slot="resting"
@@ -728,7 +750,7 @@ function PlayerSettingsModal({
                 onClear={() => onClearPhoto("damage")}
               />
             </Group>
-            {(player.photos.resting || player.photos.damage) && (
+            {player.photoFit === "cover" && (player.photos.resting || player.photos.damage) && (
               <>
                 <Text size="xs" c="dimmed" mt={10} mb={4}>
                   {t("lifeTracker.focusHint")}
@@ -769,7 +791,7 @@ function PlayerSettingsModal({
           e.currentTarget.value = "";
         }}
       />
-    </Modal>
+    </>
   );
 }
 
@@ -782,8 +804,12 @@ export function LifeTrackerApp() {
   const [players, setPlayers] = useState<Player[]>(() => makePlayers(40));
   const [flash, setFlash] = useState<Record<number, number | null>>({});
   const [starter, setStarter] = useState<string | null>(null);
+  const [starterId, setStarterId] = useState<number | null>(null);
+  const [monarchEnabled, setMonarchEnabled] = useState(false);
+  const [monarchId, setMonarchId] = useState<number | null>(null);
   const [cameraTarget, setCameraTarget] = useState<CameraTarget | null>(null);
   const [settingsOpened, setSettingsOpened] = useState(false);
+  const [gameSetupOpen, setGameSetupOpen] = useState<string | null>(null);
   const [playerSettingsId, setPlayerSettingsId] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   // null = not yet known (avoids a hydration mismatch and a "not supported" flash)
@@ -817,7 +843,7 @@ export function LifeTrackerApp() {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(ORIENTATION_STORAGE_KEY);
-      if (stored === "outward" || stored === "down") setOrientationMode(stored);
+      if (stored === "outward" || stored === "down" || stored === "roundtable") setOrientationMode(stored);
     } catch {
       // Storage unavailable (privacy mode) — keep the default
     }
@@ -832,6 +858,9 @@ export function LifeTrackerApp() {
         setOrientationMode(game.orientationMode);
         setTheme(game.theme);
         setStarter(game.starter);
+        setStarterId(game.starterId ?? game.players.find((player) => player.name === game.starter)?.id ?? null);
+        setMonarchEnabled(game.monarchEnabled);
+        setMonarchId(game.monarchId);
       }
     } catch {
       // Invalid or inaccessible saved data must not prevent opening the board.
@@ -844,7 +873,7 @@ export function LifeTrackerApp() {
     const save = () => {
       try {
         localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify({
-          version: 1, players, playerCount, startingLife, orientationMode, theme, starter,
+          version: 1, players, playerCount, startingLife, orientationMode, theme, starter, starterId, monarchEnabled, monarchId,
         }));
         setSaveError(false);
       } catch {
@@ -854,7 +883,7 @@ export function LifeTrackerApp() {
     save();
     window.addEventListener("pagehide", save);
     return () => window.removeEventListener("pagehide", save);
-  }, [settingsLoaded, players, playerCount, startingLife, orientationMode, theme, starter]);
+  }, [settingsLoaded, players, playerCount, startingLife, orientationMode, theme, starter, starterId, monarchEnabled, monarchId]);
 
   const changeOrientationMode = useCallback((mode: OrientationMode) => {
     setOrientationMode(mode);
@@ -879,13 +908,30 @@ export function LifeTrackerApp() {
     return () => observer.disconnect();
   }, []);
 
+  const resetGameState = useCallback(() => {
+    setMonarchEnabled(false);
+    setMonarchId(null);
+    setPlayers((prev) =>
+      prev.map((p) => ({
+        ...p,
+        life: startingLife,
+        counters: { poison: 0, energy: 0, experience: 0, tax: 0, partnerTax: 0, speed: 0 },
+        commanderDamage: {},
+      })),
+    );
+    setFlash({});
+    setStarter(null);
+    setStarterId(null);
+  }, [startingLife]);
+
   const decideStartingPlayer = useCallback(() => {
     if (spinActive.current) return;
     const order = players.slice(0, playerCount).map((p) => ({ id: p.id, name: p.name }));
     const n = order.length;
     if (n === 0) return;
+    resetGameState();
     spinActive.current = true;
-    setSettingsOpened(false);
+    setGameSetupOpen(null);
 
     const winnerIdx = Math.floor(Math.random() * n);
     // Enough full loops that even a 2-player spin feels like a wheel
@@ -898,6 +944,7 @@ export function LifeTrackerApp() {
       if (i === total) {
         setSpotlight({ id: entry.id, phase: "won" });
         setStarter(entry.name);
+        setStarterId(entry.id);
         spotlightTimer.current = setTimeout(() => {
           setSpotlight({ id: entry.id, phase: "fading" });
           spotlightTimer.current = setTimeout(() => {
@@ -913,8 +960,13 @@ export function LifeTrackerApp() {
       const t = (i + 1) / total;
       spotlightTimer.current = setTimeout(() => step(i + 1), 60 + 320 * t * t);
     };
-    step(0);
-  }, [players, playerCount]);
+    // Let the setup panel visibly collapse before revealing the selection animation.
+    const delay = gameSetupOpen && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 250 : 0;
+    spotlightTimer.current = setTimeout(() => {
+      setSettingsOpened(false);
+      step(0);
+    }, delay);
+  }, [players, playerCount, gameSetupOpen, resetGameState]);
 
   useEffect(() => {
     setFullscreenAvailable(document.fullscreenEnabled ?? false);
@@ -932,9 +984,12 @@ export function LifeTrackerApp() {
 
   useEffect(() => {
     // Touch devices only — a wide desktop window should not rotate the board
+    if (orientationMode === "down") {
+      (window.screen.orientation as unknown as LockableOrientation).unlock?.();
+    }
     const mq = window.matchMedia("(pointer: coarse) and (orientation: landscape)");
     const update = () => {
-      if (!mq.matches) {
+      if (!mq.matches || orientationMode === "down") {
         setBoardRotation("none");
         return;
       }
@@ -950,7 +1005,7 @@ export function LifeTrackerApp() {
       mq.removeEventListener("change", update);
       window.screen.orientation?.removeEventListener("change", update);
     };
-  }, []);
+  }, [orientationMode]);
 
   const toggleFullscreen = useCallback(async () => {
     if (document.fullscreenElement) {
@@ -961,11 +1016,11 @@ export function LifeTrackerApp() {
       await document.documentElement.requestFullscreen();
       const orientation = screen.orientation as unknown as LockableOrientation;
       // Lock to whatever orientation the table is set up in right now
-      await orientation.lock?.(orientation.type);
+      if (orientationMode !== "down") await orientation.lock?.(orientation.type);
     } catch {
       // Fullscreen or the lock isn't supported here (e.g. iPhone, desktop) — keep going without it
     }
-  }, []);
+  }, [orientationMode]);
 
   const flashChange = useCallback((id: number, amount: number) => {
     // Consecutive changes within the flash window accumulate into one badge
@@ -1003,7 +1058,7 @@ export function LifeTrackerApp() {
     setPlayers((prev) =>
       prev.map((p) =>
         p.id === id
-          ? { ...p, counters: { ...p.counters, [key]: Math.max(0, p.counters[key] + delta) } }
+          ? { ...p, counters: { ...p.counters, [key]: Math.min(key === "speed" ? 4 : Infinity, Math.max(0, p.counters[key] + delta)) } }
           : p,
       ),
     );
@@ -1069,28 +1124,27 @@ export function LifeTrackerApp() {
   }, []);
 
   const resetGame = useCallback(() => {
-    setPlayers((prev) =>
-      prev.map((p) => ({
-        ...p,
-        life: startingLife,
-        counters: { poison: 0, energy: 0, experience: 0, tax: 0, partnerTax: 0 },
-        commanderDamage: {},
-      })),
-    );
-    setFlash({});
+    resetGameState();
     setSettingsOpened(false);
-  }, [startingLife]);
+  }, [resetGameState]);
 
   // Two players share the board as side-by-side columns only when seated
   // outward on a portrait board; everywhere else stacked rows fit the
   // reading direction better.
-  const twoPlayerRows = playerCount === 2 && (orientationMode === "down" || boardLandscape);
+  const twoPlayerRows = playerCount === 2 && (orientationMode !== "outward" || boardLandscape);
+  const roundtableFour = orientationMode === "roundtable" && playerCount === 4;
 
   // Outward seating puts players along the board's longer sides: left/right
   // on a portrait board, top/bottom on a landscape one. "down" keeps every
   // area upright for a single viewer.
   const orientationFor = (index: number): Orientation => {
     if (orientationMode === "down") return "bottom";
+    if (orientationMode === "roundtable") {
+      if (playerCount === 2) return index === 0 ? "top" : "bottom";
+      if (playerCount === 3) return index === 0 ? "left" : index === 1 ? "right" : "bottom";
+      // Full-width top and bottom seats surround the two middle side seats.
+      return (["top", "left", "right", "bottom"] as const)[index] ?? "bottom";
+    }
     if (boardLandscape) return index < (playerCount === 2 ? 1 : 2) ? "top" : "bottom";
     if (playerCount === 3 && index === 2) return "bottom";
     return index % 2 === 0 ? "left" : "right";
@@ -1099,7 +1153,9 @@ export function LifeTrackerApp() {
   // Which local side of the (possibly rotated) frame lands on the screen edge
   // away from the center button; callouts then open toward the middle.
   const controlsSideFor = (index: number): ControlSide => {
+    if (roundtableFour) return index === 0 || index === 1 ? "left" : "right";
     if (orientationMode === "down") {
+      if (boardLandscape) return index % 2 === 0 ? "left" : "right";
       return index < (playerCount === 2 ? 1 : 2) ? "top" : "bottom";
     }
     const orientation = orientationFor(index);
@@ -1122,14 +1178,12 @@ export function LifeTrackerApp() {
     // don't affect) so the focus picker can show the real cover crop
     const board = boardRef.current;
     if (board) {
-      const rows = playerCount === 2 && !twoPlayerRows ? 1 : 2;
-      const fullWidth =
-        (playerCount === 3 && gridIndex === 2) || (playerCount === 2 && twoPlayerRows);
-      const cellW = fullWidth ? board.clientWidth : board.clientWidth / 2;
-      const cellH = board.clientHeight / rows;
-      const orientation = orientationFor(gridIndex);
-      const upright = orientation === "top" || orientation === "bottom";
-      setSettingsAspect(upright ? cellW / cellH : cellH / cellW);
+      const cell = board.children[gridIndex] as HTMLElement | undefined;
+      if (cell && cell.clientWidth > 0 && cell.clientHeight > 0) {
+        const orientation = orientationFor(gridIndex);
+        const upright = orientation === "top" || orientation === "bottom";
+        setSettingsAspect(upright ? cell.clientWidth / cell.clientHeight : cell.clientHeight / cell.clientWidth);
+      }
     }
     setPlayerSettingsId(playerId);
   };
@@ -1138,7 +1192,10 @@ export function LifeTrackerApp() {
   // Grid cells fill row-major (TL, TR, BL, BR); swapping the bottom row makes
   // the seat order go clockwise around the table: 1 TL, 2 TR, 3 BR, 4 BL.
   const displayPlayers = [...activePlayers];
-  if (playerCount === 4) {
+  if (roundtableFour) {
+    // Clockwise player order: top, right, bottom, left.
+    displayPlayers.splice(0, 4, activePlayers[0]!, activePlayers[3]!, activePlayers[1]!, activePlayers[2]!);
+  } else if (playerCount === 4) {
     const third = displayPlayers[2];
     const fourth = displayPlayers[3];
     if (third && fourth) {
@@ -1146,9 +1203,18 @@ export function LifeTrackerApp() {
       displayPlayers[3] = third;
     }
   }
+  const stepPlayerSettings = (direction: number) => {
+    const index = activePlayers.findIndex((player) => player.id === playerSettingsId);
+    const next = activePlayers[index + direction];
+    if (next) {
+      openPlayerSettings(next.id, displayPlayers.findIndex((player) => player.id === next.id));
+    } else {
+      setPlayerSettingsId(null);
+    }
+  };
   const settingsPlayer = players.find((p) => p.id === playerSettingsId) ?? null;
   const layoutClass =
-    playerCount === 2
+    roundtableFour ? (boardLandscape ? classes.layoutRoundtableLandscape : classes.layoutRoundtable) : playerCount === 2
       ? twoPlayerRows
         ? classes.layout2Rows
         : classes.layout2
@@ -1182,6 +1248,10 @@ export function LifeTrackerApp() {
         <PlayerArea
           key={player.id}
           player={player}
+          isStartingPlayer={player.id === starterId}
+          monarchEnabled={monarchEnabled}
+          isMonarch={monarchEnabled && player.id === monarchId}
+          onClaimMonarch={() => setMonarchId(player.id)}
           opponents={activePlayers.filter((p) => p.id !== player.id)}
           orientation={orientationFor(index)}
           controlsSide={controlsSideFor(index)}
@@ -1190,7 +1260,6 @@ export function LifeTrackerApp() {
           onLifeChange={(delta) => adjustLife(player.id, delta)}
           onCounterChange={(key, delta) => adjustCounter(player.id, key, delta)}
           onCommanderChange={(fromId, delta) => adjustCommander(player.id, fromId, delta)}
-          onOpenSettings={() => openPlayerSettings(player.id, index)}
         />
       ))}
 
@@ -1200,7 +1269,7 @@ export function LifeTrackerApp() {
           variant="default"
           size={56}
           radius="xl"
-          onClick={() => setSettingsOpened(true)}
+          onClick={() => { setPlayerSettingsId(null); setSettingsOpened(true); }}
           aria-label={t("lifeTracker.generalSettings")}
         >
           <IconMenu2 size={26} />
@@ -1209,76 +1278,97 @@ export function LifeTrackerApp() {
 
       <Modal
         opened={settingsOpened}
-        onClose={() => setSettingsOpened(false)}
-        title={t("lifeTracker.generalSettings")}
+        onClose={() => { setSettingsOpened(false); setPlayerSettingsId(null); }}
+        title={
+          <Group gap="xs" wrap="nowrap">
+            {settingsPlayer !== null && (
+              <ActionIcon
+                variant="subtle"
+                aria-label={t("lifeTracker.backToGeneral")}
+                onClick={() => setPlayerSettingsId(null)}
+              >
+                <IconArrowLeft size={18} />
+              </ActionIcon>
+            )}
+            <span>{t("lifeTracker.generalSettings")}</span>
+          </Group>
+        }
         centered
       >
-        <Stack>
+        {settingsPlayer === null ? <Stack>
+          <Accordion value={gameSetupOpen} onChange={setGameSetupOpen} transitionDuration={250} variant="contained">
+            <Accordion.Item value="setup">
+              <Accordion.Control>{t("lifeTracker.gameSetup")}</Accordion.Control>
+              <Accordion.Panel>
+                <Stack>
+                  <div>
+                    <Text size="sm" fw={500} mb={6}>
+                      {t("lifeTracker.players")}
+                    </Text>
+                    <SegmentedControl
+                      fullWidth
+                      value={String(playerCount)}
+                      onChange={(v) => setPlayerCount(Number(v))}
+                      data={[2, 3, 4].map((n) => ({
+                        label: t("lifeTracker.playersOption", { n }),
+                        value: String(n),
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Text size="sm" fw={500} mb={6}>
+                      {t("lifeTracker.startingLife")}
+                    </Text>
+                    <SegmentedControl
+                      fullWidth
+                      value={String(startingLife)}
+                      onChange={(v) => {
+                        const life = Number(v);
+                        setStartingLife(life);
+                        resetLife(life);
+                      }}
+                      data={[20, 40].map((n) => ({
+                        label: t("lifeTracker.lifeOption", { n }),
+                        value: String(n),
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <Text size="sm" fw={500} mb={6}>
+                      {t("lifeTracker.orientation")}
+                    </Text>
+                    <SegmentedControl
+                      fullWidth
+                      value={orientationMode}
+                      styles={{ label: { whiteSpace: "normal" } }}
+                      onChange={(v) => changeOrientationMode(v as OrientationMode)}
+                      data={[
+                        { label: t("lifeTracker.orientationOutward"), value: "outward" },
+                        { label: t("lifeTracker.orientationDown"), value: "down" },
+                        { label: t("lifeTracker.orientationRoundtable"), value: "roundtable" },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <Text size="sm" fw={500} mb={6}>{t("lifeTracker.theme")}</Text>
+                    <SegmentedControl fullWidth value={theme} onChange={(value) => {
+                      if (value === "A" || value === "B" || value === "D") setTheme(value);
+                    }} data={[{ value: "A", label: "Moody" }, { value: "B", label: "Pastel" }, { value: "D", label: "Neon" }]} />
+                  </div>
+                </Stack>
+              </Accordion.Panel>
+            </Accordion.Item>
+          </Accordion>
           <div>
-            <Button
-              fullWidth
-              leftSection={<IconDice size={16} />}
-              onClick={decideStartingPlayer}
-            >
-              {t("lifeTracker.decideStartingPlayer")}
-            </Button>
-            {starter && (
-              <Text ta="center" fw={600} mt={8}>
-                {t("lifeTracker.starts", { name: starter })}
-              </Text>
-            )}
-          </div>
-          <div>
-            <Text size="sm" fw={500} mb={6}>{t("lifeTracker.theme")}</Text>
-            <SegmentedControl fullWidth value={theme} onChange={(value) => {
-              if (value === "A" || value === "B" || value === "D") setTheme(value);
-            }} data={[{ value: "A", label: "Machined" }, { value: "B", label: "Spellglass" }, { value: "D", label: "Neon Circuit" }]} />
-          </div>
-          <div>
-            <Text size="sm" fw={500} mb={6}>
-              {t("lifeTracker.players")}
-            </Text>
-            <SegmentedControl
-              fullWidth
-              value={String(playerCount)}
-              onChange={(v) => setPlayerCount(Number(v))}
-              data={[2, 3, 4].map((n) => ({
-                label: t("lifeTracker.playersOption", { n }),
-                value: String(n),
-              }))}
-            />
-          </div>
-          <div>
-            <Text size="sm" fw={500} mb={6}>
-              {t("lifeTracker.startingLife")}
-            </Text>
-            <SegmentedControl
-              fullWidth
-              value={String(startingLife)}
-              onChange={(v) => {
-                const life = Number(v);
-                setStartingLife(life);
-                resetLife(life);
-              }}
-              data={[20, 40].map((n) => ({
-                label: t("lifeTracker.lifeOption", { n }),
-                value: String(n),
-              }))}
-            />
-          </div>
-          <div>
-            <Text size="sm" fw={500} mb={6}>
-              {t("lifeTracker.orientation")}
-            </Text>
-            <SegmentedControl
-              fullWidth
-              value={orientationMode}
-              onChange={(v) => changeOrientationMode(v as OrientationMode)}
-              data={[
-                { label: t("lifeTracker.orientationOutward"), value: "outward" },
-                { label: t("lifeTracker.orientationDown"), value: "down" },
-              ]}
-            />
+            <Text fw={600} mb="xs">{t("lifeTracker.playerSettings")}</Text>
+            <SimpleGrid cols={2} spacing="xs">
+              {activePlayers.map((player) => (
+                <Button key={player.id} variant="default" fullWidth
+                  onClick={() => openPlayerSettings(player.id, displayPlayers.findIndex((p) => p.id === player.id))}>
+                  {player.name}
+                </Button>
+              ))}
+            </SimpleGrid>
           </div>
           <div>
             <Button
@@ -1305,40 +1395,78 @@ export function LifeTrackerApp() {
           >
             {t("lifeTracker.resetGame")}
           </Button>
-        </Stack>
+          <div>
+            <Button
+              fullWidth
+              leftSection={<IconDice size={16} />}
+              onClick={decideStartingPlayer}
+            >
+              {t("lifeTracker.decideStartingPlayer")}
+            </Button>
+            {starter && (
+              <Text ta="center" fw={600} mt={8}>
+                {t("lifeTracker.starts", { name: starter })}
+              </Text>
+            )}
+          </div>
+          <Button
+            fullWidth
+            variant="filled"
+            color="#ffd700"
+            autoContrast
+            leftSection={<IconCrown size={18} />}
+            disabled={monarchEnabled}
+            onClick={() => { setMonarchEnabled(true); setSettingsOpened(false); }}
+            styles={{ label: { whiteSpace: "normal" }, root: { height: "auto", minHeight: 36, paddingBlock: 8 } }}
+          >
+            {t(monarchEnabled ? "lifeTracker.monarchEnabled" : "lifeTracker.enableMonarch")}
+          </Button>
+        </Stack> : <Stack>
+          <Text fw={600} aria-live="polite">
+            {t("lifeTracker.playerSetupProgress", { current: activePlayers.findIndex((p) => p.id === playerSettingsId) + 1, total: playerCount })}
+          </Text>
+          <PlayerSettingsForm
+            key={settingsPlayer.id}
+            player={settingsPlayer}
+            onPhotoFitChange={(photoFit) => setPlayers((prev) => prev.map((player) => player.id === playerSettingsId ? { ...player, photoFit } : player))}
+            unavailableColors={activePlayers.filter((player) => player.id !== settingsPlayer.id).map((player) => player.color)}
+            areaAspect={settingsAspect}
+            onRename={(name) =>
+              setPlayers((prev) =>
+                prev.map((p) => (p.id === playerSettingsId ? { ...p, name } : p)),
+              )
+            }
+            onColorChange={(color) =>
+              setPlayers((prev) =>
+                prev.map((p) => (p.id === playerSettingsId ? { ...p, color } : p)),
+              )
+            }
+            onTogglePartners={(value) => setPlayers((prev) => prev.map((p) => p.id === playerSettingsId ? { ...p, partnerCommanders: value } : p))}
+            onToggleCounter={(key, value) => {
+              if (playerSettingsId !== null) toggleCounter(playerSettingsId, key, value);
+            }}
+            onSetFocus={(slot, focus) => {
+              if (playerSettingsId !== null) setPhotoFocus(playerSettingsId, slot, focus);
+            }}
+            onOpenCamera={(slot) => {
+              if (playerSettingsId !== null) setCameraTarget({ playerId: playerSettingsId, slot });
+            }}
+            onUploadPhoto={(slot, file) => {
+              if (playerSettingsId !== null) void uploadPhoto(playerSettingsId, slot, file);
+            }}
+            onClearPhoto={(slot) => {
+              if (playerSettingsId !== null) setPhoto(playerSettingsId, slot, null);
+            }}
+          />
+          <Group grow>
+            <Button variant="default" disabled={playerSettingsId === activePlayers[0]?.id}
+              onClick={() => stepPlayerSettings(-1)}>{t("lifeTracker.previousPlayer")}</Button>
+            <Button onClick={() => stepPlayerSettings(1)}>
+              {t(playerSettingsId === activePlayers.at(-1)?.id ? "lifeTracker.finishPlayerSetup" : "lifeTracker.nextPlayer")}
+            </Button>
+          </Group>
+        </Stack>}
       </Modal>
-
-      <PlayerSettingsModal
-        player={settingsPlayer}
-        areaAspect={settingsAspect}
-        onClose={() => setPlayerSettingsId(null)}
-        onRename={(name) =>
-          setPlayers((prev) =>
-            prev.map((p) => (p.id === playerSettingsId ? { ...p, name } : p)),
-          )
-        }
-        onColorChange={(color) =>
-          setPlayers((prev) =>
-            prev.map((p) => (p.id === playerSettingsId ? { ...p, color } : p)),
-          )
-        }
-        onTogglePartners={(value) => setPlayers((prev) => prev.map((p) => p.id === playerSettingsId ? { ...p, partnerCommanders: value } : p))}
-        onToggleCounter={(key, value) => {
-          if (playerSettingsId !== null) toggleCounter(playerSettingsId, key, value);
-        }}
-        onSetFocus={(slot, focus) => {
-          if (playerSettingsId !== null) setPhotoFocus(playerSettingsId, slot, focus);
-        }}
-        onOpenCamera={(slot) => {
-          if (playerSettingsId !== null) setCameraTarget({ playerId: playerSettingsId, slot });
-        }}
-        onUploadPhoto={(slot, file) => {
-          if (playerSettingsId !== null) void uploadPhoto(playerSettingsId, slot, file);
-        }}
-        onClearPhoto={(slot) => {
-          if (playerSettingsId !== null) setPhoto(playerSettingsId, slot, null);
-        }}
-      />
 
       <CameraModal
         target={cameraTarget}

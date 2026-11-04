@@ -84,7 +84,7 @@ function AccountButton() {
   const { t } = useTranslation();
 
   if (status === "loading") {
-    return <Skeleton height={28} width={100} radius="sm" />;
+    return <Skeleton height={28} w={{ base: 28, sm: 100 }} radius="sm" />;
   }
 
   if (!session?.user) {
@@ -98,10 +98,10 @@ function AccountButton() {
   return (
     <Menu width={160} position="bottom-end">
       <Menu.Target>
-        <UnstyledButton>
-          <Group gap="xs">
+        <UnstyledButton aria-label={session.user.name || 'Account'}>
+          <Group gap="xs" wrap="nowrap">
             <Avatar src={session.user.image} size="sm" radius="xl" />
-            <Text size="sm">{session.user.name}</Text>
+            <Text size="sm" visibleFrom="sm" maw={160} truncate>{session.user.name}</Text>
           </Group>
         </UnstyledButton>
       </Menu.Target>
@@ -210,22 +210,23 @@ export function Shell({ children }: { children: React.ReactNode }) {
       padding={immersive ? 0 : "md"}
     >
       <AppShell.Header className="app-navigation">
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
+        <Group h="100%" px={{ base: "xs", sm: "md" }} gap="xs" wrap="nowrap" justify="space-between">
+          <Group gap="xs" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
             <Burger
               opened={mobileOpened}
               onClick={toggleMobile}
               hiddenFrom={immersive ? undefined : "sm"}
               size="sm"
+              style={{ flexShrink: 0 }}
             />
-            <UnstyledButton component={Link} href="/" onClick={closeMobile}>
-              <Group gap={6} align="center">
-                <img src="/favicon.svg" alt="" style={{ width: 28, height: 28 }} />
-                <Text fw={700} size="lg">Cornucopium</Text>
+            <UnstyledButton component={Link} href="/" onClick={closeMobile} style={{ minWidth: 0 }}>
+              <Group gap={6} align="center" wrap="nowrap">
+                <img src="/favicon.svg" alt="" style={{ width: 28, height: 28, flexShrink: 0 }} />
+                <Text fw={700} size="lg" truncate>Cornucopium</Text>
               </Group>
             </UnstyledButton>
           </Group>
-          <Group gap="xs">
+          <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
             <ColorSchemeToggle />
             <Box visibleFrom="sm">
               <LanguagePicker />
